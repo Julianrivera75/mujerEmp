@@ -1,0 +1,115 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String      @id @default(cuid())
+  name          String
+  email         String      @unique
+  passwordHash  String
+  role          String      @default("STUDENT") // ADMIN, MENTOR, STUDENT
+  status        String      @default("ACTIVO")  // ACTIVO, INACTIVO
+  documentId    String?
+  phone         String?
+  avatar        String?
+  startDate     DateTime?   // Fecha de inicio en la plataforma
+  endDate       DateTime?   // Fecha de finalización
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  mentoredClasses   ClassSession[]    @relation("MentorClasses")
+  enrolledClasses   ClassEnrollment[]
+  attendances       Attendance[]
+  submissions       Submission[]
+  createdAssignments Assignment[]     @relation("MentorAssignments")
+}
+
+model ClassSession {
+  id            String          @id @default(cuid())
+  title         String
+  description   String?
+  dateStart     DateTime
+  dateEnd       DateTime
+  meetLink      String?         // Link de Google Meet
+  youtubeUrl    String?         // Link de YouTube para la grabación
+  recordingNotes String?
+  status        String          @default("PROGRAMADA") // PROGRAMADA, FINALIZADA, CANCELADA
+  monthKey      String          // Formato YYYY-MM para agrupamiento mensual
+
+  mentorId      String
+  mentor        User            @relation("MentorClasses", fields: [mentorId], references: [id], onDelete: Cascade)
+
+  enrollments   ClassEnrollment[]
+  attendances   Attendance[]
+  assignments   Assignment[]
+  resources     ClassResource[]
+
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+model ClassEnrollment {
+  id            String       @id @default(cuid())
+  classId       String
+  studentId     String
+  classSession  ClassSession @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student       User         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, studentId])
+}
+
+model Attendance {
+  id            String       @id @default(cuid())
+  classId       String
+  studentId     String
+  joinedAt      DateTime     @default(now()) // Hora exacta de clic al enlace de Google Meet
+  classSession  ClassSession @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student       User         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, studentId])
+}
+
+model Assignment {
+  id            String        @id @default(cuid())
+  classId       String
+  creatorId     String
+  title         String
+  description   String
+  dueDate       DateTime
+  classSession  ClassSession  @relation(fields: [classId], references: [id], onDelete: Cascade)
+  creator       User          @relation("MentorAssignments", fields: [creatorId], references: [id], onDelete: Cascade)
+  submissions   Submission[]
+  createdAt     DateTime      @default(now())
+}
+
+model Submission {
+  id            String      @id @default(cuid())
+  assignmentId  String
+  studentId     String
+  submittedAt   DateTime    @default(now())
+  fileUrl       String?
+  fileType      String?     // PDF, DOC, IMAGE, LINK
+  notes         String?
+  grade         Float?      // Calificación otorgada
+  feedback      String?     // Comentarios de retroalimentación
+  gradedAt      DateTime?
+  assignment    Assignment  @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student       User        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, studentId])
+}
+
+model ClassResource {
+  id            String       @id @default(cuid())
+  classId       String
+  title         String
+  type          String       // YOUTUBE, DOCUMENT, LINK
+  url           String
+  classSession  ClassSession @relation(fields: [classId], references: [id], onDelete: Cascade)
+  createdAt     DateTime     @default(now())
+}
