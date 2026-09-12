@@ -2,7 +2,16 @@ import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 import prisma from './prisma';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'empoderas-diversas-secret-key-2026';
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (secret) return secret;
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET no está configurado');
+  }
+  return 'dev-only-secret-no-usar-en-produccion';
+}
+
+const JWT_SECRET = getJwtSecret();
 const TOKEN_NAME = 'empoderas_session';
 
 export interface TokenPayload {
