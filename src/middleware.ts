@@ -1,7 +1,17 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { jwtVerify } from 'jose';
 
-export function middleware(request: NextRequest) {
+function getJwtSecretKey(): Uint8Array {
+  const secret = process.env.JWT_SECRET;
+  if (secret) return new TextEncoder().encode(secret);
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET no está configurado');
+  }
+  return new TextEncoder().encode('dev-only-secret-no-usar-en-produccion');
+}
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Rutas públicas que no requieren autenticación
@@ -26,12 +36,8 @@ export function middleware(request: NextRequest) {
   }
 
   try {
-    // Decodificar payload para verificar rol en middleware
-    const parts = sessionCookie.split('.');
-    if (parts.length !== 3) {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-    const payload = JSON.parse(atob(parts[1]));
+    // Verificar firma real del JWT (no solo decodificar el payload).
+    const { payload } = await jwtVerify(sessionCookie, getJwtSecretKey(), { algorithms: ['HS256'] });
 
     // Validar si el usuario está inactivo
     if (payload.status === 'INACTIVO') {
@@ -63,7 +69,10 @@ export function middleware(request: NextRequest) {
 
     return NextResponse.next();
   } catch (err) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    // Firma inválida, token expirado o cookie corrupta.
+    const response = NextResponse.redirect(new URL('/login', request.url));
+    response.cookies.delete('empoderas_session');
+    return response;
   }
 }
 

@@ -61,6 +61,19 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: 'ID de entrega requerido.' }, { status: 400 });
     }
 
+    const existing = await prisma.submission.findUnique({
+      where: { id: submissionId },
+      include: { assignment: { include: { classSession: { select: { mentorId: true } } } } },
+    });
+
+    if (!existing) {
+      return NextResponse.json({ error: 'Entrega no encontrada.' }, { status: 404 });
+    }
+
+    if (user.role === 'MENTOR' && existing.assignment.classSession.mentorId !== user.id) {
+      return NextResponse.json({ error: 'No podés calificar entregas de clases que no dictás.' }, { status: 403 });
+    }
+
     const updated = await prisma.submission.update({
       where: { id: submissionId },
       data: {

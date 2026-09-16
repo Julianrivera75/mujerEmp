@@ -61,6 +61,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Todos los campos son obligatorios.' }, { status: 400 });
     }
 
+    if (user.role === 'MENTOR') {
+      const classSession = await prisma.classSession.findUnique({
+        where: { id: classId },
+        select: { mentorId: true },
+      });
+      if (!classSession) {
+        return NextResponse.json({ error: 'Clase no encontrada.' }, { status: 404 });
+      }
+      if (classSession.mentorId !== user.id) {
+        return NextResponse.json({ error: 'No podés crear tareas en clases que no dictás.' }, { status: 403 });
+      }
+    }
+
     const assignment = await prisma.assignment.create({
       data: {
         classId,
