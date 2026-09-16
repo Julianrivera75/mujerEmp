@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import YouTubeEmbed from '@/components/YouTubeEmbed';
+import FileLink from '@/components/FileLink';
 import { 
   BookOpen, 
   Youtube, 
@@ -126,11 +127,10 @@ export default function StudentRepositoryPage() {
                         </h3>
                         <div className="space-y-2">
                           {selectedClass.resources.map((res) => (
-                            <a
+                            <FileLink
                               key={res.id}
-                              href={res.url}
-                              target="_blank"
-                              rel="noreferrer"
+                              fileUrl={res.url}
+                              isStoredFile={res.type === 'DOCUMENT'}
                               className="flex items-center justify-between p-3 rounded-xl bg-purple-50/60 hover:bg-purple-100/80 border border-purple-100 text-xs font-bold text-purple-900 transition-colors"
                             >
                               <div className="flex items-center space-x-2">
@@ -138,7 +138,7 @@ export default function StudentRepositoryPage() {
                                 <span>{res.title}</span>
                               </div>
                               <ExternalLink className="w-3.5 h-3.5 text-purple-500" />
-                            </a>
+                            </FileLink>
                           ))}
                         </div>
                       </div>

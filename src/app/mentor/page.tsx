@@ -2,19 +2,24 @@
 
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
-import { 
-  Calendar, 
-  Video, 
-  Youtube, 
-  Users, 
-  Clock, 
-  CheckCircle2, 
-  Edit, 
-  Save, 
+import FileUpload from '@/components/FileUpload';
+import FileLink from '@/components/FileLink';
+import {
+  Calendar,
+  Video,
+  Youtube,
+  Users,
+  Clock,
+  CheckCircle2,
+  Edit,
+  Save,
   ExternalLink,
   PlusCircle,
   Loader2,
-  BookOpen
+  BookOpen,
+  FileText,
+  Trash2,
+  X
 } from 'lucide-react';
 
 interface MentorClass {
@@ -30,6 +35,7 @@ interface MentorClass {
   enrollments: { student: { id: string; name: string; email: string; documentId: string | null } }[];
   attendances: { studentId: string; joinedAt: string; student: { name: string } }[];
   assignments: { id: string; title: string; dueDate: string }[];
+  resources: { id: string; title: string; type: string; url: string }[];
 }
 
 export default function MentorDashboardPage() {
@@ -46,6 +52,14 @@ export default function MentorDashboardPage() {
 
   // Modal para ver estudiantes asignadas y quién asistió
   const [selectedClassForStudents, setSelectedClassForStudents] = useState<MentorClass | null>(null);
+
+  // Modal para gestionar recursos/materiales de una clase
+  const [selectedClassForResources, setSelectedClassForResources] = useState<MentorClass | null>(null);
+  const [resourceTitle, setResourceTitle] = useState('');
+  const [resourceLink, setResourceLink] = useState('');
+  const [uploadedResourceKey, setUploadedResourceKey] = useState<string | null>(null);
+  const [uploadedResourceType, setUploadedResourceType] = useState<'PDF' | 'IMAGE' | null>(null);
+  const [savingResource, setSavingResource] = useState(false);
 
   const loadData = async () => {
     try {
@@ -111,6 +125,62 @@ export default function MentorDashboardPage() {
       console.error('Error guardando enlaces:', err);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const resetResourceForm = () => {
+    setResourceTitle('');
+    setResourceLink('');
+    setUploadedResourceKey(null);
+    setUploadedResourceType(null);
+  };
+
+  const handleAddResource = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedClassForResources) return;
+
+    setSavingResource(true);
+    try {
+      const res = await fetch('/api/resources', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(
+          uploadedResourceKey
+            ? { classId: selectedClassForResources.id, title: resourceTitle, type: 'DOCUMENT', url: uploadedResourceKey }
+            : { classId: selectedClassForResources.id, title: resourceTitle, type: 'LINK', url: resourceLink },
+        ),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        const updated = { ...selectedClassForResources, resources: [...selectedClassForResources.resources, data.resource] };
+        setSelectedClassForResources(updated);
+        setClasses(classes.map((c) => (c.id === updated.id ? updated : c)));
+        resetResourceForm();
+      }
+    } catch (err) {
+      console.error('Error al agregar recurso:', err);
+    } finally {
+      setSavingResource(false);
+    }
+  };
+
+  const handleDeleteResource = async (resourceId: string) => {
+    if (!selectedClassForResources) return;
+    if (!confirm('¿Eliminar este recurso de la clase?')) return;
+
+    try {
+      const res = await fetch(`/api/resources?id=${resourceId}`, { method: 'DELETE' });
+      if (res.ok) {
+        const updated = {
+          ...selectedClassForResources,
+          resources: selectedClassForResources.resources.filter((r) => r.id !== resourceId),
+        };
+        setSelectedClassForResources(updated);
+        setClasses(classes.map((c) => (c.id === updated.id ? updated : c)));
+      }
+    } catch (err) {
+      console.error('Error al eliminar recurso:', err);
     }
   };
 
@@ -225,6 +295,14 @@ export default function MentorDashboardPage() {
                           <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                           <span>Asistieron al Google Meet: {attendedCount} de {totalEnrolled}</span>
                         </div>
+
+                        <button
+                          onClick={() => setSelectedClassForResources(cls)}
+                          className="inline-flex items-center space-x-1.5 text-xs font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3.5 py-2 rounded-xl transition-colors"
+                        >
+                          <FileText className="w-4 h-4 text-indigo-600" />
+                          <span>Materiales de Clase ({cls.resources.length})</span>
+                        </button>
                       </div>
                     </div>
 
@@ -400,6 +478,120 @@ export default function MentorDashboardPage() {
             >
               Cerrar
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Materiales / Recursos de Clase */}
+      {selectedClassForResources && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-100">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+              <h3 className="text-lg font-black text-slate-800">Materiales de Clase</h3>
+              <button
+                onClick={() => {
+                  setSelectedClassForResources(null);
+                  resetResourceForm();
+                }}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-xs text-slate-500 mb-4">
+              Clase: <strong>{selectedClassForResources.title}</strong>
+            </p>
+
+            <div className="max-h-56 overflow-y-auto space-y-2 mb-5">
+              {selectedClassForResources.resources.length === 0 ? (
+                <p className="text-xs text-slate-400 italic py-3 text-center">Sin materiales agregados todavía.</p>
+              ) : (
+                selectedClassForResources.resources.map((res) => (
+                  <div
+                    key={res.id}
+                    className="flex items-center justify-between p-2.5 rounded-xl bg-indigo-50/60 border border-indigo-100 text-xs"
+                  >
+                    <FileLink
+                      fileUrl={res.url}
+                      isStoredFile={res.type === 'DOCUMENT'}
+                      className="flex items-center space-x-1.5 font-bold text-indigo-900 hover:text-indigo-700"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      <span className="truncate max-w-[220px]">{res.title}</span>
+                    </FileLink>
+                    <button
+                      onClick={() => handleDeleteResource(res.id)}
+                      className="text-slate-400 hover:text-red-600 ml-2"
+                      title="Eliminar recurso"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <form onSubmit={handleAddResource} className="space-y-3 pt-3 border-t border-slate-100">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Título del material *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej: Guía de ejercicios - Módulo 3"
+                  value={resourceTitle}
+                  onChange={(e) => setResourceTitle(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-indigo-500/20"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Enlace (Drive, Canva, etc.)
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://drive.google.com/..."
+                  value={resourceLink}
+                  onChange={(e) => {
+                    setResourceLink(e.target.value);
+                    if (e.target.value) {
+                      setUploadedResourceKey(null);
+                      setUploadedResourceType(null);
+                    }
+                  }}
+                  disabled={!!uploadedResourceKey}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-indigo-500/20 disabled:bg-slate-50 disabled:text-slate-400"
+                />
+              </div>
+
+              <div className="flex items-center">
+                <div className="flex-1 h-px bg-slate-200" />
+                <span className="px-2 text-[10px] font-bold text-slate-400 uppercase">o subí un archivo</span>
+                <div className="flex-1 h-px bg-slate-200" />
+              </div>
+
+              <FileUpload
+                category="resource"
+                accept=".pdf,image/png,image/jpeg,image/webp"
+                label="Subir PDF o imagen (máx. 25 MB)"
+                onUploaded={(key) => {
+                  setUploadedResourceKey(key);
+                  setResourceLink('');
+                  setUploadedResourceType(key.match(/\.(png|jpe?g|webp)$/i) ? 'IMAGE' : 'PDF');
+                }}
+              />
+
+              <button
+                type="submit"
+                disabled={savingResource || !resourceTitle || (!resourceLink && !uploadedResourceKey)}
+                className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-xs flex items-center justify-center space-x-1.5"
+              >
+                {savingResource ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PlusCircle className="w-3.5 h-3.5" />}
+                <span>Agregar Material</span>
+              </button>
+            </form>
           </div>
         </div>
       )}

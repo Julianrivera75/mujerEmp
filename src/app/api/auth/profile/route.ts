@@ -13,7 +13,7 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { phone, currentPassword, newPassword } = body;
+    const { phone, currentPassword, newPassword, avatar } = body;
 
     const dbUser = await prisma.user.findUnique({
       where: { id: user.id },
@@ -26,6 +26,10 @@ export async function PUT(req: Request) {
     const updateData: any = {};
     if (phone !== undefined) {
       updateData.phone = phone.trim() || null;
+    }
+    if (avatar !== undefined) {
+      // Solo aceptamos keys de nuestro bucket (prefijo "avatares/"), nunca URLs arbitrarias.
+      updateData.avatar = typeof avatar === 'string' && avatar.startsWith('avatares/') ? avatar : null;
     }
 
     // Si desea cambiar contraseña
@@ -58,7 +62,7 @@ export async function PUT(req: Request) {
     const updated = await prisma.user.update({
       where: { id: user.id },
       data: updateData,
-      select: { id: true, name: true, email: true, phone: true },
+      select: { id: true, name: true, email: true, phone: true, avatar: true },
     });
 
     return NextResponse.json({

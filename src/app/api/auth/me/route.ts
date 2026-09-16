@@ -22,6 +22,7 @@ export async function GET() {
       documentId: true,
       startDate: true,
       endDate: true,
+      avatar: true,
     },
   });
 

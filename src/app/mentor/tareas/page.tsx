@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
-import { 
-  ClipboardList, 
+import FileLink from '@/components/FileLink';
+import {
+  ClipboardList,
   PlusCircle, 
   Calendar, 
   CheckCircle, 
@@ -262,16 +263,15 @@ export default function MentorTasksPage() {
                               )}
 
                               {sub.fileUrl && (
-                                <a
-                                  href={sub.fileUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
+                                <FileLink
+                                  fileUrl={sub.fileUrl}
+                                  isStoredFile={sub.fileType === 'PDF' || sub.fileType === 'IMAGE'}
                                   className="inline-flex items-center space-x-1.5 text-xs text-teal-600 hover:text-teal-800 font-bold mb-3"
                                 >
                                   <FileText className="w-3.5 h-3.5" />
                                   <span>Ver Archivo / Enlace Entregado</span>
                                   <ExternalLink className="w-3 h-3" />
-                                </a>
+                                </FileLink>
                               )}
 
                               {sub.feedback && (

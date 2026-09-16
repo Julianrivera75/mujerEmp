@@ -1,0 +1,107 @@
+'use client';
+
+import React, { useRef, useState } from 'react';
+import { Upload, Loader2, CheckCircle2, AlertCircle, X } from 'lucide-react';
+
+type UploadCategory = 'submission' | 'resource' | 'avatar' | 'certificate';
+
+interface FileUploadProps {
+  category: UploadCategory;
+  accept: string;
+  /** Se llama con el "key" de S3 una vez subido el archivo. */
+  onUploaded: (key: string, fileName: string) => void;
+  label?: string;
+}
+
+export default function FileUpload({ category, accept, onUploaded, label }: FileUploadProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [uploadedName, setUploadedName] = useState<string | null>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setError(null);
+    setUploading(true);
+    try {
+      const presignRes = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          category,
+          fileName: file.name,
+          contentType: file.type,
+          sizeBytes: file.size,
+        }),
+      });
+
+      const presignData = await presignRes.json();
+      if (!presignRes.ok) {
+        setError(presignData.error || 'No se pudo preparar la subida.');
+        return;
+      }
+
+      const putRes = await fetch(presignData.uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      });
+
+      if (!putRes.ok) {
+        setError('Error al subir el archivo. Intentá de nuevo.');
+        return;
+      }
+
+      setUploadedName(file.name);
+      onUploaded(presignData.key, file.name);
+    } catch (err) {
+      console.error('Error al subir archivo:', err);
+      setError('Error de red al subir el archivo.');
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  };
+
+  return (
+    <div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        onChange={handleFileChange}
+        className="hidden"
+        id={`file-upload-${category}`}
+      />
+      <label
+        htmlFor={`file-upload-${category}`}
+        className="flex items-center justify-center space-x-2 px-3.5 py-2.5 rounded-xl border-2 border-dashed border-slate-300 text-xs font-semibold text-slate-600 hover:border-fuchsia-400 hover:text-fuchsia-600 cursor-pointer transition-colors"
+      >
+        {uploading ? (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>Subiendo...</span>
+          </>
+        ) : uploadedName ? (
+          <>
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <span className="truncate">{uploadedName}</span>
+          </>
+        ) : (
+          <>
+            <Upload className="w-4 h-4" />
+            <span>{label || 'Subir archivo'}</span>
+          </>
+        )}
+      </label>
+      {error && (
+        <p className="flex items-center space-x-1 text-xs text-rose-600 mt-1.5">
+          <AlertCircle className="w-3.5 h-3.5" />
+          <span>{error}</span>
+        </p>
+      )}
+    </div>
+  );
+}

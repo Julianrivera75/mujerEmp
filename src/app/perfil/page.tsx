@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
-import { 
-  User, 
+import FileUpload from '@/components/FileUpload';
+import AvatarImage from '@/components/AvatarImage';
+import {
+  User,
   Lock, 
   Phone, 
   Mail, 
@@ -28,6 +30,8 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [avatarKey, setAvatarKey] = useState<string | null>(null);
+  const [avatarSaving, setAvatarSaving] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -38,6 +42,7 @@ export default function ProfilePage() {
         if (data.user) {
           setCurrentUser(data.user);
           setPhone(data.user.phone || '');
+          setAvatarKey(data.user.avatar || null);
         }
       } catch (err) {
         console.error('Error cargando perfil:', err);
@@ -47,6 +52,29 @@ export default function ProfilePage() {
     }
     load();
   }, []);
+
+  const handleAvatarUploaded = async (key: string) => {
+    setAvatarSaving(true);
+    setErrorMsg('');
+    try {
+      const res = await fetch('/api/auth/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatar: key }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setErrorMsg(data.error || 'No se pudo guardar la foto de perfil.');
+        return;
+      }
+      setAvatarKey(key);
+      setSuccessMsg('¡Foto de perfil actualizada!');
+    } catch (err) {
+      setErrorMsg('Error de conexión al guardar la foto.');
+    } finally {
+      setAvatarSaving(false);
+    }
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,8 +140,19 @@ export default function ProfilePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Tarjeta de Resumen de Usuario */}
             <div className="glass-card rounded-3xl p-6 border border-white shadow-xl space-y-4">
-              <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-purple-600 via-fuchsia-600 to-indigo-600 text-white font-black text-2xl flex items-center justify-center shadow-lg shadow-purple-500/25 mx-auto">
-                {currentUser?.name?.charAt(0)}
+              <AvatarImage
+                avatarKey={avatarKey}
+                fallbackInitial={currentUser?.name?.charAt(0) || '?'}
+                className="w-20 h-20 rounded-3xl text-2xl shadow-lg shadow-purple-500/25 mx-auto"
+              />
+
+              <div className="flex justify-center">
+                <FileUpload
+                  category="avatar"
+                  accept="image/png,image/jpeg,image/webp"
+                  label={avatarSaving ? 'Guardando...' : 'Cambiar foto'}
+                  onUploaded={(key) => handleAvatarUploaded(key)}
+                />
               </div>
 
               <div className="text-center">

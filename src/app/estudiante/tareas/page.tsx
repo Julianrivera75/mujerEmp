@@ -16,6 +16,7 @@ import {
   X
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import FileUpload from '@/components/FileUpload';
 
 interface Submission {
   id: string;
@@ -47,6 +48,7 @@ export default function StudentTasksPage() {
   const [submittingAssignment, setSubmittingAssignment] = useState<StudentAssignment | null>(null);
   const [submissionNotes, setSubmissionNotes] = useState('');
   const [submissionUrl, setSubmissionUrl] = useState('');
+  const [uploadedFileKey, setUploadedFileKey] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
 
   const loadData = async () => {
@@ -77,7 +79,9 @@ export default function StudentTasksPage() {
     setSubmittingAssignment(ass);
     const existing = ass.submissions[0];
     setSubmissionNotes(existing?.notes || '');
-    setSubmissionUrl(existing?.fileUrl || '');
+    const isUploadedFile = existing?.fileType === 'PDF' || existing?.fileType === 'IMAGE';
+    setSubmissionUrl(isUploadedFile ? '' : existing?.fileUrl || '');
+    setUploadedFileKey(isUploadedFile ? existing?.fileUrl || null : null);
   };
 
   const handleSubmitTask = async (e: React.FormEvent) => {
@@ -89,12 +93,21 @@ export default function StudentTasksPage() {
       const res = await fetch('/api/submissions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          assignmentId: submittingAssignment.id,
-          notes: submissionNotes,
-          fileUrl: submissionUrl,
-          fileType: 'LINK',
-        }),
+        body: JSON.stringify(
+          uploadedFileKey
+            ? {
+                assignmentId: submittingAssignment.id,
+                notes: submissionNotes,
+                fileUrl: uploadedFileKey,
+                fileType: uploadedFileKey.match(/\.(png|jpe?g|webp)$/i) ? 'IMAGE' : 'PDF',
+              }
+            : {
+                assignmentId: submittingAssignment.id,
+                notes: submissionNotes,
+                fileUrl: submissionUrl,
+                fileType: 'LINK',
+              },
+        ),
       });
 
       if (res.ok) {
@@ -285,8 +298,30 @@ export default function StudentTasksPage() {
                   type="url"
                   placeholder="https://docs.google.com/... o https://drive.google.com/..."
                   value={submissionUrl}
-                  onChange={(e) => setSubmissionUrl(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-fuchsia-500/20"
+                  onChange={(e) => {
+                    setSubmissionUrl(e.target.value);
+                    if (e.target.value) setUploadedFileKey(null);
+                  }}
+                  disabled={!!uploadedFileKey}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-fuchsia-500/20 disabled:bg-slate-50 disabled:text-slate-400"
+                />
+              </div>
+
+              <div className="flex items-center">
+                <div className="flex-1 h-px bg-slate-200" />
+                <span className="px-2 text-[10px] font-bold text-slate-400 uppercase">o subí un archivo</span>
+                <div className="flex-1 h-px bg-slate-200" />
+              </div>
+
+              <div>
+                <FileUpload
+                  category="submission"
+                  accept=".pdf,image/png,image/jpeg,image/webp"
+                  label="Subir PDF o imagen (máx. 15 MB)"
+                  onUploaded={(key) => {
+                    setUploadedFileKey(key);
+                    setSubmissionUrl('');
+                  }}
                 />
               </div>
 
