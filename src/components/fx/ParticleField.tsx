@@ -61,7 +61,7 @@ export function ParticleField({
     const palette = PALETTES[variant].map(lift);
     const alphaK = tone === 'dark' ? 1.3 : 1;
 
-    type P = { x: number; y: number; vx: number; vy: number; r: number; a: number; c: RGB; tw: number };
+    type P = { x: number; y: number; vx: number; vy: number; r: number; a: number; c: RGB; tw: number; twSpeed: number; depth: number; sparkle: boolean };
     let ps: P[] = [];
     let w = 0;
     let h = 0;
@@ -78,19 +78,26 @@ export function ParticleField({
         : { w: window.innerWidth, h: window.innerHeight };
 
     const build = () => {
-      let n = Math.floor((w * h) / (hero ? 16000 : 30000));
-      n = Math.min(n, small ? (hero ? 40 : 20) : hero ? 90 : 45);
+      let n = Math.floor((w * h) / (hero ? 13000 : 30000));
+      n = Math.min(n, small ? (hero ? 50 : 20) : hero ? 130 : 45);
       if ((navigator.hardwareConcurrency ?? 8) <= 4) n = Math.floor(n * 0.7);
-      ps = Array.from({ length: n }, () => ({
-        x: rand(0, w),
-        y: rand(0, h),
-        vx: rand(-0.12, 0.12),
-        vy: rand(-0.18, -0.03),
-        r: rand(0.8, 2.4),
-        a: rand(0.25, 0.6),
-        tw: rand(0, Math.PI * 2),
-        c: palette[Math.floor(Math.random() * palette.length)],
-      }));
+      ps = Array.from({ length: n }, (_, i) => {
+        // Profundidad simulada: partículas "cercanas" más grandes, brillantes y rápidas.
+        const depth = rand(0.35, 1.4);
+        return {
+          x: rand(0, w),
+          y: rand(0, h),
+          vx: rand(-0.12, 0.12) * depth,
+          vy: rand(-0.2, -0.03) * depth,
+          r: rand(0.7, hero ? 3.2 : 2.2) * depth,
+          a: rand(0.2, hero ? 0.75 : 0.6),
+          tw: rand(0, Math.PI * 2),
+          twSpeed: rand(0.015, 0.045),
+          depth,
+          sparkle: hero && i % 11 === 0,
+          c: palette[Math.floor(Math.random() * palette.length)],
+        };
+      });
     };
 
     const resize = (force = false) => {
@@ -109,12 +116,12 @@ export function ParticleField({
 
     const draw = (dt: number) => {
       ctx.clearRect(0, 0, w, h);
-      const link = hero ? 140 : 110;
-      const linkA = hero ? 0.28 : 0.14;
+      const link = hero ? 150 : 110;
+      const linkA = hero ? 0.24 : 0.14;
       for (const p of ps) {
         p.x += p.vx * dt;
         p.y += p.vy * dt;
-        p.tw += 0.02 * dt;
+        p.tw += p.twSpeed * dt;
         if (interactive) {
           const dx = p.x - mouse.x;
           const dy = p.y - mouse.y;
@@ -140,8 +147,14 @@ export function ParticleField({
           const dy = a.y - b.y;
           const d2 = dx * dx + dy * dy;
           if (d2 < link * link) {
-            const o = (1 - Math.sqrt(d2) / link) * linkA * alphaK;
-            ctx.strokeStyle = `rgba(${a.c[0]},${a.c[1]},${a.c[2]},${o})`;
+            const closeness = 1 - Math.sqrt(d2) / link;
+            const o = closeness * closeness * linkA * alphaK * ((a.depth + b.depth) / 2);
+            const mixed: RGB = [
+              Math.round((a.c[0] + b.c[0]) / 2),
+              Math.round((a.c[1] + b.c[1]) / 2),
+              Math.round((a.c[2] + b.c[2]) / 2),
+            ];
+            ctx.strokeStyle = `rgba(${mixed[0]},${mixed[1]},${mixed[2]},${o})`;
             ctx.beginPath();
             ctx.moveTo(a.x, a.y);
             ctx.lineTo(b.x, b.y);
@@ -149,12 +162,49 @@ export function ParticleField({
           }
         }
       }
-      for (const p of ps) {
-        const t = 0.75 + 0.25 * Math.sin(p.tw);
-        ctx.fillStyle = `rgba(${p.c[0]},${p.c[1]},${p.c[2]},${Math.min(1, p.a * t * alphaK)})`;
+
+      // Orden por profundidad: las "lejanas" se pintan primero, dando sensación de parallax.
+      const painted = hero ? [...ps].sort((a, b) => a.depth - b.depth) : ps;
+
+      for (const p of painted) {
+        const twinkle = 0.7 + 0.3 * Math.sin(p.tw);
+        const alpha = Math.min(1, p.a * twinkle * alphaK);
+        const [r, g, b] = p.c;
+
+        if (hero) {
+          // Halo suave detrás de cada partícula para dar profundidad y brillo.
+          const glowR = p.r * 4.5;
+          const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowR);
+          glow.addColorStop(0, `rgba(${r},${g},${b},${alpha * 0.35})`);
+          glow.addColorStop(1, `rgba(${r},${g},${b},0)`);
+          ctx.fillStyle = glow;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, glowR, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         ctx.fill();
+
+        // Núcleo blanco en las partículas "sparkle" para simular un destello vivo.
+        if (p.sparkle && twinkle > 0.92) {
+          ctx.fillStyle = `rgba(255,255,255,${(twinkle - 0.92) * 6})`;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r * 0.5, 0, Math.PI * 2);
+          ctx.fill();
+
+          const flare = p.r * 3.2;
+          ctx.strokeStyle = `rgba(255,255,255,${(twinkle - 0.92) * 3})`;
+          ctx.lineWidth = 0.8;
+          ctx.beginPath();
+          ctx.moveTo(p.x - flare, p.y);
+          ctx.lineTo(p.x + flare, p.y);
+          ctx.moveTo(p.x, p.y - flare);
+          ctx.lineTo(p.x, p.y + flare);
+          ctx.stroke();
+        }
       }
     };
 
