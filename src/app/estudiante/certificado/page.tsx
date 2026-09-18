@@ -1,213 +1,175 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import Navbar from '@/components/Navbar';
-import { 
-  Award, 
-  Printer, 
-  Sparkles, 
-  ShieldCheck, 
-  Calendar, 
-  CheckCircle2, 
-  Loader2,
-  Lock,
-  ArrowLeft
-} from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Printer, ShieldCheck, Lock, ArrowLeft, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { ProgressBar } from '@/components/ui/ProgressBar';
+import { useSessionUser } from '@/lib/user-context';
 
 export default function StudentCertificatePage() {
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const user = useSessionUser();
   const [totalClasses, setTotalClasses] = useState(0);
   const [totalAttended, setTotalAttended] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function load() {
+    (async () => {
       try {
         setLoading(true);
-        const [meRes, classesRes, attRes] = await Promise.all([
-          fetch('/api/auth/me'),
-          fetch('/api/classes'),
-          fetch('/api/admin/attendances'),
-        ]);
-
-        const meData = await meRes.json();
-        setCurrentUser(meData.user);
-
+        const [classesRes, attRes] = await Promise.all([fetch('/api/classes'), fetch('/api/admin/attendances')]);
         const classesData = await classesRes.json();
-        const myClasses = classesData.classes || [];
-        setTotalClasses(myClasses.length);
+        setTotalClasses((classesData.classes || []).length);
 
         const attData = await attRes.json();
         const allAtt = attData.attendances || [];
-        const myAtt = allAtt.filter((a: any) => a.student.id === meData.user?.id);
-        setTotalAttended(myAtt.length);
+        setTotalAttended(allAtt.filter((a: any) => a.student.id === user.id).length);
       } catch (err) {
         console.error('Error cargando certificado:', err);
       } finally {
         setLoading(false);
       }
-    }
-    load();
-  }, []);
+    })();
+  }, [user.id]);
 
   const percentage = totalClasses > 0 ? Math.round((totalAttended / totalClasses) * 100) : 0;
-  // Permitimos ver el certificado si asistió al menos al 50% en demo o tiene asistencias
+  // TODO(producto): condición real de desbloqueo (totalAttended > 0) no coincide con el copy de abajo (80%/50%).
   const isEligible = totalAttended > 0;
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
-      <div className="print:hidden">
-        {currentUser && <Navbar user={currentUser} />}
-      </div>
-
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Barra superior no imprimible */}
-        <div className="print:hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <div>
-            <Link
-              href="/estudiante"
-              className="inline-flex items-center space-x-1 text-xs font-bold text-purple-700 hover:underline mb-2"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Volver a mis clases</span>
-            </Link>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-800 flex items-center space-x-2.5">
-              <Award className="w-8 h-8 text-purple-600" />
-              <span>Certificado de Acreditación</span>
-            </h1>
-            <p className="text-slate-500 text-xs mt-0.5">
-              Acreditación oficial de culminación y asistencia al programa formativo de Empoderas Diversas.
-            </p>
-          </div>
-
-          {isEligible && (
-            <button
-              onClick={handlePrint}
-              className="inline-flex items-center space-x-2 px-6 py-3 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm shadow-lg shadow-purple-500/25 transition-all transform hover:-translate-y-0.5"
-            >
-              <Printer className="w-4 h-4" />
-              <span>Descargar / Imprimir Diploma</span>
-            </button>
-          )}
+    <div className="max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div>
+          <Link href="/estudiante" className="inline-flex items-center gap-1 text-xs font-bold text-role-accent hover:underline mb-2">
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Volver a mis clases</span>
+          </Link>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-slate-800 flex items-center gap-2.5">
+            <span>Certificado de acreditación</span>
+          </h1>
+          <p className="text-slate-500 text-xs mt-0.5">Acreditación oficial de culminación y asistencia al programa formativo de Empoderas Diversas.</p>
         </div>
 
-        {loading ? (
-          <div className="py-24 text-center text-slate-400">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-purple-600" />
-            <p>Generando acreditación...</p>
+        {isEligible && (
+          <Button leftIcon={<Printer className="w-4 h-4" />} onClick={() => window.print()}>
+            Descargar / imprimir diploma
+          </Button>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="py-24 text-center text-slate-400 text-sm">Generando acreditación...</div>
+      ) : !isEligible ? (
+        <Card variant="glass" className="p-10 text-center max-w-lg mx-auto">
+          <div className="w-16 h-16 rounded-3xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-4">
+            <Lock className="w-8 h-8" />
           </div>
-        ) : !isEligible ? (
-          /* Estado Bloqueado */
-          <div className="glass-card rounded-3xl p-10 text-center border border-white shadow-xl max-w-lg mx-auto">
-            <div className="w-16 h-16 rounded-3xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-4">
-              <Lock className="w-8 h-8" />
+          <h2 className="text-xl font-bold text-slate-800 mb-2">Certificado en proceso de desbloqueo</h2>
+          <p className="text-xs text-slate-500 mb-6 leading-relaxed">
+            Para obtener tu certificado de capacitación, debes asistir a tus clases virtuales mediante el botón de Google Meet.
+          </p>
+
+          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs text-slate-600 mb-6">
+            <div className="flex justify-between mb-1.5 font-bold">
+              <span>Tu asistencia actual:</span>
+              <span className="text-role-accent">
+                {percentage}% ({totalAttended} de {totalClasses} clases)
+              </span>
             </div>
-            <h2 className="text-xl font-bold text-slate-800 mb-2">
-              Certificado en Proceso de Desbloqueo
-            </h2>
-            <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-              Para obtener tu certificado de capacitación, debes asistir a tus clases virtuales mediante el botón de Google Meet.
+            <ProgressBar value={percentage} />
+          </div>
+
+          <Button href="/estudiante">Ir a mis próximas clases</Button>
+        </Card>
+      ) : (
+        <div className="relative bg-white rounded-3xl p-10 sm:p-14 shadow-2xl border-8 border-purple-900/10 text-center overflow-hidden print:border-4 print:shadow-none print:m-0 print:p-8">
+          <CornerOrnaments />
+          <Seal />
+
+          <div className="relative z-10 space-y-6">
+            <div className="flex justify-center mb-2">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-100 text-purple-800 text-xs font-black uppercase tracking-widest">
+                <Sparkles className="w-4 h-4 text-purple-600" />
+                <span>Empoderas Diversas · Red de Formación</span>
+              </div>
+            </div>
+
+            <h2 className="text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-slate-500">Certificado de Acreditación y Participación</h2>
+
+            <p className="text-xs text-slate-500 max-w-lg mx-auto">
+              La corporación y red de capacitación <strong>Empoderas Diversas</strong> hace constar que:
             </p>
 
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs text-slate-600 mb-6">
-              <div className="flex justify-between mb-1.5 font-bold">
-                <span>Tu asistencia actual:</span>
-                <span className="text-purple-700">{percentage}% ({totalAttended} de {totalClasses} clases)</span>
+            <div className="py-3">
+              <h3 className="text-3xl sm:text-5xl font-bold text-purple-950 tracking-tight font-serif">{user.name}</h3>
+              <p className="text-xs font-semibold text-slate-600 mt-2">
+                Documento de identidad: <strong>{user.documentId || 'Registrada en plataforma'}</strong>
+              </p>
+            </div>
+
+            <p className="text-xs sm:text-sm text-slate-700 max-w-2xl mx-auto leading-relaxed">
+              Ha completado satisfactoriamente los módulos de formación integral, liderazgo transformacional, habilidades digitales y gestión de proyectos comunitarios,
+              cumpliendo con los estándares de asistencia sincrónica virtual y entrega de actividades prácticas.
+            </p>
+
+            <div className="pt-10 grid grid-cols-2 gap-8 max-w-xl mx-auto">
+              <div className="text-center">
+                <div className="w-44 border-b-2 border-slate-400 mx-auto mb-2" />
+                <p className="font-bold text-xs text-slate-800">Dirección General</p>
+                <p className="text-[10px] text-slate-500">Empoderas Diversas</p>
               </div>
-              <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-purple-500 to-fuchsia-500 rounded-full"
-                  style={{ width: `${percentage}%` }}
-                />
+              <div className="text-center">
+                <div className="w-44 border-b-2 border-slate-400 mx-auto mb-2" />
+                <p className="font-bold text-xs text-slate-800">Coordinación de Mentorías</p>
+                <p className="text-[10px] text-slate-500">Comité Pedagógico</p>
               </div>
             </div>
 
-            <Link
-              href="/estudiante"
-              className="inline-flex items-center space-x-2 px-6 py-3 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md transition-all"
-            >
-              <span>Ir a mis próximas clases</span>
-            </Link>
-          </div>
-        ) : (
-          /* Diploma Oficial Imprimible */
-          <div className="relative bg-white rounded-3xl p-10 sm:p-14 shadow-2xl border-8 border-purple-900/10 text-center overflow-hidden print:border-4 print:shadow-none print:m-0 print:p-8">
-            {/* Adornos decorativos de esquinas */}
-            <div className="absolute top-0 left-0 w-28 h-28 border-t-8 border-l-8 border-purple-600 rounded-tl-2xl pointer-events-none" />
-            <div className="absolute top-0 right-0 w-28 h-28 border-t-8 border-r-8 border-purple-600 rounded-tr-2xl pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-28 h-28 border-b-8 border-l-8 border-purple-600 rounded-bl-2xl pointer-events-none" />
-            <div className="absolute bottom-0 right-0 w-28 h-28 border-b-8 border-r-8 border-purple-600 rounded-br-2xl pointer-events-none" />
-
-            {/* Marca de agua institucional */}
-            <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none">
-              <Award className="w-96 h-96 text-purple-900" />
-            </div>
-
-            <div className="relative z-10 space-y-6">
-              {/* Logo / Cabecera */}
-              <div className="flex justify-center mb-2">
-                <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-purple-100 text-purple-800 text-xs font-black uppercase tracking-widest">
-                  <Sparkles className="w-4 h-4 text-purple-600" />
-                  <span>Empoderas Diversas • Red de Formación</span>
-                </div>
-              </div>
-
-              <h2 className="text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-slate-500">
-                Certificado de Acreditación y Participación
-              </h2>
-
-              <p className="text-xs text-slate-500 max-w-lg mx-auto">
-                La corporación y red de capacitación <strong>Empoderas Diversas</strong> hace constar que:
-              </p>
-
-              {/* Nombre de la Estudiante */}
-              <div className="py-3">
-                <h3 className="text-3xl sm:text-5xl font-black text-purple-950 tracking-tight font-serif">
-                  {currentUser?.name}
-                </h3>
-                <p className="text-xs font-semibold text-slate-600 mt-2">
-                  Documento de Identidad: <strong>{currentUser?.documentId || 'Registrada en plataforma'}</strong>
-                </p>
-              </div>
-
-              <p className="text-xs sm:text-sm text-slate-700 max-w-2xl mx-auto leading-relaxed">
-                Ha completado satisfactoriamente los módulos de formación integral, liderazgo transformacional, habilidades digitales y gestión de proyectos comunitarios, cumpliendo con los estándares de asistencia sincrónica virtual y entrega de actividades prácticas.
-              </p>
-
-              {/* Sellos y Firmas */}
-              <div className="pt-10 grid grid-cols-2 gap-8 max-w-xl mx-auto">
-                <div className="text-center">
-                  <div className="w-44 border-b-2 border-slate-400 mx-auto mb-2" />
-                  <p className="font-bold text-xs text-slate-800">Dirección General</p>
-                  <p className="text-[10px] text-slate-500">Empoderas Diversas</p>
-                </div>
-
-                <div className="text-center">
-                  <div className="w-44 border-b-2 border-slate-400 mx-auto mb-2" />
-                  <p className="font-bold text-xs text-slate-800">Coordinación de Mentorías</p>
-                  <p className="text-[10px] text-slate-500">Comité Pedagógico</p>
-                </div>
-              </div>
-
-              {/* Pie de Página con Código de Verificación */}
-              <div className="pt-8 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 gap-2">
-                <span className="flex items-center space-x-1">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  <span>Código Único de Verificación: <strong>ED-{currentUser?.id?.slice(-8).toUpperCase()}</strong></span>
-                </span>
+            <div className="pt-8 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 gap-2">
+              <span className="flex items-center gap-1">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
                 <span>
-                  Fecha de expedición: {new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  Código único de verificación: <strong>ED-{user.id.slice(-8).toUpperCase()}</strong>
                 </span>
-              </div>
+              </span>
+              <span>Fecha de expedición: {new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
             </div>
           </div>
-        )}
-      </main>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const CORNER_POSITIONS = [
+  'top-0 left-0',
+  'top-0 right-0 -scale-x-100',
+  'bottom-0 right-0 rotate-180',
+  'bottom-0 left-0 -scale-y-100',
+];
+
+/** Las 4 esquinas del diploma, un único componente que reutiliza un mismo trazo SVG rotado/reflejado. */
+function CornerOrnaments() {
+  return (
+    <>
+      {CORNER_POSITIONS.map((pos, i) => (
+        <svg key={i} aria-hidden="true" width="72" height="72" viewBox="0 0 72 72" className={`absolute pointer-events-none ${pos}`}>
+          <path d="M6 6 L56 6 M6 6 L6 56" stroke="#7e22ce" strokeWidth="6" strokeLinecap="round" fill="none" />
+        </svg>
+      ))}
+    </>
+  );
+}
+
+function Seal() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center opacity-[0.04] pointer-events-none">
+      <svg width="380" height="380" viewBox="0 0 100 100" aria-hidden="true">
+        <circle cx="50" cy="50" r="46" fill="none" stroke="#581c87" strokeWidth="2" />
+        <circle cx="50" cy="50" r="38" fill="none" stroke="#581c87" strokeWidth="1" />
+        <path d="M50 20 L58 42 L82 42 L62 56 L70 78 L50 64 L30 78 L38 56 L18 42 L42 42 Z" fill="#581c87" />
+      </svg>
     </div>
   );
 }

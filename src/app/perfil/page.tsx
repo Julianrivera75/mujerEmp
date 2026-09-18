@@ -1,46 +1,51 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import Navbar from '@/components/Navbar';
+import React, { useEffect, useState } from 'react';
+import { User, Phone, CheckCircle2, ShieldCheck, Save } from 'lucide-react';
+import { Card } from '@/components/ui/Card';
+import { Input } from '@/components/ui/Field';
+import { Button } from '@/components/ui/Button';
+import { Avatar } from '@/components/ui/Avatar';
+import { SkeletonCard } from '@/components/ui/Skeleton';
 import FileUpload from '@/components/FileUpload';
-import AvatarImage from '@/components/AvatarImage';
-import {
-  User,
-  Lock, 
-  Phone, 
-  Mail, 
-  Calendar, 
-  FileText, 
-  CheckCircle2, 
-  AlertCircle, 
-  Loader2,
-  Save,
-  ShieldCheck
-} from 'lucide-react';
+import { useToast } from '@/components/ui/Toast';
+import { ROLE_META, type Role } from '@/lib/roles';
+
+interface FullProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: Role;
+  status: 'ACTIVO' | 'INACTIVO';
+  phone: string | null;
+  documentId: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  avatar: string | null;
+}
 
 export default function ProfilePage() {
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const { show } = useToast();
+  const [profile, setProfile] = useState<FullProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [phone, setPhone] = useState('');
+  const [avatarKey, setAvatarKey] = useState<string | null>(null);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-
   const [saving, setSaving] = useState(false);
-  const [successMsg, setSuccessMsg] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
-  const [avatarKey, setAvatarKey] = useState<string | null>(null);
   const [avatarSaving, setAvatarSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
-    async function load() {
+    (async () => {
       try {
         setLoading(true);
         const res = await fetch('/api/auth/me');
         const data = await res.json();
         if (data.user) {
-          setCurrentUser(data.user);
+          setProfile(data.user);
           setPhone(data.user.phone || '');
           setAvatarKey(data.user.avatar || null);
         }
@@ -49,28 +54,26 @@ export default function ProfilePage() {
       } finally {
         setLoading(false);
       }
-    }
-    load();
+    })();
   }, []);
 
   const handleAvatarUploaded = async (key: string) => {
     setAvatarSaving(true);
-    setErrorMsg('');
     try {
       const res = await fetch('/api/auth/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ avatar: key }),
       });
-      const data = await res.json();
       if (!res.ok) {
-        setErrorMsg(data.error || 'No se pudo guardar la foto de perfil.');
+        const data = await res.json();
+        show('error', data.error || 'No se pudo guardar la foto de perfil.');
         return;
       }
       setAvatarKey(key);
-      setSuccessMsg('¡Foto de perfil actualizada!');
+      show('success', 'Foto de perfil actualizada.');
     } catch (err) {
-      setErrorMsg('Error de conexión al guardar la foto.');
+      show('error', 'Error de conexión al guardar la foto.');
     } finally {
       setAvatarSaving(false);
     }
@@ -79,7 +82,6 @@ export default function ProfilePage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
-    setSuccessMsg('');
 
     if (newPassword && newPassword !== confirmPassword) {
       setErrorMsg('La nueva contraseña y su confirmación no coinciden.');
@@ -91,21 +93,16 @@ export default function ProfilePage() {
       const res = await fetch('/api/auth/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone,
-          currentPassword: currentPassword || undefined,
-          newPassword: newPassword || undefined,
-        }),
+        body: JSON.stringify({ phone, currentPassword: currentPassword || undefined, newPassword: newPassword || undefined }),
       });
 
       const data = await res.json();
       if (!res.ok) {
         setErrorMsg(data.error || 'No se pudo actualizar el perfil.');
-        setSaving(false);
         return;
       }
 
-      setSuccessMsg('¡Datos actualizados exitosamente!');
+      show('success', 'Datos actualizados.');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -117,186 +114,89 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {currentUser && <Navbar user={currentUser} />}
+    <div className="max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mb-8">
+        <h1 className="font-display text-2xl sm:text-3xl font-bold text-slate-800 flex items-center gap-3">
+          <User className="w-7 h-7 text-role-accent" />
+          <span>Mi perfil y seguridad</span>
+        </h1>
+        <p className="text-slate-500 text-sm mt-1">Consulta los datos de tu cuenta, periodo de vinculación y actualiza tu contraseña de acceso.</p>
+      </div>
 
-      <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-800 flex items-center space-x-3">
-            <User className="w-8 h-8 text-purple-600" />
-            <span>Mi Perfil y Seguridad</span>
-          </h1>
-          <p className="text-slate-500 text-sm mt-1">
-            Consulta los datos de tu cuenta, periodo de vinculación y actualiza tu contraseña de acceso.
-          </p>
-        </div>
+      {loading || !profile ? (
+        <SkeletonCard />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card variant="glass" className="p-6 space-y-4">
+            <Avatar avatarKey={avatarKey} fallbackInitial={profile.name.charAt(0)} size="xl" ring className="mx-auto" />
 
-        {loading ? (
-          <div className="py-20 text-center text-slate-400">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-purple-600" />
-            <p>Cargando información del perfil...</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Tarjeta de Resumen de Usuario */}
-            <div className="glass-card rounded-3xl p-6 border border-white shadow-xl space-y-4">
-              <AvatarImage
-                avatarKey={avatarKey}
-                fallbackInitial={currentUser?.name?.charAt(0) || '?'}
-                className="w-20 h-20 rounded-3xl text-2xl shadow-lg shadow-purple-500/25 mx-auto"
+            <div className="flex justify-center">
+              <FileUpload
+                category="avatar"
+                accept="image/png,image/jpeg,image/webp"
+                label={avatarSaving ? 'Guardando...' : 'Cambiar foto'}
+                onUploaded={(key) => handleAvatarUploaded(key)}
               />
-
-              <div className="flex justify-center">
-                <FileUpload
-                  category="avatar"
-                  accept="image/png,image/jpeg,image/webp"
-                  label={avatarSaving ? 'Guardando...' : 'Cambiar foto'}
-                  onUploaded={(key) => handleAvatarUploaded(key)}
-                />
-              </div>
-
-              <div className="text-center">
-                <h2 className="text-lg font-bold text-slate-800">{currentUser?.name}</h2>
-                <p className="text-xs text-slate-500">{currentUser?.email}</p>
-                <div className="mt-2">
-                  <span className="inline-block text-[11px] font-bold px-3 py-0.5 rounded-full bg-purple-100 text-purple-800">
-                    {currentUser?.role === 'ADMIN' ? 'Administradora' : currentUser?.role === 'MENTOR' ? 'Mentora' : 'Estudiante'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-2.5 pt-4 border-t border-slate-100 text-xs text-slate-600">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-400">Estado:</span>
-                  <span className="font-bold text-emerald-600 flex items-center">
-                    <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-                    {currentUser?.status}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-400">Documento:</span>
-                  <span className="font-semibold text-slate-700">{currentUser?.documentId || 'N/A'}</span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-400">Fecha Inicio:</span>
-                  <span className="font-semibold text-slate-700">
-                    {currentUser?.startDate ? new Date(currentUser.startDate).toLocaleDateString('es-ES') : 'Indefinido'}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-400">Fecha Fin:</span>
-                  <span className="font-semibold text-slate-700">
-                    {currentUser?.endDate ? new Date(currentUser.endDate).toLocaleDateString('es-ES') : 'Indefinido'}
-                  </span>
-                </div>
-              </div>
             </div>
 
-            {/* Formulario de Modificación de Datos y Clave */}
-            <div className="md:col-span-2 glass-card rounded-3xl p-6 sm:p-8 border border-white shadow-xl">
-              <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center space-x-2">
-                <ShieldCheck className="w-5 h-5 text-purple-600" />
-                <span>Actualizar Datos de Contacto y Contraseña</span>
-              </h2>
-
-              {successMsg && (
-                <div className="mb-4 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>{successMsg}</span>
-                </div>
-              )}
-
-              {errorMsg && (
-                <div className="mb-4 p-3 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center space-x-2">
-                  <AlertCircle className="w-4 h-4 text-red-600" />
-                  <span>{errorMsg}</span>
-                </div>
-              )}
-
-              <form onSubmit={handleSave} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Teléfono de Contacto
-                  </label>
-                  <div className="relative">
-                    <Phone className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="+57 300 000 0000"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-purple-500/20"
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-slate-100">
-                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-3">
-                    Cambiar Contraseña (Opcional)
-                  </h3>
-
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Contraseña Actual
-                      </label>
-                      <input
-                        type="password"
-                        placeholder="••••••••"
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-purple-500/20"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                          Nueva Contraseña
-                        </label>
-                        <input
-                          type="password"
-                          placeholder="Mínimo 6 caracteres"
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-purple-500/20"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                          Confirmar Nueva Contraseña
-                        </label>
-                        <input
-                          type="password"
-                          placeholder="Repite la nueva contraseña"
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-purple-500/20"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-4 flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm shadow-md shadow-purple-500/20 transition-all flex items-center space-x-2"
-                  >
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    <span>Guardar Cambios</span>
-                  </button>
-                </div>
-              </form>
+            <div className="text-center">
+              <h2 className="text-lg font-bold text-slate-800">{profile.name}</h2>
+              <p className="text-xs text-slate-500">{profile.email}</p>
+              <span className="inline-block mt-2 text-[11px] font-bold px-3 py-0.5 rounded-full bg-role-soft text-role-accent">{ROLE_META[profile.role].label}</span>
             </div>
-          </div>
-        )}
-      </main>
+
+            <div className="space-y-2.5 pt-4 border-t border-slate-100 text-xs text-slate-600">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Estado:</span>
+                <span className="font-bold text-emerald-600 flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  {profile.status}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Documento:</span>
+                <span className="font-semibold text-slate-700">{profile.documentId || 'N/A'}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Fecha inicio:</span>
+                <span className="font-semibold text-slate-700">{profile.startDate ? new Date(profile.startDate).toLocaleDateString('es-ES') : 'Indefinido'}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Fecha fin:</span>
+                <span className="font-semibold text-slate-700">{profile.endDate ? new Date(profile.endDate).toLocaleDateString('es-ES') : 'Indefinido'}</span>
+              </div>
+            </div>
+          </Card>
+
+          <Card variant="glass" className="md:col-span-2 p-6 sm:p-8">
+            <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-role-accent" />
+              <span>Actualizar datos de contacto y contraseña</span>
+            </h2>
+
+            {errorMsg && <div role="alert" className="mb-4 p-3 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs">{errorMsg}</div>}
+
+            <form onSubmit={handleSave} className="space-y-4">
+              <Input label="Teléfono de contacto" placeholder="+57 300 000 0000" value={phone} onChange={(e) => setPhone(e.target.value)} leftIcon={<Phone className="w-4 h-4" />} />
+
+              <div className="pt-4 border-t border-slate-100 space-y-3">
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">Cambiar contraseña (opcional)</h3>
+                <Input label="Contraseña actual" type="password" placeholder="••••••••" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Input label="Nueva contraseña" type="password" placeholder="Mínimo 6 caracteres" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                  <Input label="Confirmar nueva contraseña" type="password" placeholder="Repite la nueva contraseña" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                </div>
+              </div>
+
+              <div className="pt-4 flex justify-end">
+                <Button type="submit" loading={saving} leftIcon={<Save className="w-4 h-4" />}>
+                  Guardar cambios
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

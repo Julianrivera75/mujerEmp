@@ -2,7 +2,28 @@
 
 import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Sparkles, ArrowRight, Lock, Mail, ShieldAlert } from 'lucide-react';
+import { m } from 'framer-motion';
+import { ArrowRight, Lock, Mail, ShieldAlert, Eye, EyeOff, ShieldCheck, Presentation, GraduationCap, Video, ClipboardList, Award } from 'lucide-react';
+import { Logo } from '@/components/Logo';
+import { Input } from '@/components/ui/Field';
+import { Button } from '@/components/ui/Button';
+import { ParticleField } from '@/components/fx/ParticleField';
+import { AuroraBackground } from '@/components/fx/AuroraBackground';
+import { fadeUp, stagger } from '@/lib/motion';
+
+const DEMO_ACCOUNTS = [
+  { email: 'admin@empoderas.org', password: '123456', label: 'Admin', icon: ShieldCheck },
+  { email: 'carolina.mentor@empoderas.org', password: '123456', label: 'Mentora', icon: Presentation },
+  { email: 'sofia.estudiante@empoderas.org', password: '123456', label: 'Estudiante', icon: GraduationCap },
+] as const;
+
+const VALUE_POINTS = [
+  { icon: Video, text: 'Clases en vivo con tu mentora, sin salir de la plataforma' },
+  { icon: ClipboardList, text: 'Tareas, entregas y retroalimentación en un solo lugar' },
+  { icon: Award, text: 'Certificado de acreditación al completar tu formación' },
+];
+
+const SHOW_DEMO_LOGIN = process.env.NEXT_PUBLIC_SHOW_DEMO_LOGIN !== 'false';
 
 function LoginFormContent() {
   const router = useRouter();
@@ -11,9 +32,10 @@ function LoginFormContent() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(
-    inactiveParam ? 'Tu cuenta se encuentra inactiva. Por favor, comunícate con el administrador.' : ''
+    inactiveParam ? 'Tu cuenta se encuentra inactiva. Por favor, comunícate con el administrador.' : '',
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,146 +73,126 @@ function LoginFormContent() {
   };
 
   return (
-    <div className="w-full max-w-md relative z-10">
-      {/* Encabezado con Logo y Marca */}
-      <div className="text-center mb-6">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-gradient-to-tr from-fuchsia-600 via-purple-600 to-indigo-600 text-white shadow-xl shadow-purple-500/30 mb-4 transform hover:scale-105 transition-transform">
-          <Sparkles className="w-8 h-8 animate-pulse" />
-        </div>
-        <h1 className="text-3xl font-black tracking-tight bg-gradient-to-r from-fuchsia-600 via-purple-700 to-indigo-800 bg-clip-text text-transparent">
-          Empoderas Diversas
-        </h1>
-        <p className="text-slate-600 text-sm mt-1 font-medium">
-          Plataforma de Capacitación y Mentoría Virtual
-        </p>
-      </div>
+    <m.div variants={stagger} initial="hidden" animate="show" className="w-full max-w-md">
+      <m.div variants={fadeUp} className="lg:hidden mb-6 flex justify-center">
+        <Logo />
+      </m.div>
 
-      {/* Tarjeta de Inicio de Sesión */}
-      <div className="glass-card rounded-3xl p-8 shadow-2xl border border-white/80">
-        <h2 className="text-xl font-bold text-slate-800 mb-2 text-center">
-          Bienvenida/o al Portal
-        </h2>
-        <p className="text-slate-500 text-xs text-center mb-6">
-          Ingresa tus credenciales para acceder a tus clases, horarios y tareas.
-        </p>
+      <m.div variants={fadeUp} className="glass-card rounded-3xl p-7 sm:p-8 shadow-lift border border-white/80">
+        <h1 className="font-display text-xl font-bold text-slate-800 mb-1">Bienvenida al portal</h1>
+        <p className="text-slate-500 text-xs mb-6">Ingresa tus credenciales para acceder a tus clases, horarios y tareas.</p>
 
         {error && (
-          <div className="mb-5 p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start space-x-2.5">
+          <div role="alert" className="mb-5 p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2.5">
             <ShieldAlert className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-              Correo Electrónico
-            </label>
-            <div className="relative">
-              <Mail className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="ejemplo@empoderas.org"
-                className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white/70 border border-slate-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/15 text-sm text-slate-800 transition-all outline-none"
-              />
-            </div>
-          </div>
+          <Input
+            label="Correo electrónico"
+            type="email"
+            required
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="ejemplo@empoderas.org"
+            leftIcon={<Mail className="w-4 h-4" />}
+          />
 
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-              Contraseña
-            </label>
-            <div className="relative">
-              <Lock className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white/70 border border-slate-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/15 text-sm text-slate-800 transition-all outline-none"
-              />
-            </div>
-          </div>
+          <Input
+            label="Contraseña"
+            type={showPassword ? 'text' : 'password'}
+            required
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            leftIcon={<Lock className="w-4 h-4" />}
+            rightSlot={
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="text-slate-400 hover:text-slate-600 p-1"
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            }
+          />
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full mt-2 py-3.5 px-4 rounded-2xl text-white font-bold text-sm bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 hover:from-fuchsia-700 hover:via-purple-700 hover:to-indigo-700 shadow-lg shadow-purple-500/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 flex items-center justify-center space-x-2"
-          >
-            {loading ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <>
-                <span>Ingresar a la Plataforma</span>
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
-          </button>
+          <Button type="submit" loading={loading} className="w-full mt-2" rightIcon={<ArrowRight className="w-4 h-4" />}>
+            Ingresar a la plataforma
+          </Button>
         </form>
 
-        {/* Acceso Rápido para Pruebas */}
-        <div className="mt-8 pt-6 border-t border-slate-200/60">
-          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center mb-3">
-            ⚡ Acceso rápido de demostración:
-          </p>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => setTestAccount('admin@empoderas.org', '123456')}
-              className="py-2 px-2 text-center rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 text-xs font-bold border border-purple-200 transition-colors"
-            >
-              👑 Admin
-            </button>
-            <button
-              type="button"
-              onClick={() => setTestAccount('carolina.mentor@empoderas.org', '123456')}
-              className="py-2 px-2 text-center rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 text-xs font-bold border border-teal-200 transition-colors"
-            >
-              👩‍🏫 Mentora
-            </button>
-            <button
-              type="button"
-              onClick={() => setTestAccount('sofia.estudiante@empoderas.org', '123456')}
-              className="py-2 px-2 text-center rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-800 text-xs font-bold border border-pink-200 transition-colors"
-            >
-              🎓 Estudiante
-            </button>
+        {SHOW_DEMO_LOGIN && (
+          <div className="mt-8 pt-6 border-t border-slate-200/60">
+            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center mb-3">
+              Acceso rápido de demostración
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {DEMO_ACCOUNTS.map((acc) => (
+                <button
+                  key={acc.email}
+                  type="button"
+                  onClick={() => setTestAccount(acc.email, acc.password)}
+                  className="flex flex-col items-center gap-1 py-2.5 px-2 text-center rounded-xl bg-role-soft hover:brightness-95 text-role-accent text-xs font-bold border border-role-accent/20 transition-colors"
+                >
+                  <acc.icon className="w-4 h-4" strokeWidth={1.75} />
+                  <span>{acc.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="mt-2 text-center">
-            <button
-              type="button"
-              onClick={() => setTestAccount('inactiva@empoderas.org', '123456')}
-              className="text-[11px] text-slate-400 hover:text-red-500 underline"
-            >
-              Probar usuario inactivo (inactiva@empoderas.org)
-            </button>
-          </div>
-        </div>
-      </div>
+        )}
+      </m.div>
 
-      {/* Pie informativo */}
       <p className="text-center text-xs text-slate-500 mt-6 font-medium">
         Empoderas Diversas © {new Date().getFullYear()} • Transformando realidades mediante educación
       </p>
-    </div>
+    </m.div>
   );
 }
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden">
-      {/* Elementos decorativos de fondo con animación */}
-      <div className="absolute top-10 left-10 w-72 h-72 bg-fuchsia-400/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob pointer-events-none" />
-      <div className="absolute top-20 right-10 w-80 h-80 bg-purple-400/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob [animation-delay:2s] pointer-events-none" />
-      <div className="absolute -bottom-10 left-1/3 w-80 h-80 bg-indigo-400/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob [animation-delay:4s] pointer-events-none" />
+    <div data-role="brand" className="min-h-dvh relative flex items-stretch">
+      <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden rounded-r-3xl bg-gradient-to-br from-[#701a75] via-[#3b0764] to-[#1e1b4b]">
+        <ParticleField variant="brand" intensity="hero" interactive contained tone="dark" />
+        <AuroraBackground spotCount={3} />
+        <m.div
+          variants={stagger}
+          initial="hidden"
+          animate="show"
+          className="relative z-10 flex flex-col justify-center px-12 xl:px-16 text-white"
+        >
+          <m.div variants={fadeUp}>
+            <Logo variant="mark-only" />
+          </m.div>
+          <m.h2 variants={fadeUp} className="font-display text-4xl xl:text-5xl leading-[1.05] tracking-tight font-bold mt-8 max-w-md">
+            Tu red de mentoría para crecer sin límites
+          </m.h2>
+          <m.div variants={fadeUp} className="mt-10 space-y-4">
+            {VALUE_POINTS.map((point, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center flex-shrink-0">
+                  <point.icon className="w-[18px] h-[18px]" strokeWidth={1.75} />
+                </div>
+                <p className="text-sm text-white/85 pt-1.5">{point.text}</p>
+              </div>
+            ))}
+          </m.div>
+        </m.div>
+      </div>
 
-      <Suspense fallback={<div className="text-purple-600 font-bold">Cargando portal...</div>}>
-        <LoginFormContent />
-      </Suspense>
+      <div className="flex-1 relative flex items-center justify-center p-4 sm:p-8 overflow-hidden">
+        <AuroraBackground spotCount={2} />
+        <Suspense fallback={<div className="text-purple-600 font-bold text-sm">Cargando portal...</div>}>
+          <LoginFormContent />
+        </Suspense>
+      </div>
     </div>
   );
 }
