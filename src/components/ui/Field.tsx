@@ -50,10 +50,12 @@ type InputOwnProps = {
   label?: string;
   hint?: string;
   error?: string;
+  leftIcon?: React.ReactNode;
+  rightSlot?: React.ReactNode;
 };
 
 export const Input = React.forwardRef<HTMLInputElement, InputOwnProps & React.InputHTMLAttributes<HTMLInputElement>>(
-  ({ label, hint, error, id, className, required, ...rest }, ref) => {
+  ({ label, hint, error, id, className, required, leftIcon, rightSlot, ...rest }, ref) => {
     const autoId = useId();
     const fieldId = id || autoId;
     const hintId = hint ? `${fieldId}-hint` : undefined;
@@ -68,15 +70,25 @@ export const Input = React.forwardRef<HTMLInputElement, InputOwnProps & React.In
             {required && <span className="text-role-accent ml-0.5">*</span>}
           </label>
         )}
-        <input
-          ref={ref}
-          id={fieldId}
-          required={required}
-          aria-describedby={describedBy}
-          aria-invalid={Boolean(error) || undefined}
-          className={cn(CONTROL_BASE, error && 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/20', className)}
-          {...rest}
-        />
+        <div className="relative">
+          {leftIcon && <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">{leftIcon}</span>}
+          <input
+            ref={ref}
+            id={fieldId}
+            required={required}
+            aria-describedby={describedBy}
+            aria-invalid={Boolean(error) || undefined}
+            className={cn(
+              CONTROL_BASE,
+              leftIcon && 'pl-10',
+              rightSlot && 'pr-10',
+              error && 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/20',
+              className,
+            )}
+            {...rest}
+          />
+          {rightSlot && <span className="absolute right-3 top-1/2 -translate-y-1/2">{rightSlot}</span>}
+        </div>
         {hint && !error && (
           <p id={hintId} className="text-xs text-slate-500">
             {hint}
