@@ -1,12 +1,12 @@
 import React from 'react';
 import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth';
+import { getSessionProfile } from '@/lib/session-profile';
 import { UserProvider } from '@/lib/user-context';
 import { ROLE_META } from '@/lib/roles';
 import Navbar from '@/components/Navbar';
 
 export default async function PerfilLayout({ children }: { children: React.ReactNode }) {
-  const user = await getCurrentUser();
+  const user = await getSessionProfile();
   if (!user) {
     redirect('/login');
   }

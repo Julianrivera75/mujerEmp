@@ -106,11 +106,18 @@ body {
 }
 
 @media print {
+  @page {
+    size: A4 landscape;
+    margin: 0;
+  }
   [data-fx] {
     display: none !important;
   }
   .no-print {
     display: none !important;
+  }
+  body {
+    background: #fff;
   }
   * {
     print-color-adjust: exact;
