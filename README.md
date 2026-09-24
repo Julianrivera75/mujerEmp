@@ -1,97 +1,75 @@
-# 💜 Empoderas Diversas - Plataforma de Capacitación y Mentoría Virtual
+# Empoderas Diversas
 
-Plataforma educativa moderna con diseño intuitivo, llamativo y animado, desarrollada para la gestión integral de programas de formación comunitaria, clases virtuales con Google Meet, registro automático de asistencia al clic, repositorio audiovisual en YouTube y módulo de entrega y calificación de tareas con retroalimentación personalizada.
+Plataforma web de capacitación y mentoría virtual. Gestiona clases en vivo por Google Meet con registro automático de asistencia, repositorio de grabaciones de YouTube, materiales de clase, tareas con entrega y calificación, y constancias de participación.
 
----
+## Roles
 
-## 👥 Roles del Sistema y Funcionalidades
+| Rol | Qué hace |
+| --- | --- |
+| Administradora | Crea y gestiona usuarias, programa clases, asigna mentoras e inscribe estudiantes, consulta y exporta asistencias, anonimiza cuentas. |
+| Mentora | Ve sus clases, publica el enlace de Meet y de la grabación, sube materiales, crea tareas y califica entregas. |
+| Estudiante | Ingresa a sus clases (la asistencia se registra al entrar), ve grabaciones y materiales, entrega tareas y descarga su constancia. |
 
-### 1. 👑 Administrador (Acceso: `admin@empoderas.org` / `123456`)
-- **Gestión de Usuarios**:
-  - Crear usuarios de tipo **Estudiante** y **Mentor(a)**.
-  - Asignar datos de perfil (Documento, Teléfono, Correo).
-  - **Control de Estado**: Marcar usuarios como **ACTIVO** o **INACTIVO** con un clic (los inactivos tienen el acceso denegado).
-  - **Fechas de Vigencia**: Asignar **Fecha de inicio** y **Fecha de finalización** del periodo formativo.
-- **Programación Mensual de Clases**:
-  - Filtrado y programación de clases por mes (ej. Septiembre 2026, Octubre 2026).
-  - Asignación de mentora responsable y selección de estudiantes convocadas.
-  - Configuración del enlace de **Google Meet**.
-  - Carga del enlace de **YouTube** de la clase grabada con notas explicativas para los estudiantes.
-- **Reporte Global de Asistencias**:
-  - Matriz con porcentaje de asistencia por estudiante.
-  - Log en tiempo real de fecha y hora exacta en que cada alumna dio clic para ingresar a Google Meet.
+## Stack
 
----
+- Next.js 14 (App Router) y React 18
+- Tailwind CSS, Framer Motion y lucide-react
+- Prisma 5 con PostgreSQL
+- Almacenamiento de archivos compatible con S3 (URLs firmadas)
+- Despliegue en Railway
 
-### 2. 👩‍🏫 Mentor(a) (Acceso: `carolina.mentor@empoderas.org` / `123456`)
-- **Mis Clases & Horarios**:
-  - Vista clara del cronograma y clases programadas por la administración.
-  - Consulta de estudiantes asignadas a cada sesión.
-- **Publicación de Enlaces de Clase**:
-  - Publicar o actualizar el enlace de **Google Meet** de la sesión en vivo.
-  - Cargar o modificar el enlace de **YouTube** para la clase grabada y materiales complementarios.
-- **Monitoreo de Asistencia**:
-  - Ver en tiempo real la lista de alumnas presentes que hicieron clic para unirse.
-- **Tareas & Calificaciones**:
-  - Crear nuevas tareas y consignas académicas con fecha límite.
-  - Revisar entregas de las alumnas (enlaces, reflexiones, archivos).
-  - Asignar calificación (escala 1.0 a 5.0) y redactar comentarios de **retroalimentación constructiva**.
+## Requisitos
 
----
+- Node.js 20 o superior
+- PostgreSQL 14 o superior
+- Un bucket compatible con S3 (solo si se usan archivos)
 
-### 3. 🎓 Estudiante (Acceso: `sofia.estudiante@empoderas.org` / `123456`)
-- **Dashboard & Horarios**:
-  - Vista de próximas clases virtuales y clases ya cursadas.
-- **Asistencia Automática a Google Meet**:
-  - Botón interactivo: **"Unirme a Clase en Google Meet"**.
-  - Cada vez que la estudiante hace clic sobre este botón, **la plataforma registra automáticamente su asistencia** con fecha y hora exacta antes de abrir Google Meet.
-  - Animación de celebración con confeti.
-- **Repositorio de Clases Grabadas en YouTube**:
-  - Sección para ver las grabaciones de las clases dictadas con reproductor interactivo embebido de YouTube.
-  - Descarga de guías y materiales de apoyo.
-- **Mis Tareas & Notas**:
-  - Ver tareas pendientes, entregadas y calificadas.
-  - Subir entregas con enlaces (Drive, Docs, etc.) y notas de reflexión.
-  - Visualizar la calificación asignada y los **comentarios de retroalimentación de la mentora**.
-- **Mi Historial de Asistencias**:
-  - Registro transparente de asistencias confirmadas y porcentaje de participación.
+## Variables de entorno
 
----
+Copia `.env.example` a `.env` y completa los valores.
 
-## 🔑 Credenciales de Demostración (Contraseña para todos: `123456`)
+| Variable | Obligatoria | Descripción |
+| --- | --- | --- |
+| `DATABASE_URL` | Sí | Cadena de conexión de PostgreSQL. |
+| `JWT_SECRET` | Sí en producción | Secreto largo y aleatorio para firmar la sesión. |
+| `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET_NAME` | Para subir archivos | Credenciales del almacenamiento. `S3_REGION` es opcional. |
+| `NEXT_PUBLIC_SHOW_DEMO_LOGIN` | No | Con `true` muestra los accesos rápidos de demostración. Solo para desarrollo. |
 
-| Rol | Correo Electrónico | Contraseña | Nota |
-| :--- | :--- | :--- | :--- |
-| **👑 Administrador** | `admin@empoderas.org` | `123456` | Control total del sistema |
-| **👩‍🏫 Mentora 1** | `carolina.mentor@empoderas.org` | `123456` | Módulo de Liderazgo |
-| **👩‍🏫 Mentora 2** | `valeria.mentor@empoderas.org` | `123456` | Módulo de Proyectos |
-| **🎓 Estudiante 1** | `sofia.estudiante@empoderas.org` | `123456` | Alumna activa con notas |
-| **🎓 Estudiante 2** | `lucia.estudiante@empoderas.org` | `123456` | Alumna activa |
-| **⛔ Estudiante Inactiva** | `inactiva@empoderas.org` | `123456` | Prueba de bloqueo por inactividad |
+## Puesta en marcha local
 
-> *Nota: En la pantalla de inicio de sesión (`/login`) encontrarás botones rápidos para llenar estas credenciales con un solo clic.*
+```bash
+npm install
+cp .env.example .env
+npm run prisma:migrate:deploy
+npm run prisma:seed   # solo local: borra todos los datos y crea cuentas de prueba
+npm run dev
+```
 
----
+La aplicación queda en http://localhost:3000. El script `prisma/seed.js` se bloquea si `NODE_ENV=production`.
 
-## 🚀 Cómo Iniciar la Plataforma en Local
+## Scripts
 
-1. Instalar dependencias (ya instaladas):
-   ```bash
-   npm install
-   ```
+| Comando | Uso |
+| --- | --- |
+| `npm run dev` | Servidor de desarrollo. |
+| `npm run build` | Genera el cliente de Prisma y compila para producción. |
+| `npm run start` | Sirve la compilación. |
+| `npm run prisma:migrate:deploy` | Aplica las migraciones pendientes. |
+| `npm run prisma:generate` | Regenera el cliente de Prisma. |
 
-2. Inicializar la base de datos con datos de prueba:
-   ```bash
-   npm run prisma:push
-   npm run prisma:seed
-   ```
+## Estructura
 
-3. Iniciar el servidor de desarrollo:
-   ```bash
-   npm run dev
-   ```
+```
+prisma/               Esquema, migraciones y datos de prueba
+src/app/              Páginas y rutas de la API (App Router)
+  admin/ mentor/ estudiante/ perfil/   Áreas por rol
+  api/                                 Rutas de servidor
+  terminos/ privacidad/ cookies/       Documentos legales públicos
+src/components/       Componentes de interfaz (ui/, fx/, legal/)
+src/lib/              Autenticación, validación, almacenamiento, utilidades
+```
 
-4. Abrir en tu navegador:
-   ```
-   http://localhost:3000
-   ```
+## Documentación
+
+- [Arquitectura](docs/ARQUITECTURA.md): capas, autenticación, permisos y modelo de datos.
+- [Operación](docs/OPERACION.md): despliegue, migraciones, secretos e incidentes.
