@@ -10,6 +10,7 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { useSessionUser } from '@/lib/user-context';
+import { CERTIFICATE_MIN_ATTENDANCE_PERCENT } from '@/lib/legal';
 import JoinMeetButton from '@/components/JoinMeetButton';
 
 interface StudentClass {
@@ -64,7 +65,7 @@ export default function StudentDashboardPage() {
             </span>
             <h1 className="font-display text-3xl sm:text-4xl font-bold">Bienvenida, {user.name.split(' ')[0]}</h1>
             <p className="mt-2 text-purple-100 text-sm sm:text-base max-w-xl">
-              Conéctate a tus clases en Google Meet con un clic. Tu asistencia se registra de inmediato para tu certificado.
+              Conéctate a tus clases en Google Meet con un clic. Tu asistencia se registra de inmediato para tu constancia de participación.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -116,8 +117,8 @@ export default function StudentDashboardPage() {
                 <Award className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-slate-800">Tu progreso hacia la certificación</h2>
-                <p className="text-xs text-slate-500">Basado en tu asistencia a las sesiones en vivo vía Google Meet.</p>
+                <h2 className="text-base font-bold text-slate-800">Tu progreso hacia la constancia de participación</h2>
+                <p className="text-xs text-slate-500">Requiere al menos un {CERTIFICATE_MIN_ATTENDANCE_PERCENT}% de asistencia a las sesiones en vivo vía Google Meet.</p>
               </div>
             </div>
             <span className="text-lg font-black text-role-accent self-start sm:self-auto">{progressPct}% cumplido</span>
@@ -127,7 +128,7 @@ export default function StudentDashboardPage() {
 
           <div className="flex justify-end">
             <Button href="/estudiante/certificado" variant="secondary" size="sm" leftIcon={<Award className="w-4 h-4" />}>
-              Ver mi certificado
+              Ver mi constancia
             </Button>
           </div>
         </Card>

@@ -3,7 +3,7 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { m } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import {
   LogOut,
   Users,
@@ -53,7 +53,7 @@ const studentLinks = [
   { href: '/estudiante/repositorio', label: 'Repositorio', icon: BookOpen },
   { href: '/estudiante/tareas', label: 'Mis tareas', icon: ClipboardList },
   { href: '/estudiante/asistencias', label: 'Mi asistencia', icon: CheckCircle2 },
-  { href: '/estudiante/certificado', label: 'Certificado', icon: Award },
+  { href: '/estudiante/certificado', label: 'Constancia', icon: Award },
 ];
 
 export default function Navbar({ user }: NavbarProps) {
@@ -194,15 +194,17 @@ export default function Navbar({ user }: NavbarProps) {
         </div>
       </div>
 
-      {drawerOpen && (
-        <MobileDrawer
-          user={user}
-          navLinks={navLinks}
-          pathname={pathname ?? ''}
-          onClose={() => setDrawerOpen(false)}
-          onLogout={handleLogout}
-        />
-      )}
+      <AnimatePresence>
+        {drawerOpen && (
+          <MobileDrawer
+            user={user}
+            navLinks={navLinks}
+            pathname={pathname ?? ''}
+            onClose={() => setDrawerOpen(false)}
+            onLogout={handleLogout}
+          />
+        )}
+      </AnimatePresence>
     </header>
   );
 }
@@ -220,9 +222,14 @@ function MobileDrawer({
   onClose: () => void;
   onLogout: () => void;
 }) {
+  const onCloseRef = React.useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') onCloseRef.current();
     };
     document.addEventListener('keydown', onKey);
     document.body.style.overflow = 'hidden';
@@ -230,10 +237,16 @@ function MobileDrawer({
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = '';
     };
-  }, [onClose]);
+  }, []);
 
   return (
-    <div className="md:hidden fixed inset-0 z-modal">
+    <m.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.15 }}
+      className="md:hidden fixed inset-0 z-modal"
+    >
       <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} />
       <m.div
         initial={{ x: '100%' }}
@@ -288,6 +301,6 @@ function MobileDrawer({
           <span>Cerrar sesión</span>
         </button>
       </m.div>
-    </div>
+    </m.div>
   );
 }

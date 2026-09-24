@@ -19,6 +19,18 @@ model User {
   avatar        String?
   startDate     DateTime?   // Fecha de inicio en la plataforma
   endDate       DateTime?   // Fecha de finalización
+
+  // Autorización de tratamiento de datos y términos (Ley 1581 de 2012)
+  termsAcceptedAt   DateTime?
+  termsVersion      String?
+  // Menores de edad: requiere autorización del representante legal
+  isMinor           Boolean   @default(false)
+  guardianName      String?
+  guardianContact   String?
+  guardianConsentAt DateTime?
+  // Supresión de datos: la cuenta se anonimiza en lugar de borrarse
+  anonymizedAt      DateTime?
+
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 

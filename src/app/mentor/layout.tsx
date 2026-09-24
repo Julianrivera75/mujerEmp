@@ -1,6 +1,7 @@
 import React from 'react';
 import { redirect } from 'next/navigation';
-import { getSessionProfile } from '@/lib/session-profile';
+import { getSessionProfile, requireAcceptedTerms } from '@/lib/session-profile';
+import LegalFooter from '@/components/LegalFooter';
 import { UserProvider } from '@/lib/user-context';
 import Navbar from '@/components/Navbar';
 
@@ -9,6 +10,7 @@ export default async function MentorLayout({ children }: { children: React.React
   if (!user || (user.role !== 'MENTOR' && user.role !== 'ADMIN')) {
     redirect('/login');
   }
+  requireAcceptedTerms(user);
 
   return (
     <div data-role="mentor" className="min-h-dvh flex flex-col">
@@ -19,6 +21,9 @@ export default async function MentorLayout({ children }: { children: React.React
         <main id="contenido" className="flex-1">
           {children}
         </main>
+        <div className="no-print">
+          <LegalFooter />
+        </div>
       </UserProvider>
     </div>
   );

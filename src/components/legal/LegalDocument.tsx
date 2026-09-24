@@ -1,0 +1,70 @@
+import React from 'react';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
+import { Logo } from '@/components/Logo';
+import { CURRENT_TERMS_VERSION } from '@/lib/legal';
+
+interface LegalDocumentProps {
+  title: string;
+  intro?: string;
+  children: React.ReactNode;
+}
+
+/** Contenedor común de las páginas legales públicas (no requieren sesión). */
+export function LegalDocument({ title, intro, children }: LegalDocumentProps) {
+  return (
+    <div data-role="brand" className="min-h-dvh">
+      <header className="border-b border-white/60 bg-white/70 backdrop-blur-sm">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
+          <Link href="/login" aria-label="Ir al inicio de sesión">
+            <Logo variant="compact" />
+          </Link>
+          <Link href="/login" className="inline-flex items-center gap-1 text-xs font-bold text-role-accent hover:underline">
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Volver</span>
+          </Link>
+        </div>
+      </header>
+
+      <main id="contenido" className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
+        <article className="glass-card rounded-3xl p-6 sm:p-10 shadow-soft border border-white">
+          <h1 className="font-display text-3xl font-bold text-slate-800 tracking-tight">{title}</h1>
+          <p className="mt-1 text-xs font-semibold text-slate-500">Versión {CURRENT_TERMS_VERSION}</p>
+          {intro && <p className="mt-4 text-sm leading-6 text-slate-700">{intro}</p>}
+          <div className="mt-6 space-y-6 text-sm leading-6 text-slate-700">{children}</div>
+        </article>
+
+        <nav aria-label="Otros documentos" className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-xs font-medium text-slate-500">
+          <Link href="/terminos" className="hover:underline hover:text-role-accent">
+            Términos y condiciones
+          </Link>
+          <Link href="/privacidad" className="hover:underline hover:text-role-accent">
+            Tratamiento de datos personales
+          </Link>
+          <Link href="/cookies" className="hover:underline hover:text-role-accent">
+            Cookies
+          </Link>
+        </nav>
+      </main>
+    </div>
+  );
+}
+
+export function LegalSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section>
+      <h2 className="font-display text-lg font-semibold text-slate-800 mb-2">{title}</h2>
+      <div className="space-y-2">{children}</div>
+    </section>
+  );
+}
+
+export function LegalList({ items }: { items: React.ReactNode[] }) {
+  return (
+    <ul className="list-disc pl-5 space-y-1">
+      {items.map((item, i) => (
+        <li key={i}>{item}</li>
+      ))}
+    </ul>
+  );
+}

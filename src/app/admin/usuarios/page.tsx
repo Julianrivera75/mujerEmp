@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Users, UserPlus, Search, Edit3 } from 'lucide-react';
+import { Users, UserPlus, Search, Edit3, UserX } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -14,6 +14,8 @@ import { Avatar } from '@/components/ui/Avatar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonRow } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Badge } from '@/components/ui/Badge';
 import { UserFormModal } from './_components/UserFormModal';
 import type { UserItem } from './types';
 
@@ -28,6 +30,8 @@ export default function AdminUsersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [selectedUser, setSelectedUser] = useState<UserItem | null>(null);
+  const [anonTarget, setAnonTarget] = useState<UserItem | null>(null);
+  const [anonymizing, setAnonymizing] = useState(false);
 
   const loadData = async () => {
     try {
@@ -76,6 +80,30 @@ export default function AdminUsersPage() {
     } catch (err) {
       setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, status: user.status } : u)));
       show('error', 'Error de conexión al actualizar el estado.');
+    }
+  };
+
+  const handleConfirmAnonymize = async () => {
+    if (!anonTarget) return;
+    setAnonymizing(true);
+    try {
+      const res = await fetch('/api/admin/users/anonymize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: anonTarget.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        show('error', data.error || 'No se pudo anonimizar la cuenta.');
+      } else {
+        show('success', data.filesFailed ? 'Cuenta anonimizada. Algunos archivos no pudieron eliminarse del almacenamiento; revísalos.' : 'Cuenta anonimizada.');
+        loadData();
+      }
+    } catch (err) {
+      show('error', 'Error de conexión al anonimizar la cuenta.');
+    } finally {
+      setAnonymizing(false);
+      setAnonTarget(null);
     }
   };
 
@@ -176,7 +204,16 @@ export default function AdminUsersPage() {
                           <div>
                             <p className="font-bold text-slate-800 leading-tight">{u.name}</p>
                             <p className="text-xs text-slate-500">{u.email}</p>
-                            <RoleBadge role={u.role} className="mt-1" />
+                            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                              <RoleBadge role={u.role} />
+                              {u.anonymizedAt && <Badge tone="neutral">Anonimizada</Badge>}
+                              {u.isMinor && (
+                                <Badge tone={u.guardianConsentAt ? 'info' : 'warning'}>
+                                  {u.guardianConsentAt ? 'Menor con autorización' : 'Menor sin autorización'}
+                                </Badge>
+                              )}
+                              {!u.anonymizedAt && !u.termsAcceptedAt && <Badge tone="warning">Términos pendientes</Badge>}
+                            </div>
                           </div>
                         </div>
                       </TCell>
@@ -219,13 +256,25 @@ export default function AdminUsersPage() {
                         {u.role === 'ADMIN' && <span className="text-slate-400">Acceso total</span>}
                       </TCell>
                       <TCell className="text-right">
-                        <button
-                          onClick={() => handleOpenEdit(u)}
-                          className="p-2 rounded-xl text-role-accent hover:bg-role-soft transition-colors"
-                          aria-label={`Editar ${u.name}`}
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
+                        <div className="inline-flex items-center gap-1">
+                          <button
+                            onClick={() => handleOpenEdit(u)}
+                            disabled={Boolean(u.anonymizedAt)}
+                            className="p-2 rounded-xl text-role-accent hover:bg-role-soft transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                            aria-label={`Editar ${u.name}`}
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => setAnonTarget(u)}
+                            disabled={Boolean(u.anonymizedAt)}
+                            className="p-2 rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                            aria-label={`Anonimizar a ${u.name}`}
+                            title="Anonimizar (derecho de supresión)"
+                          >
+                            <UserX className="w-4 h-4" />
+                          </button>
+                        </div>
                       </TCell>
                     </TRow>
                   ))}
@@ -243,8 +292,21 @@ export default function AdminUsersPage() {
                       <p className="font-bold text-slate-800 leading-tight">{u.name}</p>
                       <RoleBadge role={u.role} className="mt-1" />
                     </div>
-                    <button onClick={() => handleOpenEdit(u)} className="p-2 rounded-xl text-role-accent hover:bg-role-soft" aria-label={`Editar ${u.name}`}>
+                    <button
+                      onClick={() => handleOpenEdit(u)}
+                      disabled={Boolean(u.anonymizedAt)}
+                      className="p-2 rounded-xl text-role-accent hover:bg-role-soft disabled:opacity-40"
+                      aria-label={`Editar ${u.name}`}
+                    >
                       <Edit3 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setAnonTarget(u)}
+                      disabled={Boolean(u.anonymizedAt)}
+                      className="p-2 rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50 disabled:opacity-40"
+                      aria-label={`Anonimizar a ${u.name}`}
+                    >
+                      <UserX className="w-4 h-4" />
                     </button>
                   </div>
                   <ResponsiveRow
@@ -260,6 +322,20 @@ export default function AdminUsersPage() {
           </>
         )}
       </Card>
+
+      <ConfirmDialog
+        open={Boolean(anonTarget)}
+        onCancel={() => setAnonTarget(null)}
+        onConfirm={handleConfirmAnonymize}
+        title="¿Anonimizar esta cuenta?"
+        description={
+          anonTarget
+            ? `Se eliminarán de forma permanente el nombre, correo, documento, teléfono, foto y archivos entregados de ${anonTarget.name}, y su acceso quedará bloqueado. Esta acción no se puede deshacer.`
+            : undefined
+        }
+        confirmLabel="Anonimizar cuenta"
+        loading={anonymizing}
+      />
 
       <UserFormModal
         open={isModalOpen}

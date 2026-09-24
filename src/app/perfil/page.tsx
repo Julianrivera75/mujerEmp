@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { User, Phone, CheckCircle2, ShieldCheck, Save } from 'lucide-react';
+import Link from 'next/link';
+import { User, Phone, CheckCircle2, ShieldCheck, Save, Download } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
@@ -183,7 +184,7 @@ export default function ProfilePage() {
                 <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">Cambiar contraseña (opcional)</h3>
                 <Input label="Contraseña actual" type="password" placeholder="••••••••" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Input label="Nueva contraseña" type="password" placeholder="Mínimo 6 caracteres" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                  <Input label="Nueva contraseña" type="password" placeholder="Mínimo 8 caracteres" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
                   <Input label="Confirmar nueva contraseña" type="password" placeholder="Repite la nueva contraseña" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
                 </div>
               </div>
@@ -194,6 +195,26 @@ export default function ProfilePage() {
                 </Button>
               </div>
             </form>
+          </Card>
+
+          <Card variant="glass" className="md:col-span-3 p-6 sm:p-8">
+            <h2 className="text-lg font-bold text-slate-800 mb-1 flex items-center gap-2">
+              <Download className="w-5 h-5 text-role-accent" />
+              <span>Tus datos personales</span>
+            </h2>
+            <p className="text-sm text-slate-600 leading-6 max-w-2xl">
+              Tienes derecho a conocer los datos que guardamos sobre ti. Descarga una copia en formato JSON con tu información de cuenta, asistencia, entregas y calificaciones.
+              Para solicitar la rectificación o la supresión de tus datos, consulta la{' '}
+              <Link href="/privacidad" className="text-role-accent font-semibold underline">
+                política de tratamiento de datos
+              </Link>
+              .
+            </p>
+            <div className="mt-4">
+              <Button href="/api/auth/export" variant="secondary" leftIcon={<Download className="w-4 h-4" />} download>
+                Descargar mis datos
+              </Button>
+            </div>
           </Card>
         </div>
       )}

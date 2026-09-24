@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { useSessionUser } from '@/lib/user-context';
+import { CERTIFICATE_MIN_ATTENDANCE_PERCENT } from '@/lib/legal';
 
 export default function StudentCertificatePage() {
   const user = useSessionUser();
@@ -34,8 +35,7 @@ export default function StudentCertificatePage() {
   }, [user.id]);
 
   const percentage = totalClasses > 0 ? Math.round((totalAttended / totalClasses) * 100) : 0;
-  // TODO(producto): condición real de desbloqueo (totalAttended > 0) no coincide con el copy de abajo (80%/50%).
-  const isEligible = totalAttended > 0;
+  const isEligible = totalClasses > 0 && percentage >= CERTIFICATE_MIN_ATTENDANCE_PERCENT;
 
   return (
     <div className="max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -46,9 +46,9 @@ export default function StudentCertificatePage() {
             <span>Volver a mis clases</span>
           </Link>
           <h1 className="font-display text-2xl sm:text-3xl font-bold text-slate-800 flex items-center gap-2.5">
-            <span>Certificado de acreditación</span>
+            <span>Constancia de participación</span>
           </h1>
-          <p className="text-slate-500 text-xs mt-0.5">Acreditación oficial de culminación y asistencia al programa formativo de Empoderas Diversas.</p>
+          <p className="text-slate-500 text-xs mt-0.5">Constancia de tu participación en el programa formativo de Empoderas Diversas.</p>
         </div>
 
         {isEligible && (
@@ -65,9 +65,9 @@ export default function StudentCertificatePage() {
           <div className="w-16 h-16 rounded-3xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-4">
             <Lock className="w-8 h-8" />
           </div>
-          <h2 className="text-xl font-bold text-slate-800 mb-2">Certificado en proceso de desbloqueo</h2>
+          <h2 className="text-xl font-bold text-slate-800 mb-2">Constancia aún no disponible</h2>
           <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-            Para obtener tu certificado de capacitación, debes asistir a tus clases virtuales mediante el botón de Google Meet.
+            Para obtener tu constancia de participación debes registrar al menos el {CERTIFICATE_MIN_ATTENDANCE_PERCENT}% de asistencia a las clases virtuales, ingresando con el botón de Google Meet.
           </p>
 
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs text-slate-600 mb-6">
@@ -95,7 +95,7 @@ export default function StudentCertificatePage() {
               </div>
             </div>
 
-            <h2 className="text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-slate-500">Certificado de Acreditación y Participación</h2>
+            <h2 className="text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-slate-500">Constancia de Participación</h2>
 
             <p className="text-xs text-slate-500 max-w-lg mx-auto">
               La corporación y red de capacitación <strong>Empoderas Diversas</strong> hace constar que:
@@ -109,8 +109,12 @@ export default function StudentCertificatePage() {
             </div>
 
             <p className="text-xs sm:text-sm text-slate-700 max-w-2xl mx-auto leading-relaxed">
-              Ha completado satisfactoriamente los módulos de formación integral, liderazgo transformacional, habilidades digitales y gestión de proyectos comunitarios,
-              cumpliendo con los estándares de asistencia sincrónica virtual y entrega de actividades prácticas.
+              Participó en el programa de formación de Empoderas Diversas, con una asistencia registrada del <strong>{percentage}%</strong> a las sesiones virtuales
+              en vivo en las que estuvo inscrita ({totalAttended} de {totalClasses}).
+            </p>
+
+            <p className="text-[10px] text-slate-400 max-w-xl mx-auto leading-relaxed">
+              Este documento acredita la participación en una actividad de formación complementaria. No constituye título académico ni certificación de educación formal ni de competencias laborales.
             </p>
 
             <div className="pt-10 grid grid-cols-2 gap-8 max-w-xl mx-auto">
@@ -130,7 +134,7 @@ export default function StudentCertificatePage() {
               <span className="flex items-center gap-1">
                 <ShieldCheck className="w-4 h-4 text-emerald-600" />
                 <span>
-                  Código único de verificación: <strong>ED-{user.id.slice(-8).toUpperCase()}</strong>
+                  Código de referencia: <strong>ED-{user.id.slice(-8).toUpperCase()}</strong>
                 </span>
               </span>
               <span>Fecha de expedición: {new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</span>

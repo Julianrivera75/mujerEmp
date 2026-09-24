@@ -9,6 +9,12 @@ export interface UserItem {
   startDate: string | null;
   endDate: string | null;
   createdAt: string;
+  isMinor: boolean;
+  guardianName: string | null;
+  guardianContact: string | null;
+  guardianConsentAt: string | null;
+  termsAcceptedAt: string | null;
+  anonymizedAt: string | null;
   _count: {
     attendances: number;
     enrolledClasses: number;

@@ -17,6 +17,9 @@ export async function middleware(request: NextRequest) {
   // Rutas públicas que no requieren autenticación
   if (
     pathname === '/login' ||
+    pathname === '/terminos' ||
+    pathname === '/privacidad' ||
+    pathname === '/cookies' ||
     pathname.startsWith('/api/auth/login') ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon.ico') ||

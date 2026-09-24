@@ -16,6 +16,10 @@ export type UserFormData = {
   phone: string;
   startDate: string;
   endDate: string;
+  isMinor: boolean;
+  guardianName: string;
+  guardianContact: string;
+  guardianConsent: boolean;
 };
 
 interface UserFormModalProps {
@@ -139,6 +143,50 @@ export function UserFormModal({ open, mode, selectedUser, onClose, onSaved }: Us
             onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
           />
         </div>
+        <div className="p-4 rounded-2xl border border-slate-200 space-y-3">
+          <label className="flex items-start gap-3 text-sm text-slate-700 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.isMinor}
+              onChange={(e) => setFormData({ ...formData, isMinor: e.target.checked })}
+              className="mt-0.5 h-4 w-4 rounded"
+            />
+            <span>
+              <strong>Es menor de 18 años.</strong>
+              <span className="block text-xs text-slate-500">
+                Su acceso solo se habilita cuando se registra la autorización de su representante legal (Ley 1581 de 2012, art. 7).
+              </span>
+            </span>
+          </label>
+
+          {formData.isMinor && (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="Representante legal"
+                  placeholder="Nombre completo"
+                  value={formData.guardianName}
+                  onChange={(e) => setFormData({ ...formData, guardianName: e.target.value })}
+                />
+                <Input
+                  label="Contacto del representante"
+                  placeholder="Correo o teléfono"
+                  value={formData.guardianContact}
+                  onChange={(e) => setFormData({ ...formData, guardianContact: e.target.value })}
+                />
+              </div>
+              <label className="flex items-start gap-3 text-sm text-slate-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.guardianConsent}
+                  onChange={(e) => setFormData({ ...formData, guardianConsent: e.target.checked })}
+                  className="mt-0.5 h-4 w-4 rounded"
+                />
+                <span>Confirmo que recibí la autorización expresa del representante legal para el tratamiento de los datos de esta persona.</span>
+              </label>
+            </>
+          )}
+        </div>
       </form>
 
       <div className="flex items-center justify-end gap-3 pt-5 mt-5 border-t border-slate-100">
@@ -165,6 +213,10 @@ function buildInitialForm(mode: 'create' | 'edit', user: UserItem | null): UserF
       phone: user.phone || '',
       startDate: user.startDate ? new Date(user.startDate).toISOString().split('T')[0] : '',
       endDate: user.endDate ? new Date(user.endDate).toISOString().split('T')[0] : '',
+      isMinor: user.isMinor,
+      guardianName: user.guardianName || '',
+      guardianContact: user.guardianContact || '',
+      guardianConsent: Boolean(user.guardianConsentAt),
     };
   }
   return {
@@ -177,5 +229,9 @@ function buildInitialForm(mode: 'create' | 'edit', user: UserItem | null): UserF
     phone: '',
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date(new Date().setMonth(new Date().getMonth() + 6)).toISOString().split('T')[0],
+    isMinor: false,
+    guardianName: '',
+    guardianContact: '',
+    guardianConsent: false,
   };
 }

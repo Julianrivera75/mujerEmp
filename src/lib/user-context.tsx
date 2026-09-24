@@ -13,6 +13,9 @@ export interface SessionUser {
   avatar?: string | null;
   startDate?: string | null;
   endDate?: string | null;
+  termsVersion?: string | null;
+  isMinor?: boolean;
+  guardianConsentAt?: string | null;
 }
 
 const UserContext = createContext<SessionUser | null>(null);

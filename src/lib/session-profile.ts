@@ -1,11 +1,13 @@
+import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { CURRENT_TERMS_VERSION } from '@/lib/legal';
 import type { SessionUser } from '@/lib/user-context';
 
 /**
- * getCurrentUser() sólo trae id/name/email/role/status (ver lib/auth.ts, fuera de alcance).
+ * getCurrentUser() sólo trae id/name/email/role/status (ver lib/auth.ts).
  * Los layouts necesitan además avatar/documentId/phone/vigencia para Navbar y el certificado,
- * así que las completamos acá sin tocar ese archivo.
+ * y los datos de aceptación de términos, así que las completamos acá.
  */
 export async function getSessionProfile(): Promise<SessionUser | null> {
   const user = await getCurrentUser();
@@ -13,7 +15,16 @@ export async function getSessionProfile(): Promise<SessionUser | null> {
 
   const extra = await prisma.user.findUnique({
     where: { id: user.id },
-    select: { avatar: true, documentId: true, phone: true, startDate: true, endDate: true },
+    select: {
+      avatar: true,
+      documentId: true,
+      phone: true,
+      startDate: true,
+      endDate: true,
+      termsVersion: true,
+      isMinor: true,
+      guardianConsentAt: true,
+    },
   });
 
   return {
@@ -23,5 +34,15 @@ export async function getSessionProfile(): Promise<SessionUser | null> {
     phone: extra?.phone ?? null,
     startDate: extra?.startDate ? extra.startDate.toISOString() : null,
     endDate: extra?.endDate ? extra.endDate.toISOString() : null,
+    termsVersion: extra?.termsVersion ?? null,
+    isMinor: extra?.isMinor ?? false,
+    guardianConsentAt: extra?.guardianConsentAt ? extra.guardianConsentAt.toISOString() : null,
   };
+}
+
+/** Bloquea el acceso a la plataforma hasta aceptar la versión vigente de los términos y la política de datos. */
+export function requireAcceptedTerms(user: SessionUser) {
+  if (user.termsVersion !== CURRENT_TERMS_VERSION || (user.isMinor && !user.guardianConsentAt)) {
+    redirect('/aceptar-terminos');
+  }
 }

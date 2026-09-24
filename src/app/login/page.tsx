@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, Suspense } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import { ArrowRight, Lock, Mail, ShieldAlert, Eye, EyeOff, ShieldCheck, Presentation, GraduationCap, Video, ClipboardList, Award } from 'lucide-react';
@@ -23,7 +24,7 @@ const VALUE_POINTS = [
   { icon: Award, text: 'Certificado de acreditación al completar tu formación' },
 ];
 
-const SHOW_DEMO_LOGIN = process.env.NEXT_PUBLIC_SHOW_DEMO_LOGIN !== 'false';
+const SHOW_DEMO_LOGIN = process.env.NEXT_PUBLIC_SHOW_DEMO_LOGIN === 'true';
 
 function LoginFormContent() {
   const router = useRouter();
@@ -150,8 +151,19 @@ function LoginFormContent() {
       </m.div>
 
       <p className="text-center text-xs text-slate-500 mt-6 font-medium">
-        Empoderas Diversas © {new Date().getFullYear()} • Transformando realidades mediante educación
+        Empoderas Diversas © {new Date().getFullYear()} · Transformando realidades mediante educación
       </p>
+      <nav aria-label="Información legal" className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs font-medium text-slate-500">
+        <Link href="/terminos" className="hover:text-role-accent hover:underline">
+          Términos y condiciones
+        </Link>
+        <Link href="/privacidad" className="hover:text-role-accent hover:underline">
+          Tratamiento de datos
+        </Link>
+        <Link href="/cookies" className="hover:text-role-accent hover:underline">
+          Cookies
+        </Link>
+      </nav>
     </m.div>
   );
 }
