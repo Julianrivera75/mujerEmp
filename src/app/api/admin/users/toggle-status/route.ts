@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { USER_STATUSES, isOneOf } from '@/lib/validators';
+import { logError } from '@/lib/log';
 
 export async function POST(req: Request) {
   try {
@@ -10,8 +12,20 @@ export async function POST(req: Request) {
     }
 
     const { id, status } = await req.json();
-    if (!id || !status) {
-      return NextResponse.json({ error: 'Datos insuficientes.' }, { status: 400 });
+    if (typeof id !== 'string' || !id || !isOneOf(USER_STATUSES, status)) {
+      return NextResponse.json({ error: 'Datos inválidos.' }, { status: 400 });
+    }
+
+    if (id === currentUser.id && status === 'INACTIVO') {
+      return NextResponse.json({ error: 'No puedes desactivar tu propia cuenta.' }, { status: 400 });
+    }
+
+    const target = await prisma.user.findUnique({ where: { id }, select: { anonymizedAt: true } });
+    if (!target) {
+      return NextResponse.json({ error: 'Usuario no encontrado.' }, { status: 404 });
+    }
+    if (target.anonymizedAt) {
+      return NextResponse.json({ error: 'Esta cuenta fue anonimizada y no puede reactivarse.' }, { status: 409 });
     }
 
     const updated = await prisma.user.update({
@@ -22,7 +36,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, user: updated });
   } catch (error) {
-    console.error('Error al cambiar estado:', error);
+    logError('admin/users toggle-status', error);
     return NextResponse.json({ error: 'No se pudo actualizar el estado.' }, { status: 500 });
   }
 }

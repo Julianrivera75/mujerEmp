@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
+import { safeHref } from '@/lib/validators';
 import { ClassFormModal } from './_components/ClassFormModal';
 import type { ClassItem, SimpleUser } from './types';
 
@@ -185,7 +186,7 @@ export default function AdminClassesPage() {
                         Google Meet:
                       </span>
                       {cls.meetLink ? (
-                        <a href={cls.meetLink} target="_blank" rel="noreferrer" className="text-teal-700 hover:text-teal-900 font-bold underline truncate max-w-[200px]">
+                        <a href={safeHref(cls.meetLink)} target="_blank" rel="noopener noreferrer" className="text-teal-700 hover:text-teal-900 font-bold underline truncate max-w-[200px]">
                           {cls.meetLink}
                         </a>
                       ) : (
@@ -199,7 +200,7 @@ export default function AdminClassesPage() {
                         Grabación YouTube:
                       </span>
                       {cls.youtubeUrl ? (
-                        <a href={cls.youtubeUrl} target="_blank" rel="noreferrer" className="text-red-600 hover:text-red-800 font-bold underline truncate max-w-[200px]">
+                        <a href={safeHref(cls.youtubeUrl)} target="_blank" rel="noopener noreferrer" className="text-red-600 hover:text-red-800 font-bold underline truncate max-w-[200px]">
                           Ver en YouTube
                         </a>
                       ) : (

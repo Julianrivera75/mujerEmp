@@ -3,6 +3,13 @@ const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
 
+// Este script borra TODAS las tablas y crea cuentas de prueba con una contraseña pública.
+// Solo debe usarse en desarrollo local; se bloquea en producción a menos que se autorice de forma explícita.
+if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DESTRUCTIVE_SEED !== 'yes') {
+  console.error('Seed bloqueado: NODE_ENV=production. Este script elimina todos los datos.');
+  process.exit(1);
+}
+
 async function main() {
   console.log('🌱 Limpiando base de datos previa...');
   await prisma.attendance.deleteMany();

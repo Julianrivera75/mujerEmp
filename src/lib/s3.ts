@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 function getS3Client(): S3Client {
@@ -82,4 +82,32 @@ export async function createPresignedDownloadUrl(key: string, expiresInSeconds =
 export async function deleteObject(key: string): Promise<void> {
   const client = getS3Client();
   await client.send(new DeleteObjectCommand({ Bucket: getBucketName(), Key: key }));
+}
+
+/** Verifica que el key pertenezca al usuario y a la categoría: "<prefijo>/<idDelUsuario>/<archivo>". */
+export function keyBelongsTo(key: unknown, category: UploadCategory, ownerId: string): key is string {
+  if (typeof key !== 'string' || key.length > 300 || key.includes('..')) return false;
+  return key.startsWith(`${UPLOAD_CATEGORIES[category].prefix}/${ownerId}/`);
+}
+
+/**
+ * Comprueba en el almacenamiento que el archivo subido exista, no supere el tamaño máximo
+ * y tenga un tipo permitido. Si no cumple, lo elimina. El cliente declara tamaño y tipo al
+ * pedir la URL firmada, así que esta es la verificación que realmente se puede confiar.
+ */
+export async function verifyUploadedObject(key: string, category: UploadCategory): Promise<boolean> {
+  const config = UPLOAD_CATEGORIES[category];
+  try {
+    const client = getS3Client();
+    const head = await client.send(new HeadObjectCommand({ Bucket: getBucketName(), Key: key }));
+    const size = head.ContentLength ?? 0;
+    const type = (head.ContentType ?? '').toLowerCase();
+    const valid = size > 0 && size <= config.maxSizeBytes && (config.allowedTypes as readonly string[]).includes(type);
+    if (!valid) {
+      await deleteObject(key).catch(() => undefined);
+    }
+    return valid;
+  } catch {
+    return false;
+  }
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { getYouTubeEmbedUrl } from '@/lib/youtube';
+import { getYouTubeEmbedUrl, getYouTubeWatchUrl } from '@/lib/youtube';
 import { Video, ExternalLink } from 'lucide-react';
 
 interface YouTubeEmbedProps {
@@ -12,6 +12,7 @@ interface YouTubeEmbedProps {
 
 export default function YouTubeEmbed({ url, title = 'Clase Grabada', notes }: YouTubeEmbedProps) {
   const embedUrl = getYouTubeEmbedUrl(url);
+  const watchUrl = getYouTubeWatchUrl(url);
 
   if (!embedUrl) {
     return (
@@ -39,9 +40,9 @@ export default function YouTubeEmbed({ url, title = 'Clase Grabada', notes }: Yo
       <div className="p-5">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold text-slate-800">{title}</h3>
-          {url && (
+          {watchUrl && (
             <a
-              href={url}
+              href={watchUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center space-x-1.5 text-xs font-semibold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-full transition-colors"

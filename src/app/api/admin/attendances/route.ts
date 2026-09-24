@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { logError } from '@/lib/log';
 
 export const dynamic = 'force-dynamic';
 
@@ -101,7 +102,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ attendances, studentSummary });
   } catch (error) {
-    console.error('Error al obtener asistencias:', error);
+    logError('admin/attendances', error);
     return NextResponse.json({ error: 'Error al consultar asistencias.' }, { status: 500 });
   }
 }

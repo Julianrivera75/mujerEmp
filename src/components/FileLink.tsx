@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { ExternalLink, Loader2 } from 'lucide-react';
+import { safeHref } from '@/lib/validators';
 
 interface FileLinkProps {
   /** URL externa, o key de S3 cuando isStoredFile es true. */
@@ -18,7 +19,7 @@ export default function FileLink({ fileUrl, isStoredFile, className, children }:
 
   if (!isStoredFile) {
     return (
-      <a href={fileUrl} target="_blank" rel="noreferrer" className={className}>
+      <a href={safeHref(fileUrl)} target="_blank" rel="noopener noreferrer" className={className}>
         {children}
       </a>
     );

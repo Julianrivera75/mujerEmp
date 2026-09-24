@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { StatusPill } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { safeHref } from '@/lib/validators';
 
 export default async function AdminDashboardPage() {
   const user = await getCurrentUser();
@@ -165,7 +166,7 @@ export default async function AdminDashboardPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     {cls.meetLink && (
                       <Link
-                        href={cls.meetLink}
+                        href={safeHref(cls.meetLink) ?? "#"}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-50 text-teal-700 hover:bg-teal-100 text-xs font-bold transition-colors"

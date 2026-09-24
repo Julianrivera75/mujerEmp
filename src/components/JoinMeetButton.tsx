@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Video, CheckCircle, ExternalLink } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Button } from '@/components/ui/Button';
+import { safeHref } from '@/lib/validators';
 import { StatusPill } from '@/components/ui/Badge';
 import { Tip } from '@/components/ui/Tip';
 import { useToast } from '@/components/ui/Toast';
@@ -69,7 +70,8 @@ export default function JoinMeetButton({
       console.error('Error al marcar asistencia:', err);
     } finally {
       setLoading(false);
-      window.open(meetLink, '_blank', 'noopener,noreferrer');
+      const safeMeetLink = safeHref(meetLink);
+      if (safeMeetLink) window.open(safeMeetLink, '_blank', 'noopener,noreferrer');
     }
   };
 

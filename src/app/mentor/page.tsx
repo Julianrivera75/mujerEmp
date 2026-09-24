@@ -10,6 +10,7 @@ import { StatusPill } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { useSessionUser } from '@/lib/user-context';
+import { safeHref } from '@/lib/validators';
 import { StudentsModal } from './_components/StudentsModal';
 import { ResourcesModal } from './_components/ResourcesModal';
 import type { MentorClass } from './types';
@@ -167,7 +168,7 @@ export default function MentorDashboardPage() {
                           {cls.meetLink ? (
                             <div className="flex items-center justify-between p-2.5 bg-teal-50 rounded-xl text-xs font-bold text-teal-900 border border-teal-200">
                               <span className="truncate max-w-[200px]">{cls.meetLink}</span>
-                              <a href={cls.meetLink} target="_blank" rel="noreferrer" className="text-teal-700 hover:text-teal-900 ml-2" aria-label="Abrir sala">
+                              <a href={safeHref(cls.meetLink)} target="_blank" rel="noopener noreferrer" className="text-teal-700 hover:text-teal-900 ml-2" aria-label="Abrir sala">
                                 <ExternalLink className="w-4 h-4" />
                               </a>
                             </div>
@@ -179,7 +180,7 @@ export default function MentorDashboardPage() {
                         <div className="space-y-1 pt-1 border-t border-slate-100">
                           <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block">Grabación de YouTube:</span>
                           {cls.youtubeUrl ? (
-                            <a href={cls.youtubeUrl} target="_blank" rel="noreferrer" className="text-xs font-bold text-red-600 hover:underline flex items-center gap-1">
+                            <a href={safeHref(cls.youtubeUrl)} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-red-600 hover:underline flex items-center gap-1">
                               <Youtube className="w-4 h-4" />
                               <span>Ver video de la clase grabada</span>
                             </a>
