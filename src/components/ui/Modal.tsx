@@ -38,6 +38,11 @@ export function Modal({ open, onClose, title, description, size = 'md', dismissi
 
   useEffect(() => setMounted(true), []);
 
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   useEffect(() => {
     if (!open) return;
     triggerRef.current = document.activeElement;
@@ -54,7 +59,7 @@ export function Modal({ open, onClose, title, description, size = 'md', dismissi
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && dismissible) {
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key !== 'Tab') return;
@@ -78,7 +83,7 @@ export function Modal({ open, onClose, title, description, size = 'md', dismissi
       document.body.style.paddingRight = prevPadding;
       (triggerRef.current as HTMLElement | null)?.focus?.();
     };
-  }, [open, dismissible, onClose]);
+  }, [open, dismissible]);
 
   if (!mounted) return null;
 
