@@ -12,3 +12,10 @@ export const CONTROLLER = {
   email: '[CORREO PARA CONSULTAS Y RECLAMOS DE DATOS]',
   phone: '[TELÉFONO]',
 } as const;
+
+/**
+ * Cambiar a true SOLO cuando los textos de /terminos y /privacidad estén completos (sin marcadores entre corchetes)
+ * y revisados por asesoría legal. Mientras sea false: las páginas legales muestran un aviso de borrador y
+ * no se exige la pantalla de aceptación. Al activarla, subir también CURRENT_TERMS_VERSION.
+ */
+export const LEGAL_REVIEW_COMPLETED = false;

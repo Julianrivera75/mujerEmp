@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { Logo } from '@/components/Logo';
-import { CURRENT_TERMS_VERSION } from '@/lib/legal';
+import { CURRENT_TERMS_VERSION, LEGAL_REVIEW_COMPLETED } from '@/lib/legal';
 
 interface LegalDocumentProps {
   title: string;
@@ -30,6 +30,11 @@ export function LegalDocument({ title, intro, children }: LegalDocumentProps) {
         <article className="glass-card rounded-3xl p-6 sm:p-10 shadow-soft border border-white">
           <h1 className="font-display text-3xl font-bold text-slate-800 tracking-tight">{title}</h1>
           <p className="mt-1 text-xs font-semibold text-slate-500">Versión {CURRENT_TERMS_VERSION}</p>
+          {!LEGAL_REVIEW_COMPLETED && (
+            <p role="note" className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
+              Borrador en revisión. Este texto aún no es la versión definitiva y puede cambiar antes de que se solicite tu aceptación.
+            </p>
+          )}
           {intro && <p className="mt-4 text-sm leading-6 text-slate-700">{intro}</p>}
           <div className="mt-6 space-y-6 text-sm leading-6 text-slate-700">{children}</div>
         </article>

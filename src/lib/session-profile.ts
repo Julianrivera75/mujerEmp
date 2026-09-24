@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import prisma from '@/lib/prisma';
-import { CURRENT_TERMS_VERSION } from '@/lib/legal';
+import { CURRENT_TERMS_VERSION, LEGAL_REVIEW_COMPLETED } from '@/lib/legal';
 import type { SessionUser } from '@/lib/user-context';
 
 /**
@@ -42,6 +42,7 @@ export async function getSessionProfile(): Promise<SessionUser | null> {
 
 /** Bloquea el acceso a la plataforma hasta aceptar la versión vigente de los términos y la política de datos. */
 export function requireAcceptedTerms(user: SessionUser) {
+  if (!LEGAL_REVIEW_COMPLETED) return;
   if (user.termsVersion !== CURRENT_TERMS_VERSION || (user.isMinor && !user.guardianConsentAt)) {
     redirect('/aceptar-terminos');
   }
