@@ -20,6 +20,7 @@ export async function middleware(request: NextRequest) {
     pathname === '/terminos' ||
     pathname === '/privacidad' ||
     pathname === '/cookies' ||
+    pathname === '/api/health' ||
     pathname.startsWith('/api/auth/login') ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon.ico') ||
