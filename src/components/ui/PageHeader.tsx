@@ -22,28 +22,31 @@ export function PageHeader({ eyebrow, title, description, date, actions, classNa
       variants={stagger}
       initial="hidden"
       animate="show"
-      className={cn('flex flex-col sm:flex-row sm:items-end justify-between gap-4', className)}
+      className={cn('flex flex-col justify-between gap-4 sm:flex-row sm:items-end', className)}
     >
       <div>
         {eyebrow && (
           <m.span
             variants={fadeUp}
-            className="inline-block px-3 py-1 rounded-full bg-role-soft text-role-accent text-xs font-bold uppercase tracking-wider mb-2"
+            className="mb-2 inline-block rounded-full bg-role-soft px-3 py-1 text-xs font-bold uppercase tracking-wider text-role-accent"
           >
             {eyebrow}
           </m.span>
         )}
-        <m.h1 variants={fadeUp} className="font-display text-2xl sm:text-3xl font-bold text-slate-800 tracking-tight">
+        <m.h1 variants={fadeUp} className="font-display text-2xl font-bold tracking-tight text-slate-800 sm:text-3xl">
           {title}
         </m.h1>
         {description && (
-          <m.p variants={fadeUp} className="mt-1.5 text-sm text-slate-600 max-w-prose">
+          <m.p variants={fadeUp} className="mt-1.5 max-w-prose text-sm text-slate-600">
             {description}
           </m.p>
         )}
         {date && (
-          <m.p variants={fadeUp} className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-500 capitalize">
-            <CalendarDays className="w-3.5 h-3.5 text-role-accent" />
+          <m.p
+            variants={fadeUp}
+            className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold capitalize text-slate-500"
+          >
+            <CalendarDays className="h-3.5 w-3.5 text-role-accent" />
             <span>{date}</span>
           </m.p>
         )}

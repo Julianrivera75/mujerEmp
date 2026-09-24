@@ -60,7 +60,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       <div
         role="status"
         aria-live="polite"
-        className="fixed z-toast bottom-4 right-4 left-4 sm:left-auto sm:w-96 flex flex-col gap-2 pointer-events-none"
+        className="pointer-events-none fixed bottom-4 left-4 right-4 z-toast flex flex-col gap-2 sm:left-auto sm:w-96"
       >
         <AnimatePresence>
           {toasts.map((t) => {
@@ -72,16 +72,16 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.96 }}
                 transition={{ duration: DURATION.base, ease: EASE }}
-                className={`pointer-events-auto flex items-start gap-2.5 rounded-2xl border p-3.5 shadow-lift glass-panel ${STYLES[t.kind]}`}
+                className={`glass-panel pointer-events-auto flex items-start gap-2.5 rounded-2xl border p-3.5 shadow-lift ${STYLES[t.kind]}`}
               >
-                <Icon className={`w-5 h-5 flex-shrink-0 mt-0.5 ${ICON_COLOR[t.kind]}`} />
-                <p className="text-sm font-medium flex-1">{t.message}</p>
+                <Icon className={`mt-0.5 h-5 w-5 flex-shrink-0 ${ICON_COLOR[t.kind]}`} />
+                <p className="flex-1 text-sm font-medium">{t.message}</p>
                 <button
                   onClick={() => dismiss(t.id)}
                   aria-label="Cerrar notificación"
-                  className="text-current/70 hover:text-current transition-colors"
+                  className="text-current/70 transition-colors hover:text-current"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="h-4 w-4" />
                 </button>
               </m.div>
             );

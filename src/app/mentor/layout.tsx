@@ -13,7 +13,7 @@ export default async function MentorLayout({ children }: { children: React.React
   requireAcceptedTerms(user);
 
   return (
-    <div data-role="mentor" className="min-h-dvh flex flex-col">
+    <div data-role="mentor" className="flex min-h-dvh flex-col">
       <UserProvider user={user}>
         <div className="no-print">
           <Navbar user={user} />

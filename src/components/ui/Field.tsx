@@ -7,45 +7,6 @@ import { cn } from '@/lib/cn';
 const CONTROL_BASE =
   'w-full h-11 rounded-xl bg-white/70 border border-slate-200 px-3.5 text-sm text-slate-800 placeholder:text-slate-400 transition-all outline-none focus:border-role-from focus:ring-2 focus:ring-primary/20 disabled:opacity-60';
 
-interface FieldProps {
-  label?: string;
-  hint?: string;
-  error?: string;
-  required?: boolean;
-  className?: string;
-  children: (describedBy: string | undefined, invalid: boolean) => React.ReactNode;
-}
-
-export function Field({ label, hint, error, required, className, children }: FieldProps) {
-  const id = useId();
-  const hintId = hint ? `${id}-hint` : undefined;
-  const errorId = error ? `${id}-error` : undefined;
-  const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined;
-
-  return (
-    <div className={cn('space-y-1.5', className)}>
-      {label && (
-        <label htmlFor={id} className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-          {label}
-          {required && <span className="text-role-accent ml-0.5">*</span>}
-        </label>
-      )}
-      {children(describedBy, Boolean(error))}
-      {hint && !error && (
-        <p id={hintId} className="text-xs text-slate-500">
-          {hint}
-        </p>
-      )}
-      {error && (
-        <p id={errorId} className="flex items-center gap-1 text-xs text-rose-600">
-          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-          <span>{error}</span>
-        </p>
-      )}
-    </div>
-  );
-}
-
 type InputOwnProps = {
   label?: string;
   hint?: string;
@@ -65,13 +26,17 @@ export const Input = React.forwardRef<HTMLInputElement, InputOwnProps & React.In
     return (
       <div className="space-y-1.5">
         {label && (
-          <label htmlFor={fieldId} className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+          <label htmlFor={fieldId} className="block text-xs font-bold uppercase tracking-wider text-slate-700">
             {label}
-            {required && <span className="text-role-accent ml-0.5">*</span>}
+            {required && <span className="ml-0.5 text-role-accent">*</span>}
           </label>
         )}
         <div className="relative">
-          {leftIcon && <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">{leftIcon}</span>}
+          {leftIcon && (
+            <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+              {leftIcon}
+            </span>
+          )}
           <input
             ref={ref}
             id={fieldId}
@@ -96,7 +61,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputOwnProps & React.In
         )}
         {error && (
           <p id={errorId} className="flex items-center gap-1 text-xs text-rose-600">
-            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+            <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
             <span>{error}</span>
           </p>
         )}
@@ -119,9 +84,9 @@ export const Textarea = React.forwardRef<
   return (
     <div className="space-y-1.5">
       {label && (
-        <label htmlFor={fieldId} className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+        <label htmlFor={fieldId} className="block text-xs font-bold uppercase tracking-wider text-slate-700">
           {label}
-          {required && <span className="text-role-accent ml-0.5">*</span>}
+          {required && <span className="ml-0.5 text-role-accent">*</span>}
         </label>
       )}
       <textarea
@@ -133,7 +98,7 @@ export const Textarea = React.forwardRef<
         aria-invalid={Boolean(error) || undefined}
         className={cn(
           CONTROL_BASE,
-          'h-auto py-2.5 resize-y',
+          'h-auto resize-y py-2.5',
           error && 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/20',
           className,
         )}
@@ -146,7 +111,7 @@ export const Textarea = React.forwardRef<
       )}
       {error && (
         <p id={errorId} className="flex items-center gap-1 text-xs text-rose-600">
-          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+          <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
           <span>{error}</span>
         </p>
       )}
@@ -168,9 +133,9 @@ export const Select = React.forwardRef<
   return (
     <div className="space-y-1.5">
       {label && (
-        <label htmlFor={fieldId} className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+        <label htmlFor={fieldId} className="block text-xs font-bold uppercase tracking-wider text-slate-700">
           {label}
-          {required && <span className="text-role-accent ml-0.5">*</span>}
+          {required && <span className="ml-0.5 text-role-accent">*</span>}
         </label>
       )}
       <select
@@ -191,7 +156,7 @@ export const Select = React.forwardRef<
       )}
       {error && (
         <p id={errorId} className="flex items-center gap-1 text-xs text-rose-600">
-          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+          <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
           <span>{error}</span>
         </p>
       )}

@@ -4,7 +4,20 @@ import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
-import { ArrowRight, Lock, Mail, ShieldAlert, Eye, EyeOff, ShieldCheck, Presentation, GraduationCap, Video, ClipboardList, Award } from 'lucide-react';
+import {
+  ArrowRight,
+  Lock,
+  Mail,
+  ShieldAlert,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  Presentation,
+  GraduationCap,
+  Video,
+  ClipboardList,
+  Award,
+} from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { Input } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
@@ -75,17 +88,22 @@ function LoginFormContent() {
 
   return (
     <m.div variants={stagger} initial="hidden" animate="show" className="w-full max-w-md">
-      <m.div variants={fadeUp} className="lg:hidden mb-6 flex justify-center">
+      <m.div variants={fadeUp} className="mb-6 flex justify-center lg:hidden">
         <Logo />
       </m.div>
 
-      <m.div variants={fadeUp} className="glass-card rounded-3xl p-7 sm:p-8 shadow-lift border border-white/80">
-        <h1 className="font-display text-xl font-bold text-slate-800 mb-1">Bienvenida al portal</h1>
-        <p className="text-slate-500 text-xs mb-6">Ingresa tus credenciales para acceder a tus clases, horarios y tareas.</p>
+      <m.div variants={fadeUp} className="glass-card rounded-3xl border border-white/80 p-7 shadow-lift sm:p-8">
+        <h1 className="mb-1 font-display text-xl font-bold text-slate-800">Bienvenida al portal</h1>
+        <p className="mb-6 text-xs text-slate-500">
+          Ingresa tus credenciales para acceder a tus clases, horarios y tareas.
+        </p>
 
         {error && (
-          <div role="alert" className="mb-5 p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2.5">
-            <ShieldAlert className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+          <div
+            role="alert"
+            className="mb-5 flex items-start gap-2.5 rounded-2xl border border-red-200 bg-red-50 p-3.5 text-xs text-red-700"
+          >
+            <ShieldAlert className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
             <span>{error}</span>
           </div>
         )}
@@ -99,7 +117,7 @@ function LoginFormContent() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="ejemplo@empoderas.org"
-            leftIcon={<Mail className="w-4 h-4" />}
+            leftIcon={<Mail className="h-4 w-4" />}
           />
 
           <Input
@@ -110,27 +128,32 @@ function LoginFormContent() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
-            leftIcon={<Lock className="w-4 h-4" />}
+            leftIcon={<Lock className="h-4 w-4" />}
             rightSlot={
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="text-slate-400 hover:text-slate-600 p-1"
+                className="p-1 text-slate-400 hover:text-slate-600"
                 aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
               >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             }
           />
 
-          <Button type="submit" loading={loading} className="w-full mt-2" rightIcon={<ArrowRight className="w-4 h-4" />}>
+          <Button
+            type="submit"
+            loading={loading}
+            className="mt-2 w-full"
+            rightIcon={<ArrowRight className="h-4 w-4" />}
+          >
             Ingresar a la plataforma
           </Button>
         </form>
 
         {SHOW_DEMO_LOGIN && (
-          <div className="mt-8 pt-6 border-t border-slate-200/60">
-            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center mb-3">
+          <div className="mt-8 border-t border-slate-200/60 pt-6">
+            <p className="mb-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-500">
               Acceso rápido de demostración
             </p>
             <div className="grid grid-cols-3 gap-2">
@@ -139,9 +162,9 @@ function LoginFormContent() {
                   key={acc.email}
                   type="button"
                   onClick={() => setTestAccount(acc.email, acc.password)}
-                  className="flex flex-col items-center gap-1 py-2.5 px-2 text-center rounded-xl bg-role-soft hover:brightness-95 text-role-accent text-xs font-bold border border-role-accent/20 transition-colors"
+                  className="flex flex-col items-center gap-1 rounded-xl border border-role-accent/20 bg-role-soft px-2 py-2.5 text-center text-xs font-bold text-role-accent transition-colors hover:brightness-95"
                 >
-                  <acc.icon className="w-4 h-4" strokeWidth={1.75} />
+                  <acc.icon className="h-4 w-4" strokeWidth={1.75} />
                   <span>{acc.label}</span>
                 </button>
               ))}
@@ -150,10 +173,13 @@ function LoginFormContent() {
         )}
       </m.div>
 
-      <p className="text-center text-xs text-slate-500 mt-6 font-medium">
+      <p className="mt-6 text-center text-xs font-medium text-slate-500">
         Empoderas Diversas © {new Date().getFullYear()} · Transformando realidades mediante educación
       </p>
-      <nav aria-label="Información legal" className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs font-medium text-slate-500">
+      <nav
+        aria-label="Información legal"
+        className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs font-medium text-slate-500"
+      >
         <Link href="/terminos" className="hover:text-role-accent hover:underline">
           Términos y condiciones
         </Link>
@@ -170,38 +196,41 @@ function LoginFormContent() {
 
 export default function LoginPage() {
   return (
-    <div data-role="brand" className="min-h-dvh relative flex items-stretch">
-      <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden rounded-r-3xl bg-gradient-to-br from-[#701a75] via-[#3b0764] to-[#1e1b4b]">
+    <div data-role="brand" className="relative flex min-h-dvh items-stretch">
+      <div className="relative hidden overflow-hidden rounded-r-3xl bg-gradient-to-br from-[#701a75] via-[#3b0764] to-[#1e1b4b] lg:flex lg:w-[55%]">
         <ParticleField variant="brand" intensity="hero" interactive contained tone="dark" />
         <AuroraBackground spotCount={3} />
         <m.div
           variants={stagger}
           initial="hidden"
           animate="show"
-          className="relative z-10 flex flex-col justify-center px-12 xl:px-16 text-white"
+          className="relative z-10 flex flex-col justify-center px-12 text-white xl:px-16"
         >
           <m.div variants={fadeUp}>
             <Logo variant="mark-only" />
           </m.div>
-          <m.h2 variants={fadeUp} className="font-display text-4xl xl:text-5xl leading-[1.05] tracking-tight font-bold mt-8 max-w-md">
+          <m.h2
+            variants={fadeUp}
+            className="mt-8 max-w-md font-display text-4xl font-bold leading-[1.05] tracking-tight xl:text-5xl"
+          >
             Tu red de mentoría para crecer sin límites
           </m.h2>
           <m.div variants={fadeUp} className="mt-10 space-y-4">
             {VALUE_POINTS.map((point, i) => (
               <div key={i} className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center flex-shrink-0">
-                  <point.icon className="w-[18px] h-[18px]" strokeWidth={1.75} />
+                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-white/10 backdrop-blur-md">
+                  <point.icon className="h-[18px] w-[18px]" strokeWidth={1.75} />
                 </div>
-                <p className="text-sm text-white/85 pt-1.5">{point.text}</p>
+                <p className="pt-1.5 text-sm text-white/85">{point.text}</p>
               </div>
             ))}
           </m.div>
         </m.div>
       </div>
 
-      <div className="flex-1 relative flex items-center justify-center p-4 sm:p-8 overflow-hidden">
+      <div className="relative flex flex-1 items-center justify-center overflow-hidden p-4 sm:p-8">
         <AuroraBackground spotCount={2} />
-        <Suspense fallback={<div className="text-purple-600 font-bold text-sm">Cargando portal...</div>}>
+        <Suspense fallback={<div className="text-sm font-bold text-purple-600">Cargando portal...</div>}>
           <LoginFormContent />
         </Suspense>
       </div>

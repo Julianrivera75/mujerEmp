@@ -39,7 +39,12 @@ export function SubmitAssignmentModal({ assignment, onClose, onSubmitted }: Subm
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(
           uploadedKey
-            ? { assignmentId: assignment.id, notes, fileUrl: uploadedKey, fileType: uploadedKey.match(/\.(png|jpe?g|webp)$/i) ? 'IMAGE' : 'PDF' }
+            ? {
+                assignmentId: assignment.id,
+                notes,
+                fileUrl: uploadedKey,
+                fileType: uploadedKey.match(/\.(png|jpe?g|webp)$/i) ? 'IMAGE' : 'PDF',
+              }
             : { assignmentId: assignment.id, notes, fileUrl: url, fileType: 'LINK' },
         ),
       });
@@ -48,8 +53,15 @@ export function SubmitAssignmentModal({ assignment, onClose, onSubmitted }: Subm
         const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (!reduceMotion) {
           try {
-            confetti({ particleCount: 60, spread: 50, origin: { y: 0.6 }, colors: ['#D946EF', '#9333EA', '#6366F1', '#14B8A6'] });
-          } catch {}
+            confetti({
+              particleCount: 60,
+              spread: 50,
+              origin: { y: 0.6 },
+              colors: ['#D946EF', '#9333EA', '#6366F1', '#14B8A6'],
+            });
+          } catch {
+            // la animación es opcional
+          }
         }
         onSubmitted();
       }
@@ -61,7 +73,12 @@ export function SubmitAssignmentModal({ assignment, onClose, onSubmitted }: Subm
   };
 
   return (
-    <Modal open={Boolean(assignment)} onClose={onClose} title="Enviar entrega de tarea" description={assignment ? `Tarea: ${assignment.title}` : undefined}>
+    <Modal
+      open={Boolean(assignment)}
+      onClose={onClose}
+      title="Enviar entrega de tarea"
+      description={assignment ? `Tarea: ${assignment.title}` : undefined}
+    >
       <form id="submission-form" onSubmit={handleSubmit} className="space-y-4">
         <Input
           label="Enlace de tu trabajo (Google Drive, Docs, Canva, GitHub)"
@@ -76,9 +93,9 @@ export function SubmitAssignmentModal({ assignment, onClose, onSubmitted }: Subm
         />
 
         <div className="flex items-center">
-          <div className="flex-1 h-px bg-slate-200" />
-          <span className="px-2 text-[10px] font-bold text-slate-400 uppercase">o subí un archivo</span>
-          <div className="flex-1 h-px bg-slate-200" />
+          <div className="h-px flex-1 bg-slate-200" />
+          <span className="px-2 text-[10px] font-bold uppercase text-slate-400">o subí un archivo</span>
+          <div className="h-px flex-1 bg-slate-200" />
         </div>
 
         <FileUpload
@@ -101,7 +118,7 @@ export function SubmitAssignmentModal({ assignment, onClose, onSubmitted }: Subm
         />
       </form>
 
-      <div className="flex items-center justify-end gap-3 pt-5 mt-5 border-t border-slate-100">
+      <div className="mt-5 flex items-center justify-end gap-3 border-t border-slate-100 pt-5">
         <Button variant="ghost" onClick={onClose} disabled={sending}>
           Cancelar
         </Button>

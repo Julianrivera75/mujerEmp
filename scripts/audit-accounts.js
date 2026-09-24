@@ -9,7 +9,17 @@
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 
-const WEAK_PASSWORDS = ['123456', '1234567', '12345678', '123456789', 'password', 'contraseña', 'empoderas', 'empoderas123', 'qwerty123'];
+const WEAK_PASSWORDS = [
+  '123456',
+  '1234567',
+  '12345678',
+  '123456789',
+  'password',
+  'contraseña',
+  'empoderas',
+  'empoderas123',
+  'qwerty123',
+];
 
 async function main() {
   const prisma = new PrismaClient();

@@ -17,7 +17,11 @@ const TONE_CLS: Record<NonNullable<BadgeProps['tone']>, string> = {
 export function Badge({ tone = 'neutral', className, ...rest }: BadgeProps) {
   return (
     <span
-      className={cn('inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold', TONE_CLS[tone], className)}
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold',
+        TONE_CLS[tone],
+        className,
+      )}
       {...rest}
     />
   );
@@ -43,8 +47,21 @@ interface StatusPillProps {
 /** Pastilla de estado: siempre punto + texto, nunca solo color. */
 export function StatusPill({ label, tone, pulse, className }: StatusPillProps) {
   return (
-    <Badge tone={tone === 'success' ? 'success' : tone === 'warning' ? 'warning' : tone === 'danger' ? 'danger' : tone === 'info' ? 'info' : 'neutral'} className={className}>
-      <span className={cn('w-1.5 h-1.5 rounded-full', DOT_TONE[tone], pulse && 'animate-pulse')} />
+    <Badge
+      tone={
+        tone === 'success'
+          ? 'success'
+          : tone === 'warning'
+            ? 'warning'
+            : tone === 'danger'
+              ? 'danger'
+              : tone === 'info'
+                ? 'info'
+                : 'neutral'
+      }
+      className={className}
+    >
+      <span className={cn('h-1.5 w-1.5 rounded-full', DOT_TONE[tone], pulse && 'animate-pulse')} />
       <span>{label}</span>
     </Badge>
   );

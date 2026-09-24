@@ -1,4 +1,4 @@
-export interface Submission {
+interface Submission {
   id: string;
   submittedAt: string;
   notes: string | null;

@@ -13,7 +13,7 @@ export default function BackgroundFX() {
   const variant = roleFromPathname(pathname ?? '');
 
   return (
-    <div data-fx aria-hidden="true" className="fixed inset-0 z-fx pointer-events-none">
+    <div data-fx aria-hidden="true" className="pointer-events-none fixed inset-0 z-fx">
       <AuroraBackground spotCount={2} />
       <ParticleField variant={variant} intensity="ambient" />
     </div>

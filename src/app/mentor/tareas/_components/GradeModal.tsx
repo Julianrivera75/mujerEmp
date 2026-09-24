@@ -43,7 +43,12 @@ export function GradeModal({ submission, onClose, onSaved }: GradeModalProps) {
   };
 
   return (
-    <Modal open={Boolean(submission)} onClose={onClose} title={submission ? `Calificar a ${submission.student.name}` : ''} size="sm">
+    <Modal
+      open={Boolean(submission)}
+      onClose={onClose}
+      title={submission ? `Calificar a ${submission.student.name}` : ''}
+      size="sm"
+    >
       <form id="grade-form" onSubmit={handleSubmit} className="space-y-4">
         <Input
           label="Calificación (escala de 1.0 a 5.0)"
@@ -66,7 +71,7 @@ export function GradeModal({ submission, onClose, onSaved }: GradeModalProps) {
         />
       </form>
 
-      <div className="flex items-center justify-end gap-3 pt-5 mt-5 border-t border-slate-100">
+      <div className="mt-5 flex items-center justify-end gap-3 border-t border-slate-100 pt-5">
         <Button variant="ghost" onClick={onClose} disabled={saving}>
           Cancelar
         </Button>

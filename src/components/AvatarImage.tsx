@@ -31,13 +31,12 @@ export default function AvatarImage({ avatarKey, fallbackInitial, className }: A
   }, [avatarKey]);
 
   if (url) {
-    // eslint-disable-next-line @next/next/no-img-element
     return <img src={url} alt="Foto de perfil" className={`object-cover ${className || ''}`} />;
   }
 
   return (
     <div
-      className={`flex items-center justify-center font-black bg-gradient-to-tr from-purple-600 via-fuchsia-600 to-indigo-600 text-white ${className || ''}`}
+      className={`flex items-center justify-center bg-gradient-to-tr from-purple-600 via-fuchsia-600 to-indigo-600 font-black text-white ${className || ''}`}
     >
       {fallbackInitial}
     </div>

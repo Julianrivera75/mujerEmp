@@ -36,7 +36,7 @@ export default function MentorAttendancesPage() {
   }, []);
 
   return (
-    <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
       <PageHeader
         eyebrow="Asistencia"
         title="Asistencia de estudiantes a mis clases"
@@ -73,12 +73,12 @@ export default function MentorAttendancesPage() {
                   <TRow key={log.id}>
                     <TCell>
                       <p className="font-bold text-slate-800">{log.student.name}</p>
-                      <p className="text-slate-400 text-[11px]">{log.student.email}</p>
+                      <p className="text-[11px] text-slate-400">{log.student.email}</p>
                     </TCell>
                     <TCell className="font-semibold text-slate-700">{log.classSession.title}</TCell>
                     <TCell>
                       <span className="flex items-center gap-1.5 font-medium text-slate-700">
-                        <Clock className="w-3.5 h-3.5 text-role-accent" />
+                        <Clock className="h-3.5 w-3.5 text-role-accent" />
                         {formatted}
                       </span>
                     </TCell>

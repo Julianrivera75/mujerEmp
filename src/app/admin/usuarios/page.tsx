@@ -96,7 +96,12 @@ export default function AdminUsersPage() {
       if (!res.ok) {
         show('error', data.error || 'No se pudo anonimizar la cuenta.');
       } else {
-        show('success', data.filesFailed ? 'Cuenta anonimizada. Algunos archivos no pudieron eliminarse del almacenamiento; revísalos.' : 'Cuenta anonimizada.');
+        show(
+          'success',
+          data.filesFailed
+            ? 'Cuenta anonimizada. Algunos archivos no pudieron eliminarse del almacenamiento; revísalos.'
+            : 'Cuenta anonimizada.',
+        );
         loadData();
       }
     } catch (err) {
@@ -124,28 +129,28 @@ export default function AdminUsersPage() {
   });
 
   return (
-    <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
       <PageHeader
         eyebrow="Comunidad"
         title="Gestión de usuarios"
         description="Crea estudiantes y mentoras, controla su estado y define sus fechas de vigencia."
         actions={
-          <Button leftIcon={<UserPlus className="w-4 h-4" />} onClick={handleOpenCreate}>
+          <Button leftIcon={<UserPlus className="h-4 w-4" />} onClick={handleOpenCreate}>
             Crear usuario
           </Button>
         }
       />
 
-      <Card variant="glass" className="p-5 flex flex-col md:flex-row items-center gap-4">
-        <div className="flex-1 w-full">
+      <Card variant="glass" className="flex flex-col items-center gap-4 p-5 md:flex-row">
+        <div className="w-full flex-1">
           <Input
             placeholder="Buscar por nombre, correo o documento..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            leftIcon={<Search className="w-4 h-4" />}
+            leftIcon={<Search className="h-4 w-4" />}
           />
         </div>
-        <div className="flex items-center gap-3 w-full md:w-auto">
+        <div className="flex w-full items-center gap-3 md:w-auto">
           <Select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="w-auto">
             <option value="ALL">Todos los roles</option>
             <option value="STUDENT">Estudiantes</option>
@@ -160,7 +165,7 @@ export default function AdminUsersPage() {
         </div>
       </Card>
 
-      <Card variant="glass" className="p-0 overflow-hidden">
+      <Card variant="glass" className="overflow-hidden p-0">
         {loading ? (
           <div className="divide-y divide-slate-100">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -173,7 +178,7 @@ export default function AdminUsersPage() {
             title="No hay usuarios con estos filtros"
             description="Ajusta la búsqueda o crea el primer usuario de este segmento."
             action={
-              <Button variant="secondary" leftIcon={<UserPlus className="w-4 h-4" />} onClick={handleOpenCreate}>
+              <Button variant="secondary" leftIcon={<UserPlus className="h-4 w-4" />} onClick={handleOpenCreate}>
                 Crear usuario
               </Button>
             }
@@ -202,7 +207,7 @@ export default function AdminUsersPage() {
                         <div className="flex items-center gap-3">
                           <Avatar fallbackInitial={u.name.charAt(0)} size="sm" />
                           <div>
-                            <p className="font-bold text-slate-800 leading-tight">{u.name}</p>
+                            <p className="font-bold leading-tight text-slate-800">{u.name}</p>
                             <p className="text-xs text-slate-500">{u.email}</p>
                             <div className="mt-1 flex flex-wrap items-center gap-1.5">
                               <RoleBadge role={u.role} />
@@ -212,7 +217,9 @@ export default function AdminUsersPage() {
                                   {u.guardianConsentAt ? 'Menor con autorización' : 'Menor sin autorización'}
                                 </Badge>
                               )}
-                              {!u.anonymizedAt && !u.termsAcceptedAt && <Badge tone="warning">Términos pendientes</Badge>}
+                              {!u.anonymizedAt && !u.termsAcceptedAt && (
+                                <Badge tone="warning">Términos pendientes</Badge>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -224,7 +231,10 @@ export default function AdminUsersPage() {
                             onChange={() => handleToggleStatus(u)}
                             label={`Cambiar estado de ${u.name}`}
                           />
-                          <StatusPill label={u.status === 'ACTIVO' ? 'Activo' : 'Inactivo'} tone={u.status === 'ACTIVO' ? 'success' : 'danger'} />
+                          <StatusPill
+                            label={u.status === 'ACTIVO' ? 'Activo' : 'Inactivo'}
+                            tone={u.status === 'ACTIVO' ? 'success' : 'danger'}
+                          />
                         </div>
                       </TCell>
                       <TCell className="text-xs">
@@ -260,19 +270,19 @@ export default function AdminUsersPage() {
                           <button
                             onClick={() => handleOpenEdit(u)}
                             disabled={Boolean(u.anonymizedAt)}
-                            className="p-2 rounded-xl text-role-accent hover:bg-role-soft transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                            className="rounded-xl p-2 text-role-accent transition-colors hover:bg-role-soft disabled:pointer-events-none disabled:opacity-40"
                             aria-label={`Editar ${u.name}`}
                           >
-                            <Edit3 className="w-4 h-4" />
+                            <Edit3 className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => setAnonTarget(u)}
                             disabled={Boolean(u.anonymizedAt)}
-                            className="p-2 rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                            className="rounded-xl p-2 text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 disabled:pointer-events-none disabled:opacity-40"
                             aria-label={`Anonimizar a ${u.name}`}
                             title="Anonimizar (derecho de supresión)"
                           >
-                            <UserX className="w-4 h-4" />
+                            <UserX className="h-4 w-4" />
                           </button>
                         </div>
                       </TCell>
@@ -283,37 +293,48 @@ export default function AdminUsersPage() {
             </div>
 
             {/* Tarjetas apiladas — < sm */}
-            <div className="sm:hidden divide-y divide-slate-100 p-3 space-y-3">
+            <div className="space-y-3 divide-y divide-slate-100 p-3 sm:hidden">
               {filteredUsers.map((u) => (
                 <div key={u.id} className="rounded-2xl border border-slate-100 p-4">
-                  <div className="flex items-center gap-3 mb-3">
+                  <div className="mb-3 flex items-center gap-3">
                     <Avatar fallbackInitial={u.name.charAt(0)} size="sm" />
                     <div className="flex-1">
-                      <p className="font-bold text-slate-800 leading-tight">{u.name}</p>
+                      <p className="font-bold leading-tight text-slate-800">{u.name}</p>
                       <RoleBadge role={u.role} className="mt-1" />
                     </div>
                     <button
                       onClick={() => handleOpenEdit(u)}
                       disabled={Boolean(u.anonymizedAt)}
-                      className="p-2 rounded-xl text-role-accent hover:bg-role-soft disabled:opacity-40"
+                      className="rounded-xl p-2 text-role-accent hover:bg-role-soft disabled:opacity-40"
                       aria-label={`Editar ${u.name}`}
                     >
-                      <Edit3 className="w-4 h-4" />
+                      <Edit3 className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => setAnonTarget(u)}
                       disabled={Boolean(u.anonymizedAt)}
-                      className="p-2 rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50 disabled:opacity-40"
+                      className="rounded-xl p-2 text-slate-500 hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
                       aria-label={`Anonimizar a ${u.name}`}
                     >
-                      <UserX className="w-4 h-4" />
+                      <UserX className="h-4 w-4" />
                     </button>
                   </div>
                   <ResponsiveRow
                     columns={[
-                      { label: 'Estado', value: <StatusPill label={u.status === 'ACTIVO' ? 'Activo' : 'Inactivo'} tone={u.status === 'ACTIVO' ? 'success' : 'danger'} /> },
+                      {
+                        label: 'Estado',
+                        value: (
+                          <StatusPill
+                            label={u.status === 'ACTIVO' ? 'Activo' : 'Inactivo'}
+                            tone={u.status === 'ACTIVO' ? 'success' : 'danger'}
+                          />
+                        ),
+                      },
                       { label: 'Documento', value: u.documentId || 'Sin documento' },
-                      { label: 'Vigencia', value: u.endDate ? new Date(u.endDate).toLocaleDateString('es-ES') : 'Indefinido' },
+                      {
+                        label: 'Vigencia',
+                        value: u.endDate ? new Date(u.endDate).toLocaleDateString('es-ES') : 'Indefinido',
+                      },
                     ]}
                   />
                 </div>

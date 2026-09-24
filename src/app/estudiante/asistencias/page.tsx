@@ -32,8 +32,8 @@ export default function StudentAttendanceHistoryPage() {
         setTotalClasses((classesData.classes || []).length);
 
         const attData = await attRes.json();
-        const allAtt: AttendanceItem[] = attData.attendances || [];
-        setAttendances(allAtt.filter((a: any) => a.student.id === user.id));
+        const allAtt: (AttendanceItem & { student: { id: string } })[] = attData.attendances || [];
+        setAttendances(allAtt.filter((a) => a.student.id === user.id));
       } catch (err) {
         console.error('Error cargando asistencias:', err);
       } finally {
@@ -45,21 +45,28 @@ export default function StudentAttendanceHistoryPage() {
   const percentage = totalClasses > 0 ? Math.round((attendances.length / totalClasses) * 100) : 0;
 
   return (
-    <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
       <PageHeader
         eyebrow="Mi progreso"
         title="Mi historial de asistencia virtual"
         description="Cada vez que haces clic en el enlace de Google Meet para conectarte a tu clase, el sistema registra tu asistencia automáticamente."
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
         <StatCard label="Clases asistidas" value={attendances.length} icon={CheckCircle2} />
         <StatCard label="Total clases programadas" value={totalClasses} icon={Calendar} />
-        <StatCard label="Porcentaje de participación" value={percentage} icon={Award} hint="% de las clases programadas" />
+        <StatCard
+          label="Porcentaje de participación"
+          value={percentage}
+          icon={Award}
+          hint="% de las clases programadas"
+        />
       </div>
 
       <Card variant="glass" className="p-6">
-        <h2 className="font-display text-lg font-bold text-slate-800 mb-4">Detalle de clases conectadas en Google Meet</h2>
+        <h2 className="mb-4 font-display text-lg font-bold text-slate-800">
+          Detalle de clases conectadas en Google Meet
+        </h2>
 
         {loading ? (
           <div className="divide-y divide-slate-100">
@@ -68,7 +75,11 @@ export default function StudentAttendanceHistoryPage() {
             ))}
           </div>
         ) : attendances.length === 0 ? (
-          <EmptyState icon={CheckCircle2} title="Aún no has registrado asistencias" description="Conéctate a tus próximas clases para marcar tu presencia." />
+          <EmptyState
+            icon={CheckCircle2}
+            title="Aún no has registrado asistencias"
+            description="Conéctate a tus próximas clases para marcar tu presencia."
+          />
         ) : (
           <Table>
             <THead>
@@ -88,10 +99,10 @@ export default function StudentAttendanceHistoryPage() {
                 return (
                   <TRow key={item.id}>
                     <TCell className="font-bold text-slate-800">{item.classSession.title}</TCell>
-                    <TCell className="text-slate-600 font-medium">{item.classSession.mentor.name}</TCell>
+                    <TCell className="font-medium text-slate-600">{item.classSession.mentor.name}</TCell>
                     <TCell>
                       <span className="flex items-center gap-1.5 font-semibold text-slate-700">
-                        <Clock className="w-3.5 h-3.5 text-emerald-600" />
+                        <Clock className="h-3.5 w-3.5 text-emerald-600" />
                         {formatted}
                       </span>
                     </TCell>

@@ -29,7 +29,16 @@ interface ModalProps {
   children: React.ReactNode;
 }
 
-export function Modal({ open, onClose, title, description, size = 'md', dismissible = true, footer, children }: ModalProps) {
+export function Modal({
+  open,
+  onClose,
+  title,
+  description,
+  size = 'md',
+  dismissible = true,
+  footer,
+  children,
+}: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<Element | null>(null);
   const titleId = useRef(`modal-title-${Math.random().toString(36).slice(2)}`).current;
@@ -90,7 +99,7 @@ export function Modal({ open, onClose, title, description, size = 'md', dismissi
   return createPortal(
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-modal flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="fixed inset-0 z-modal flex items-end justify-center p-0 sm:items-center sm:p-4">
           <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -111,17 +120,17 @@ export function Modal({ open, onClose, title, description, size = 'md', dismissi
             exit={{ opacity: 0, scale: 0.96, y: 8 }}
             transition={{ duration: DURATION.base, ease: EASE }}
             className={cn(
-              'relative w-full glass-panel rounded-t-3xl sm:rounded-3xl shadow-lift flex flex-col max-h-[calc(100dvh-2rem)]',
+              'glass-panel relative flex max-h-[calc(100dvh-2rem)] w-full flex-col rounded-t-3xl shadow-lift sm:rounded-3xl',
               SIZE_CLS[size],
             )}
           >
-            <div className="flex items-start justify-between gap-4 p-5 sm:p-6 border-b border-slate-100/80">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100/80 p-5 sm:p-6">
               <div>
                 <h2 id={titleId} className="font-display text-lg font-bold text-slate-800">
                   {title}
                 </h2>
                 {description && (
-                  <p id={descId} className="text-sm text-slate-500 mt-0.5">
+                  <p id={descId} className="mt-0.5 text-sm text-slate-500">
                     {description}
                   </p>
                 )}
@@ -130,16 +139,16 @@ export function Modal({ open, onClose, title, description, size = 'md', dismissi
                 <button
                   onClick={onClose}
                   aria-label="Cerrar"
-                  className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors flex-shrink-0"
+                  className="flex-shrink-0 rounded-xl p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="h-5 w-5" />
                 </button>
               )}
             </div>
 
-            <div className="p-5 sm:p-6 overflow-y-auto">{children}</div>
+            <div className="overflow-y-auto p-5 sm:p-6">{children}</div>
 
-            {footer && <div className="p-5 sm:p-6 pt-0 flex items-center justify-end gap-2.5">{footer}</div>}
+            {footer && <div className="flex items-center justify-end gap-2.5 p-5 pt-0 sm:p-6">{footer}</div>}
           </m.div>
         </div>
       )}

@@ -17,7 +17,13 @@ interface AttendanceLog {
   id: string;
   joinedAt: string;
   student: { id: string; name: string; email: string; documentId: string | null };
-  classSession: { id: string; title: string; dateStart: string; meetLink: string | null; mentor: { id: string; name: string } };
+  classSession: {
+    id: string;
+    title: string;
+    dateStart: string;
+    meetLink: string | null;
+    mentor: { id: string; name: string };
+  };
 }
 
 interface StudentSummary {
@@ -96,47 +102,50 @@ export default function AdminAttendancePage() {
   };
 
   return (
-    <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
       <PageHeader
         eyebrow="Reportes"
         title="Control y reporte de asistencias"
         description="Registro automático generado cada vez que una estudiante hace clic en el enlace de Google Meet."
         actions={
-          <Button variant="secondary" leftIcon={<Download className="w-4 h-4" />} onClick={exportToCsv}>
+          <Button variant="secondary" leftIcon={<Download className="h-4 w-4" />} onClick={exportToCsv}>
             Exportar CSV
           </Button>
         }
       />
 
       <div>
-        <h2 className="font-display text-lg font-bold text-slate-800 flex items-center gap-2 mb-4">
-          <Award className="w-5 h-5 text-role-accent" />
+        <h2 className="mb-4 flex items-center gap-2 font-display text-lg font-bold text-slate-800">
+          <Award className="h-5 w-5 text-role-accent" />
           <span>Porcentaje de asistencia por estudiante</span>
         </h2>
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 3 }).map((_, i) => (
-              <Card key={i} variant="glass" className="p-5 h-32 animate-pulse" />
+              <Card key={i} variant="glass" className="h-32 animate-pulse p-5" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {studentSummary.map((st) => (
-              <Card key={st.id} variant="glass" className="p-5 flex flex-col justify-between">
+              <Card key={st.id} variant="glass" className="flex flex-col justify-between p-5">
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-bold text-slate-800 text-sm">{st.name}</span>
-                    <StatusPill label={st.status === 'ACTIVO' ? 'Activo' : 'Inactivo'} tone={st.status === 'ACTIVO' ? 'success' : 'danger'} />
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-sm font-bold text-slate-800">{st.name}</span>
+                    <StatusPill
+                      label={st.status === 'ACTIVO' ? 'Activo' : 'Inactivo'}
+                      tone={st.status === 'ACTIVO' ? 'success' : 'danger'}
+                    />
                   </div>
-                  <p className="text-xs text-slate-500 mb-3">{st.email}</p>
+                  <p className="mb-3 text-xs text-slate-500">{st.email}</p>
                   <ProgressBar value={st.percentage} className="mb-2" />
                 </div>
-                <div className="flex items-center justify-between text-xs text-slate-600 pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-between border-t border-slate-100 pt-2 text-xs text-slate-600">
                   <span>
                     Asistió a <strong>{st.totalAttended}</strong> de {st.totalEnrolled}
                   </span>
-                  <span className="font-black text-role-accent text-sm">{st.percentage}%</span>
+                  <span className="text-sm font-black text-role-accent">{st.percentage}%</span>
                 </div>
               </Card>
             ))}
@@ -145,13 +154,20 @@ export default function AdminAttendancePage() {
       </div>
 
       <Card variant="glass" className="p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h2 className="font-display text-lg font-bold text-slate-800">Historial detallado de ingresos</h2>
-            <p className="text-xs text-slate-500">Fecha y hora exacta en la que cada estudiante dio clic para unirse a la sesión.</p>
+            <p className="text-xs text-slate-500">
+              Fecha y hora exacta en la que cada estudiante dio clic para unirse a la sesión.
+            </p>
           </div>
           <div className="w-full sm:w-72">
-            <Input placeholder="Filtrar por alumna o clase..." value={search} onChange={(e) => setSearch(e.target.value)} leftIcon={<Search className="w-4 h-4" />} />
+            <Input
+              placeholder="Filtrar por alumna o clase..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              leftIcon={<Search className="h-4 w-4" />}
+            />
           </div>
         </div>
 
@@ -185,15 +201,15 @@ export default function AdminAttendancePage() {
                   <TRow key={log.id}>
                     <TCell>
                       <p className="font-bold text-slate-800">{log.student.name}</p>
-                      <p className="text-slate-400 text-[11px]">{log.student.email}</p>
+                      <p className="text-[11px] text-slate-400">{log.student.email}</p>
                     </TCell>
                     <TCell>
                       <p className="font-semibold text-slate-700">{log.classSession.title}</p>
                     </TCell>
-                    <TCell className="text-slate-600 font-medium">{log.classSession.mentor.name}</TCell>
+                    <TCell className="font-medium text-slate-600">{log.classSession.mentor.name}</TCell>
                     <TCell>
                       <span className="flex items-center gap-1.5 font-semibold text-slate-700">
-                        <Clock className="w-3.5 h-3.5 text-emerald-600" />
+                        <Clock className="h-3.5 w-3.5 text-emerald-600" />
                         {formatted}
                       </span>
                     </TCell>

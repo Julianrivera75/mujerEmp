@@ -12,25 +12,39 @@ export default function TermsPage() {
     >
       <LegalSection title="1. Quiénes somos">
         <p>
-          La plataforma es operada por {CONTROLLER.legalName}, identificada con NIT {CONTROLLER.taxId}, con domicilio en {CONTROLLER.address} (en adelante, «la Organización»).
-          Puedes escribirnos a {CONTROLLER.email}.
+          La plataforma es operada por {CONTROLLER.legalName}, identificada con NIT {CONTROLLER.taxId}, con domicilio en{' '}
+          {CONTROLLER.address} (en adelante, «la Organización»). Puedes escribirnos a {CONTROLLER.email}.
         </p>
       </LegalSection>
 
       <LegalSection title="2. Definiciones">
         <LegalList
           items={[
-            <><strong>Plataforma:</strong> el sitio web y los servicios asociados de gestión de clases virtuales, asistencia, tareas, materiales y constancias.</>,
-            <><strong>Usuaria:</strong> toda persona con una cuenta activa, ya sea estudiante, mentora o administradora.</>,
-            <><strong>Estudiante:</strong> persona inscrita en las clases del programa de formación.</>,
-            <><strong>Mentora:</strong> persona que dicta clases, asigna tareas y retroalimenta a las estudiantes.</>,
+            <>
+              <strong>Plataforma:</strong> el sitio web y los servicios asociados de gestión de clases virtuales,
+              asistencia, tareas, materiales y constancias.
+            </>,
+            <>
+              <strong>Usuaria:</strong> toda persona con una cuenta activa, ya sea estudiante, mentora o administradora.
+            </>,
+            <>
+              <strong>Estudiante:</strong> persona inscrita en las clases del programa de formación.
+            </>,
+            <>
+              <strong>Mentora:</strong> persona que dicta clases, asigna tareas y retroalimenta a las estudiantes.
+            </>,
           ]}
         />
       </LegalSection>
 
       <LegalSection title="3. Naturaleza del servicio">
         <p>
-          El programa es una actividad de formación complementaria. La participación en él, y la constancia que la Plataforma genera, <strong>no constituyen título académico, ni certificación de educación formal, ni certificación de competencias laborales</strong>{' '}
+          El programa es una actividad de formación complementaria. La participación en él, y la constancia que la
+          Plataforma genera,{' '}
+          <strong>
+            no constituyen título académico, ni certificación de educación formal, ni certificación de competencias
+            laborales
+          </strong>{' '}
           reconocida oficialmente, salvo que la Organización lo indique de forma expresa y por escrito.
         </p>
       </LegalSection>
@@ -48,8 +62,10 @@ export default function TermsPage() {
 
       <LegalSection title="5. Personas menores de edad">
         <p>
-          Las personas menores de 18 años solo pueden usar la Plataforma si su madre, padre o representante legal ha dado su autorización previa, expresa e informada, que la Organización registra antes de habilitar el acceso.
-          El tratamiento de los datos de menores se rige por la Política de tratamiento de datos personales y por el interés superior del menor.
+          Las personas menores de 18 años solo pueden usar la Plataforma si su madre, padre o representante legal ha
+          dado su autorización previa, expresa e informada, que la Organización registra antes de habilitar el acceso.
+          El tratamiento de los datos de menores se rige por la Política de tratamiento de datos personales y por el
+          interés superior del menor.
         </p>
       </LegalSection>
 
@@ -68,12 +84,14 @@ export default function TermsPage() {
 
       <LegalSection title="7. Clases virtuales y grabaciones">
         <p>
-          Las clases se realizan por videollamada mediante servicios de terceros (por ejemplo, Google Meet). Algunas sesiones pueden ser grabadas y publicadas en un canal de YouTube, para que las participantes del programa puedan repasarlas.
-          La grabación puede captar tu imagen, tu voz y tus intervenciones.
+          Las clases se realizan por videollamada mediante servicios de terceros (por ejemplo, Google Meet). Algunas
+          sesiones pueden ser grabadas y publicadas en un canal de YouTube, para que las participantes del programa
+          puedan repasarlas. La grabación puede captar tu imagen, tu voz y tus intervenciones.
         </p>
         <p>
-          Al aceptar estos términos autorizas de forma expresa esa grabación y su uso con fines pedagógicos dentro del programa. Puedes mantener tu cámara apagada.
-          Si quieres que una grabación en la que apareces deje de estar disponible, escríbenos a {CONTROLLER.email} y la retiraremos en un plazo razonable.
+          Al aceptar estos términos autorizas de forma expresa esa grabación y su uso con fines pedagógicos dentro del
+          programa. Puedes mantener tu cámara apagada. Si quieres que una grabación en la que apareces deje de estar
+          disponible, escríbenos a {CONTROLLER.email} y la retiraremos en un plazo razonable.
         </p>
       </LegalSection>
 
@@ -89,8 +107,10 @@ export default function TermsPage() {
 
       <LegalSection title="9. Asistencia y constancia de participación">
         <p>
-          La asistencia se registra cuando ingresas a la sala desde el botón de la Plataforma. La constancia de participación se habilita cuando tu asistencia registrada alcanza al menos el {CERTIFICATE_MIN_ATTENDANCE_PERCENT}% de las sesiones en vivo en las que estás inscrita.
-          La Organización puede negar o revocar una constancia si comprueba información falsa o un uso fraudulento de la Plataforma.
+          La asistencia se registra cuando ingresas a la sala desde el botón de la Plataforma. La constancia de
+          participación se habilita cuando tu asistencia registrada alcanza al menos el{' '}
+          {CERTIFICATE_MIN_ATTENDANCE_PERCENT}% de las sesiones en vivo en las que estás inscrita. La Organización puede
+          negar o revocar una constancia si comprueba información falsa o un uso fraudulento de la Plataforma.
         </p>
       </LegalSection>
 
@@ -106,21 +126,24 @@ export default function TermsPage() {
 
       <LegalSection title="11. Protección de datos personales">
         <p>
-          El tratamiento de tus datos personales se rige por la Política de tratamiento de datos personales, disponible en la Plataforma, conforme a la Ley 1581 de 2012 y sus normas reglamentarias.
+          El tratamiento de tus datos personales se rige por la Política de tratamiento de datos personales, disponible
+          en la Plataforma, conforme a la Ley 1581 de 2012 y sus normas reglamentarias.
         </p>
       </LegalSection>
 
       <LegalSection title="12. Cambios en estos términos">
         <p>
-          Podemos actualizar estos términos. Cuando el cambio sea relevante te lo informaremos en la Plataforma y te pediremos aceptar la nueva versión para seguir usándola.
-          La versión vigente y su fecha aparecen al inicio de este documento.
+          Podemos actualizar estos términos. Cuando el cambio sea relevante te lo informaremos en la Plataforma y te
+          pediremos aceptar la nueva versión para seguir usándola. La versión vigente y su fecha aparecen al inicio de
+          este documento.
         </p>
       </LegalSection>
 
       <LegalSection title="13. Ley aplicable y reclamaciones">
         <p>
-          Estos términos se rigen por las leyes de la República de Colombia. Ante cualquier inconformidad, te invitamos a escribirnos primero a {CONTROLLER.email} para buscar una solución directa.
-          Lo anterior no limita tu derecho de acudir a las autoridades competentes, como la Superintendencia de Industria y Comercio.
+          Estos términos se rigen por las leyes de la República de Colombia. Ante cualquier inconformidad, te invitamos
+          a escribirnos primero a {CONTROLLER.email} para buscar una solución directa. Lo anterior no limita tu derecho
+          de acudir a las autoridades competentes, como la Superintendencia de Industria y Comercio.
         </p>
       </LegalSection>
     </LegalDocument>

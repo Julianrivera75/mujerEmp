@@ -16,12 +16,12 @@ Si una migración falla, la aplicación no arranca. Por eso toda migración debe
 
 Se definen en el servicio de la aplicación. La lista completa está en el README.
 
-| Variable | Notas |
-| --- | --- |
-| `DATABASE_URL` | La inyecta Railway al enlazar PostgreSQL. |
-| `JWT_SECRET` | Obligatoria en producción: sin ella la aplicación no compila ni arranca. |
-| `S3_*` | Credenciales del bucket. |
-| `NEXT_PUBLIC_SHOW_DEMO_LOGIN` | Dejar sin definir en producción. Es una variable de compilación. |
+| Variable                      | Notas                                                                    |
+| ----------------------------- | ------------------------------------------------------------------------ |
+| `DATABASE_URL`                | La inyecta Railway al enlazar PostgreSQL.                                |
+| `JWT_SECRET`                  | Obligatoria en producción: sin ella la aplicación no compila ni arranca. |
+| `S3_*`                        | Credenciales del bucket.                                                 |
+| `NEXT_PUBLIC_SHOW_DEMO_LOGIN` | Dejar sin definir en producción. Es una variable de compilación.         |
 
 ## Migraciones de base de datos
 

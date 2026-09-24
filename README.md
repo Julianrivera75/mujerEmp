@@ -4,11 +4,11 @@ Plataforma web de capacitación y mentoría virtual. Gestiona clases en vivo por
 
 ## Roles
 
-| Rol | Qué hace |
-| --- | --- |
+| Rol            | Qué hace                                                                                                                              |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | Administradora | Crea y gestiona usuarias, programa clases, asigna mentoras e inscribe estudiantes, consulta y exporta asistencias, anonimiza cuentas. |
-| Mentora | Ve sus clases, publica el enlace de Meet y de la grabación, sube materiales, crea tareas y califica entregas. |
-| Estudiante | Ingresa a sus clases (la asistencia se registra al entrar), ve grabaciones y materiales, entrega tareas y descarga su constancia. |
+| Mentora        | Ve sus clases, publica el enlace de Meet y de la grabación, sube materiales, crea tareas y califica entregas.                         |
+| Estudiante     | Ingresa a sus clases (la asistencia se registra al entrar), ve grabaciones y materiales, entrega tareas y descarga su constancia.     |
 
 ## Stack
 
@@ -28,12 +28,12 @@ Plataforma web de capacitación y mentoría virtual. Gestiona clases en vivo por
 
 Copia `.env.example` a `.env` y completa los valores.
 
-| Variable | Obligatoria | Descripción |
-| --- | --- | --- |
-| `DATABASE_URL` | Sí | Cadena de conexión de PostgreSQL. |
-| `JWT_SECRET` | Sí en producción | Secreto largo y aleatorio para firmar la sesión. |
-| `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET_NAME` | Para subir archivos | Credenciales del almacenamiento. `S3_REGION` es opcional. |
-| `NEXT_PUBLIC_SHOW_DEMO_LOGIN` | No | Con `true` muestra los accesos rápidos de demostración. Solo para desarrollo. |
+| Variable                                                                    | Obligatoria         | Descripción                                                                   |
+| --------------------------------------------------------------------------- | ------------------- | ----------------------------------------------------------------------------- |
+| `DATABASE_URL`                                                              | Sí                  | Cadena de conexión de PostgreSQL.                                             |
+| `JWT_SECRET`                                                                | Sí en producción    | Secreto largo y aleatorio para firmar la sesión.                              |
+| `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET_NAME` | Para subir archivos | Credenciales del almacenamiento. `S3_REGION` es opcional.                     |
+| `NEXT_PUBLIC_SHOW_DEMO_LOGIN`                                               | No                  | Con `true` muestra los accesos rápidos de demostración. Solo para desarrollo. |
 
 ## Puesta en marcha local
 
@@ -49,13 +49,13 @@ La aplicación queda en http://localhost:3000. El script `prisma/seed.js` se blo
 
 ## Scripts
 
-| Comando | Uso |
-| --- | --- |
-| `npm run dev` | Servidor de desarrollo. |
-| `npm run build` | Genera el cliente de Prisma y compila para producción. |
-| `npm run start` | Sirve la compilación. |
-| `npm run prisma:migrate:deploy` | Aplica las migraciones pendientes. |
-| `npm run prisma:generate` | Regenera el cliente de Prisma. |
+| Comando                         | Uso                                                    |
+| ------------------------------- | ------------------------------------------------------ |
+| `npm run dev`                   | Servidor de desarrollo.                                |
+| `npm run build`                 | Genera el cliente de Prisma y compila para producción. |
+| `npm run start`                 | Sirve la compilación.                                  |
+| `npm run prisma:migrate:deploy` | Aplica las migraciones pendientes.                     |
+| `npm run prisma:generate`       | Regenera el cliente de Prisma.                         |
 
 ## Estructura
 

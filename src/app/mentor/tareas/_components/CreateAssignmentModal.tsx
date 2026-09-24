@@ -60,12 +60,31 @@ export function CreateAssignmentModal({ open, classes, onClose, onCreated }: Cre
             </option>
           ))}
         </Select>
-        <Input label="Título de la tarea" required placeholder="Ej: Ensayo reflexivo sobre liderazgo y género" value={title} onChange={(e) => setTitle(e.target.value)} />
-        <Textarea label="Instrucciones detalladas" required rows={3} placeholder="Explica qué deben entregar las estudiantes..." value={description} onChange={(e) => setDescription(e.target.value)} />
-        <Input label="Fecha y hora límite de entrega" type="datetime-local" required value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+        <Input
+          label="Título de la tarea"
+          required
+          placeholder="Ej: Ensayo reflexivo sobre liderazgo y género"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+        <Textarea
+          label="Instrucciones detalladas"
+          required
+          rows={3}
+          placeholder="Explica qué deben entregar las estudiantes..."
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+        <Input
+          label="Fecha y hora límite de entrega"
+          type="datetime-local"
+          required
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
+        />
       </form>
 
-      <div className="flex items-center justify-end gap-3 pt-5 mt-5 border-t border-slate-100">
+      <div className="mt-5 flex items-center justify-end gap-3 border-t border-slate-100 pt-5">
         <Button variant="ghost" onClick={onClose} disabled={creating}>
           Cancelar
         </Button>

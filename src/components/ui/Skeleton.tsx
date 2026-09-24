@@ -11,17 +11,9 @@ function Shimmer() {
   );
 }
 
-export function SkeletonLine({ className }: { className?: string }) {
-  return (
-    <div className={shimmerBase(cn('h-3.5', className))}>
-      <Shimmer />
-    </div>
-  );
-}
-
 export function SkeletonCard({ className }: { className?: string }) {
   return (
-    <div className={cn('glass-card rounded-2xl p-6 border border-white space-y-3', className)}>
+    <div className={cn('glass-card space-y-3 rounded-2xl border border-white p-6', className)}>
       <div className={shimmerBase('h-4 w-1/3')}>
         <Shimmer />
       </div>
@@ -38,7 +30,7 @@ export function SkeletonCard({ className }: { className?: string }) {
 export function SkeletonRow({ className }: { className?: string }) {
   return (
     <div className={cn('flex items-center gap-4 p-4', className)}>
-      <div className={shimmerBase('w-10 h-10 rounded-xl flex-shrink-0')}>
+      <div className={shimmerBase('h-10 w-10 flex-shrink-0 rounded-xl')}>
         <Shimmer />
       </div>
       <div className="flex-1 space-y-2">

@@ -69,7 +69,21 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { name, email, password, role, status, documentId, phone, startDate, endDate, isMinor, guardianName, guardianContact, guardianConsent } = body;
+    const {
+      name,
+      email,
+      password,
+      role,
+      status,
+      documentId,
+      phone,
+      startDate,
+      endDate,
+      isMinor,
+      guardianName,
+      guardianContact,
+      guardianConsent,
+    } = body;
 
     const cleanName = cleanText(name, 120);
     if (!cleanName || !email || !password || !role) {
@@ -132,7 +146,22 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { id, name, email, password, role, status, documentId, phone, startDate, endDate, isMinor, guardianName, guardianContact, guardianConsent } = body;
+    const {
+      id,
+      name,
+      email,
+      password,
+      role,
+      status,
+      documentId,
+      phone,
+      startDate,
+      endDate,
+      isMinor,
+      guardianName,
+      guardianContact,
+      guardianConsent,
+    } = body;
 
     if (typeof id !== 'string' || !id) {
       return NextResponse.json({ error: 'ID de usuario requerido.' }, { status: 400 });
@@ -158,7 +187,10 @@ export async function PUT(req: Request) {
 
     // Una administradora no puede quitarse a sí misma el acceso (dejaría el sistema sin administración).
     if (id === currentUser.id && ((role !== undefined && role !== 'ADMIN') || status === 'INACTIVO')) {
-      return NextResponse.json({ error: 'No puedes cambiar tu propio rol ni desactivar tu propia cuenta.' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'No puedes cambiar tu propio rol ni desactivar tu propia cuenta.' },
+        { status: 400 },
+      );
     }
 
     const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : undefined;

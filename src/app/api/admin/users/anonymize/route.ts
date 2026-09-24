@@ -27,7 +27,12 @@ export async function POST(req: Request) {
 
     const target = await prisma.user.findUnique({
       where: { id },
-      select: { id: true, avatar: true, anonymizedAt: true, submissions: { select: { id: true, fileUrl: true, fileType: true } } },
+      select: {
+        id: true,
+        avatar: true,
+        anonymizedAt: true,
+        submissions: { select: { id: true, fileUrl: true, fileType: true } },
+      },
     });
     if (!target) {
       return NextResponse.json({ error: 'Usuario no encontrado.' }, { status: 404 });

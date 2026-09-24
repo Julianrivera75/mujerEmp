@@ -13,7 +13,7 @@ export default async function EstudianteLayout({ children }: { children: React.R
   requireAcceptedTerms(user);
 
   return (
-    <div data-role="student" className="min-h-dvh flex flex-col">
+    <div data-role="student" className="flex min-h-dvh flex-col">
       <UserProvider user={user}>
         <div className="no-print">
           <Navbar user={user} />

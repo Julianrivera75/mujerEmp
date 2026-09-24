@@ -48,7 +48,10 @@ export async function POST(req: Request) {
       }
     } else {
       if (!keyBelongsTo(fileUrl, 'submission', user.id) || !(await verifyUploadedObject(fileUrl, 'submission'))) {
-        return NextResponse.json({ error: 'El archivo no es válido. Sube un PDF o una imagen de hasta 15 MB.' }, { status: 400 });
+        return NextResponse.json(
+          { error: 'El archivo no es válido. Sube un PDF o una imagen de hasta 15 MB.' },
+          { status: 400 },
+        );
       }
       storedFile = fileUrl;
     }
@@ -58,7 +61,14 @@ export async function POST(req: Request) {
     const submission = await prisma.submission.upsert({
       where: { assignmentId_studentId: { assignmentId, studentId: user.id } },
       update: { notes: cleanNotes, fileUrl: storedFile, fileType: type, submittedAt: new Date() },
-      create: { assignmentId, studentId: user.id, notes: cleanNotes, fileUrl: storedFile, fileType: type, submittedAt: new Date() },
+      create: {
+        assignmentId,
+        studentId: user.id,
+        notes: cleanNotes,
+        fileUrl: storedFile,
+        fileType: type,
+        submittedAt: new Date(),
+      },
     });
 
     return NextResponse.json({ success: true, submission });

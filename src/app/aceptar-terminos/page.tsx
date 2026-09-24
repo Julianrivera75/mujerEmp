@@ -17,5 +17,12 @@ export default async function AcceptTermsPage() {
 
   if (alreadyAccepted) redirect(homeHref);
 
-  return <AcceptTermsForm userName={user.name} version={CURRENT_TERMS_VERSION} blockedMinor={blockedMinor} homeHref={homeHref} />;
+  return (
+    <AcceptTermsForm
+      userName={user.name}
+      version={CURRENT_TERMS_VERSION}
+      blockedMinor={blockedMinor}
+      homeHref={homeHref}
+    />
+  );
 }

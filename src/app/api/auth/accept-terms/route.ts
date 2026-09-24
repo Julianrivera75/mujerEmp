@@ -14,16 +14,25 @@ export async function POST(req: Request) {
 
     const { version } = await req.json();
     if (version !== CURRENT_TERMS_VERSION) {
-      return NextResponse.json({ error: 'La versión de los términos cambió. Recarga la página e inténtalo de nuevo.' }, { status: 409 });
+      return NextResponse.json(
+        { error: 'La versión de los términos cambió. Recarga la página e inténtalo de nuevo.' },
+        { status: 409 },
+      );
     }
 
-    const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { isMinor: true, guardianConsentAt: true } });
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { isMinor: true, guardianConsentAt: true },
+    });
     if (!dbUser) {
       return NextResponse.json({ error: 'Usuario no encontrado.' }, { status: 404 });
     }
     if (dbUser.isMinor && !dbUser.guardianConsentAt) {
       return NextResponse.json(
-        { error: 'Tu cuenta requiere la autorización de tu madre, padre o representante legal. Comunícate con la administración.' },
+        {
+          error:
+            'Tu cuenta requiere la autorización de tu madre, padre o representante legal. Comunícate con la administración.',
+        },
         { status: 403 },
       );
     }

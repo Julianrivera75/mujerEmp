@@ -31,7 +31,8 @@ export default function CookiesPage() {
           </table>
         </div>
         <p>
-          Es una cookie estrictamente necesaria: sin ella no podrías ingresar, por eso no requiere un consentimiento separado. No es accesible desde scripts del navegador y solo se envía por conexión segura.
+          Es una cookie estrictamente necesaria: sin ella no podrías ingresar, por eso no requiere un consentimiento
+          separado. No es accesible desde scripts del navegador y solo se envía por conexión segura.
         </p>
       </LegalSection>
 
@@ -41,14 +42,16 @@ export default function CookiesPage() {
 
       <LegalSection title="Contenido de terceros">
         <p>
-          Las grabaciones de las clases se muestran con el reproductor de YouTube en su modo de privacidad ampliada. Aun así, al reproducir un video Google puede guardar cookies o información en tu navegador según sus propias políticas.
-          Al abrir una sala de Google Meet también se aplican las condiciones de Google.
+          Las grabaciones de las clases se muestran con el reproductor de YouTube en su modo de privacidad ampliada. Aun
+          así, al reproducir un video Google puede guardar cookies o información en tu navegador según sus propias
+          políticas. Al abrir una sala de Google Meet también se aplican las condiciones de Google.
         </p>
       </LegalSection>
 
       <LegalSection title="Cómo gestionarlas">
         <p>
-          Puedes borrar o bloquear las cookies desde la configuración de tu navegador. Si bloqueas la cookie de sesión no podrás iniciar sesión en la Plataforma.
+          Puedes borrar o bloquear las cookies desde la configuración de tu navegador. Si bloqueas la cookie de sesión
+          no podrás iniciar sesión en la Plataforma.
         </p>
       </LegalSection>
     </LegalDocument>

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { Upload, Loader2, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { Upload, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 
 type UploadCategory = 'submission' | 'resource' | 'avatar' | 'certificate';
 
@@ -77,28 +77,28 @@ export default function FileUpload({ category, accept, onUploaded, label }: File
       />
       <label
         htmlFor={`file-upload-${category}`}
-        className="flex items-center justify-center space-x-2 px-3.5 py-2.5 rounded-xl border-2 border-dashed border-slate-300 text-xs font-semibold text-slate-600 hover:border-fuchsia-400 hover:text-fuchsia-600 cursor-pointer transition-colors"
+        className="flex cursor-pointer items-center justify-center space-x-2 rounded-xl border-2 border-dashed border-slate-300 px-3.5 py-2.5 text-xs font-semibold text-slate-600 transition-colors hover:border-fuchsia-400 hover:text-fuchsia-600"
       >
         {uploading ? (
           <>
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
             <span>Subiendo...</span>
           </>
         ) : uploadedName ? (
           <>
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
             <span className="truncate">{uploadedName}</span>
           </>
         ) : (
           <>
-            <Upload className="w-4 h-4" />
+            <Upload className="h-4 w-4" />
             <span>{label || 'Subir archivo'}</span>
           </>
         )}
       </label>
       {error && (
-        <p className="flex items-center space-x-1 text-xs text-rose-600 mt-1.5">
-          <AlertCircle className="w-3.5 h-3.5" />
+        <p className="mt-1.5 flex items-center space-x-1 text-xs text-rose-600">
+          <AlertCircle className="h-3.5 w-3.5" />
           <span>{error}</span>
         </p>
       )}

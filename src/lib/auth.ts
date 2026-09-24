@@ -26,7 +26,7 @@ export function signToken(payload: TokenPayload): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 }
 
-export function verifyToken(token: string): TokenPayload | null {
+function verifyToken(token: string): TokenPayload | null {
   try {
     return jwt.verify(token, JWT_SECRET) as TokenPayload;
   } catch (error) {
@@ -45,7 +45,7 @@ export async function getCurrentUser(): Promise<TokenPayload | null> {
   // Verificar en base de datos si el usuario sigue existiendo y si sigue ACTIVO
   const user = await prisma.user.findUnique({
     where: { id: payload.id },
-    select: { id: true, email: true, role: true, name: true, status: true }
+    select: { id: true, email: true, role: true, name: true, status: true },
   });
 
   if (!user || user.status === 'INACTIVO') {

@@ -84,27 +84,49 @@ export function ResourcesModal({ cls, onClose, onUpdated }: ResourcesModalProps)
 
   return (
     <>
-      <Modal open={Boolean(cls)} onClose={handleClose} title="Materiales de clase" description={cls ? `Clase: ${cls.title}` : undefined}>
-        <div className="max-h-56 overflow-y-auto space-y-2 mb-5">
+      <Modal
+        open={Boolean(cls)}
+        onClose={handleClose}
+        title="Materiales de clase"
+        description={cls ? `Clase: ${cls.title}` : undefined}
+      >
+        <div className="mb-5 max-h-56 space-y-2 overflow-y-auto">
           {cls?.resources.length === 0 ? (
-            <p className="text-xs text-slate-400 italic py-3 text-center">Sin materiales agregados todavía.</p>
+            <p className="py-3 text-center text-xs italic text-slate-400">Sin materiales agregados todavía.</p>
           ) : (
             cls?.resources.map((res) => (
-              <div key={res.id} className="flex items-center justify-between p-2.5 rounded-xl bg-role-soft border border-role-accent/15 text-xs">
-                <FileLink fileUrl={res.url} isStoredFile={res.type === 'DOCUMENT'} className="flex items-center gap-1.5 font-bold text-slate-800 hover:text-role-accent">
-                  <FileText className="w-3.5 h-3.5" />
-                  <span className="truncate max-w-[220px]">{res.title}</span>
+              <div
+                key={res.id}
+                className="flex items-center justify-between rounded-xl border border-role-accent/15 bg-role-soft p-2.5 text-xs"
+              >
+                <FileLink
+                  fileUrl={res.url}
+                  isStoredFile={res.type === 'DOCUMENT'}
+                  className="flex items-center gap-1.5 font-bold text-slate-800 hover:text-role-accent"
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  <span className="max-w-[220px] truncate">{res.title}</span>
                 </FileLink>
-                <button onClick={() => setDeleteTarget(res.id)} className="text-slate-400 hover:text-red-600 ml-2" aria-label={`Eliminar ${res.title}`}>
-                  <Trash2 className="w-3.5 h-3.5" />
+                <button
+                  onClick={() => setDeleteTarget(res.id)}
+                  className="ml-2 text-slate-400 hover:text-red-600"
+                  aria-label={`Eliminar ${res.title}`}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
             ))
           )}
         </div>
 
-        <form onSubmit={handleAdd} className="space-y-3 pt-3 border-t border-slate-100">
-          <Input label="Título del material" required placeholder="Ej: Guía de ejercicios — Módulo 3" value={title} onChange={(e) => setTitle(e.target.value)} />
+        <form onSubmit={handleAdd} className="space-y-3 border-t border-slate-100 pt-3">
+          <Input
+            label="Título del material"
+            required
+            placeholder="Ej: Guía de ejercicios — Módulo 3"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
           <Input
             label="Enlace (Drive, Canva, etc.)"
             type="url"
@@ -118,9 +140,9 @@ export function ResourcesModal({ cls, onClose, onUpdated }: ResourcesModalProps)
           />
 
           <div className="flex items-center">
-            <div className="flex-1 h-px bg-slate-200" />
-            <span className="px-2 text-[10px] font-bold text-slate-400 uppercase">o subí un archivo</span>
-            <div className="flex-1 h-px bg-slate-200" />
+            <div className="h-px flex-1 bg-slate-200" />
+            <span className="px-2 text-[10px] font-bold uppercase text-slate-400">o subí un archivo</span>
+            <div className="h-px flex-1 bg-slate-200" />
           </div>
 
           <FileUpload
@@ -133,7 +155,13 @@ export function ResourcesModal({ cls, onClose, onUpdated }: ResourcesModalProps)
             }}
           />
 
-          <Button type="submit" loading={saving} disabled={!title || (!link && !uploadedKey)} className="w-full" leftIcon={<PlusCircle className="w-4 h-4" />}>
+          <Button
+            type="submit"
+            loading={saving}
+            disabled={!title || (!link && !uploadedKey)}
+            className="w-full"
+            leftIcon={<PlusCircle className="h-4 w-4" />}
+          >
             Agregar material
           </Button>
         </form>

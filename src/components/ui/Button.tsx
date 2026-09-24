@@ -18,11 +18,9 @@ interface BaseProps {
   children: React.ReactNode;
 }
 
-type ButtonAsButton = BaseProps &
-  React.ButtonHTMLAttributes<HTMLButtonElement> & { href?: undefined };
+type ButtonAsButton = BaseProps & React.ButtonHTMLAttributes<HTMLButtonElement> & { href?: undefined };
 
-type ButtonAsLink = BaseProps &
-  Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> & { href: string };
+type ButtonAsLink = BaseProps & Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> & { href: string };
 
 export type ButtonProps = ButtonAsButton | ButtonAsLink;
 
@@ -34,7 +32,8 @@ const SIZE_CLS: Record<Size, string> = {
 
 const VARIANT_CLS: Record<Variant, string> = {
   primary: 'text-white bg-gradient-to-r from-role-from to-role-to shadow-glow hover:brightness-105',
-  secondary: 'glass-card--flat text-slate-700 border border-slate-200/80 hover:border-role-accent/40 hover:text-role-accent',
+  secondary:
+    'glass-card--flat text-slate-700 border border-slate-200/80 hover:border-role-accent/40 hover:text-role-accent',
   ghost: 'text-slate-600 hover:bg-role-soft hover:text-role-accent',
   danger: 'text-white bg-gradient-to-r from-red-600 to-rose-600 shadow-lift hover:brightness-105',
 };
@@ -48,14 +47,14 @@ export function Button(props: ButtonProps) {
 
   const content = (
     <>
-      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : leftIcon}
+      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : leftIcon}
       <span>{children}</span>
       {!loading && rightIcon}
     </>
   );
 
   if ('href' in props && props.href) {
-    const { href, ...anchorRest } = rest as React.AnchorHTMLAttributes<HTMLAnchorElement>;
+    const { href: _href, ...anchorRest } = rest as React.AnchorHTMLAttributes<HTMLAnchorElement>;
     return (
       <Link href={props.href} className={cls} {...anchorRest}>
         {content}

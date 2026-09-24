@@ -39,7 +39,10 @@ export async function PUT(req: Request) {
       } else {
         // Solo se acepta un archivo propio, ya subido al almacenamiento y con tamaño y tipo válidos.
         if (!keyBelongsTo(avatar, 'avatar', user.id) || !(await verifyUploadedObject(avatar, 'avatar'))) {
-          return NextResponse.json({ error: 'La foto de perfil no es válida. Sube una imagen PNG, JPG o WebP de hasta 3 MB.' }, { status: 400 });
+          return NextResponse.json(
+            { error: 'La foto de perfil no es válida. Sube una imagen PNG, JPG o WebP de hasta 3 MB.' },
+            { status: 400 },
+          );
         }
         updateData.avatar = avatar;
         if (dbUser.avatar && dbUser.avatar !== avatar) previousAvatar = dbUser.avatar;
@@ -48,7 +51,10 @@ export async function PUT(req: Request) {
 
     if (typeof newPassword === 'string' && newPassword.trim().length > 0) {
       if (!currentPassword || typeof currentPassword !== 'string') {
-        return NextResponse.json({ error: 'Debes ingresar tu contraseña actual para establecer una nueva.' }, { status: 400 });
+        return NextResponse.json(
+          { error: 'Debes ingresar tu contraseña actual para establecer una nueva.' },
+          { status: 400 },
+        );
       }
 
       const isMatch = await bcrypt.compare(currentPassword, dbUser.passwordHash);

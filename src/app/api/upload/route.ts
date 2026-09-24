@@ -2,12 +2,7 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { logError } from '@/lib/log';
-import {
-  createPresignedUploadUrl,
-  createPresignedDownloadUrl,
-  UPLOAD_CATEGORIES,
-  type UploadCategory,
-} from '@/lib/s3';
+import { createPresignedUploadUrl, createPresignedDownloadUrl, UPLOAD_CATEGORIES, type UploadCategory } from '@/lib/s3';
 
 function isValidCategory(value: unknown): value is UploadCategory {
   return typeof value === 'string' && value in UPLOAD_CATEGORIES;
@@ -66,7 +61,10 @@ export async function POST(req: Request) {
 
     if (sizeBytes > config.maxSizeBytes) {
       const maxMb = Math.round(config.maxSizeBytes / (1024 * 1024));
-      return NextResponse.json({ error: `El archivo supera el tamaño máximo permitido (${maxMb} MB).` }, { status: 400 });
+      return NextResponse.json(
+        { error: `El archivo supera el tamaño máximo permitido (${maxMb} MB).` },
+        { status: 400 },
+      );
     }
 
     const { uploadUrl, key } = await createPresignedUploadUrl(category, user.id, fileName, contentType);

@@ -16,7 +16,7 @@ export default async function PerfilLayout({ children }: { children: React.React
   const variant = ROLE_META[user.role].variant;
 
   return (
-    <div data-role={variant} className="min-h-dvh flex flex-col">
+    <div data-role={variant} className="flex min-h-dvh flex-col">
       <UserProvider user={user}>
         <div className="no-print">
           <Navbar user={user} />

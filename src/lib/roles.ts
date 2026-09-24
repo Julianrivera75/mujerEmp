@@ -1,4 +1,4 @@
-import { ShieldCheck, Presentation, GraduationCap, Sparkles, type LucideIcon } from 'lucide-react';
+import { ShieldCheck, Presentation, GraduationCap, type LucideIcon } from 'lucide-react';
 
 export type Role = 'ADMIN' | 'MENTOR' | 'STUDENT';
 export type RoleVariant = 'brand' | 'admin' | 'mentor' | 'student';
@@ -21,5 +21,3 @@ export function roleFromPathname(pathname: string): RoleVariant {
   if (pathname.startsWith('/estudiante')) return 'student';
   return 'brand';
 }
-
-export const BRAND_META = { label: 'Empoderas Diversas', variant: 'brand' as RoleVariant, icon: Sparkles };

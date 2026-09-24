@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ExternalLink, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { safeHref } from '@/lib/validators';
 
 interface FileLinkProps {
@@ -25,8 +25,7 @@ export default function FileLink({ fileUrl, isStoredFile, className, children }:
     );
   }
 
-  const handleClick = async (e: React.MouseEvent) => {
-    e.preventDefault();
+  const handleClick = async () => {
     if (loading) return;
     setLoading(true);
     try {
@@ -43,8 +42,8 @@ export default function FileLink({ fileUrl, isStoredFile, className, children }:
   };
 
   return (
-    <a href="#" onClick={handleClick} className={className}>
-      {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin inline" /> : children}
-    </a>
+    <button type="button" onClick={handleClick} className={className}>
+      {loading ? <Loader2 className="inline h-3.5 w-3.5 animate-spin" /> : children}
+    </button>
   );
 }

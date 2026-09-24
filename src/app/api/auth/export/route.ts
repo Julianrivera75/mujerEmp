@@ -16,7 +16,10 @@ export async function GET() {
 
     const limit = rateLimit(`export:${user.id}`, 5, 60 * 60 * 1000);
     if (!limit.ok) {
-      return NextResponse.json({ error: 'Has descargado tus datos varias veces seguidas. Intenta más tarde.' }, { status: 429 });
+      return NextResponse.json(
+        { error: 'Has descargado tus datos varias veces seguidas. Intenta más tarde.' },
+        { status: 429 },
+      );
     }
 
     const data = await prisma.user.findUnique({

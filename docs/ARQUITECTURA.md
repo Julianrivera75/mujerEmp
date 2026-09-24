@@ -13,14 +13,14 @@ Navegador ──► middleware (verifica sesión y rol)
 
 ## Capas
 
-| Capa | Ubicación | Responsabilidad |
-| --- | --- | --- |
-| Middleware | `src/middleware.ts` | Verifica la firma de la sesión, estado de la cuenta y separa las áreas por rol. |
+| Capa             | Ubicación                                             | Responsabilidad                                                                                                  |
+| ---------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Middleware       | `src/middleware.ts`                                   | Verifica la firma de la sesión, estado de la cuenta y separa las áreas por rol.                                  |
 | Layouts por área | `src/app/{admin,mentor,estudiante,perfil}/layout.tsx` | Resuelven la usuaria, aplican el tema del rol, montan la barra de navegación y exigen la aceptación de términos. |
-| Páginas | `src/app/**/page.tsx` | Interfaz. Consumen la API con `fetch`. |
-| API | `src/app/api/**/route.ts` | Autorización por rol, validación de datos y acceso a la base. |
-| Librerías | `src/lib/` | Autenticación, validadores, límite de intentos, almacenamiento, registro de errores. |
-| Componentes | `src/components/` | Interfaz reutilizable (`ui/`), fondo animado (`fx/`) y documentos legales (`legal/`). |
+| Páginas          | `src/app/**/page.tsx`                                 | Interfaz. Consumen la API con `fetch`.                                                                           |
+| API              | `src/app/api/**/route.ts`                             | Autorización por rol, validación de datos y acceso a la base.                                                    |
+| Librerías        | `src/lib/`                                            | Autenticación, validadores, límite de intentos, almacenamiento, registro de errores.                             |
+| Componentes      | `src/components/`                                     | Interfaz reutilizable (`ui/`), fondo animado (`fx/`) y documentos legales (`legal/`).                            |
 
 ## Autenticación y sesión
 
@@ -32,15 +32,15 @@ Navegador ──► middleware (verifica sesión y rol)
 
 ## Permisos por rol
 
-| Recurso | Administradora | Mentora | Estudiante |
-| --- | --- | --- | --- |
-| Usuarias | Crear, editar, activar, anonimizar | Sin acceso | Solo su perfil |
-| Clases | Todas | Las que dicta (edita enlaces y notas) | Las que tiene inscritas (solo lectura) |
-| Asistencia | Todas | De sus clases | Solo la propia |
-| Tareas | Todas | Las de sus clases | Las de sus clases inscritas |
-| Entregas | Ver y calificar todas | Ver y calificar las de sus clases | Enviar y ver las propias |
-| Materiales | Todos | Crear y borrar en sus clases | Ver los de sus clases |
-| Archivos | Todos | Los de sus clases y los propios | Los propios y los materiales |
+| Recurso    | Administradora                     | Mentora                               | Estudiante                             |
+| ---------- | ---------------------------------- | ------------------------------------- | -------------------------------------- |
+| Usuarias   | Crear, editar, activar, anonimizar | Sin acceso                            | Solo su perfil                         |
+| Clases     | Todas                              | Las que dicta (edita enlaces y notas) | Las que tiene inscritas (solo lectura) |
+| Asistencia | Todas                              | De sus clases                         | Solo la propia                         |
+| Tareas     | Todas                              | Las de sus clases                     | Las de sus clases inscritas            |
+| Entregas   | Ver y calificar todas              | Ver y calificar las de sus clases     | Enviar y ver las propias               |
+| Materiales | Todos                              | Crear y borrar en sus clases          | Ver los de sus clases                  |
+| Archivos   | Todos                              | Los de sus clases y los propios       | Los propios y los materiales           |
 
 ## Modelo de datos
 

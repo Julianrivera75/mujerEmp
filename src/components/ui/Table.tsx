@@ -10,29 +10,28 @@ export function Table({ className, ...rest }: React.TableHTMLAttributes<HTMLTabl
 }
 
 export function THead({ className, ...rest }: React.HTMLAttributes<HTMLTableSectionElement>) {
-  return <thead className={cn('sticky top-0 bg-slate-50/90 backdrop-blur-sm text-left', className)} {...rest} />;
+  return <thead className={cn('sticky top-0 bg-slate-50/90 text-left backdrop-blur-sm', className)} {...rest} />;
 }
 
 export function TRow({ className, ...rest }: React.HTMLAttributes<HTMLTableRowElement>) {
-  return <tr className={cn('border-b border-slate-100 last:border-0 hover:bg-role-soft/50 transition-colors', className)} {...rest} />;
-}
-
-export function TCell({
-  className,
-  head,
-  ...rest
-}: React.TdHTMLAttributes<HTMLTableCellElement> & { head?: boolean }) {
-  const Comp = head ? 'th' : 'td';
   return (
-    <Comp
-      className={cn(
-        'px-4 py-3 align-middle',
-        head ? 'text-xs font-bold uppercase tracking-wider text-slate-500' : 'text-slate-700',
-        className,
-      )}
-      {...(rest as any)}
+    <tr
+      className={cn('border-b border-slate-100 transition-colors last:border-0 hover:bg-role-soft/50', className)}
+      {...rest}
     />
   );
+}
+
+export function TCell({ className, head, ...rest }: React.TdHTMLAttributes<HTMLTableCellElement> & { head?: boolean }) {
+  const classes = cn(
+    'px-4 py-3 align-middle',
+    head ? 'text-xs font-bold uppercase tracking-wider text-slate-500' : 'text-slate-700',
+    className,
+  );
+  if (head) {
+    return <th scope="col" className={classes} {...rest} />;
+  }
+  return <td className={classes} {...rest} />;
 }
 
 /**
@@ -47,7 +46,7 @@ export function ResponsiveRow({
   className?: string;
 }) {
   return (
-    <div className={cn('sm:hidden rounded-2xl border border-slate-100 p-4 space-y-2', className)}>
+    <div className={cn('space-y-2 rounded-2xl border border-slate-100 p-4 sm:hidden', className)}>
       {columns.map((c, i) => (
         <div key={i} className="flex items-center justify-between gap-3 text-sm">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-400">{c.label}</span>

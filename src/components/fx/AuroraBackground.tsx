@@ -15,7 +15,7 @@ export function AuroraBackground({ spotCount = 2 }: Props) {
       {SPOTS.slice(0, spotCount).map((s, i) => (
         <div
           key={i}
-          className={`absolute w-72 h-72 sm:w-80 sm:h-80 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob ${s.cls}`}
+          className={`absolute h-72 w-72 animate-blob rounded-full opacity-70 mix-blend-multiply blur-3xl filter sm:h-80 sm:w-80 ${s.cls}`}
           style={{ animationDelay: s.delay }}
         />
       ))}

@@ -35,7 +35,6 @@ function useCountUp(target: number, reduce: boolean | null) {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target, reduce]);
 
   return value;
@@ -49,19 +48,19 @@ export function StatCard({ label, value, icon: Icon, hint, emphasize, className 
     <m.div
       variants={fadeUp}
       className={cn(
-        'glass-card rounded-2xl p-6 border border-white shadow-soft',
-        emphasize && 'sm:col-span-2 bg-gradient-to-br from-role-soft to-white',
+        'glass-card rounded-2xl border border-white p-6 shadow-soft',
+        emphasize && 'bg-gradient-to-br from-role-soft to-white sm:col-span-2',
         className,
       )}
     >
       <div className="flex items-center justify-between">
         <span className="text-xs font-bold uppercase tracking-wider text-slate-500">{label}</span>
-        <div className="w-10 h-10 rounded-2xl bg-role-soft text-role-accent flex items-center justify-center">
-          <Icon className="w-5 h-5" strokeWidth={1.75} />
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-role-soft text-role-accent">
+          <Icon className="h-5 w-5" strokeWidth={1.75} />
         </div>
       </div>
-      <p className="font-display tabular-nums text-3xl font-bold text-slate-800 mt-3">{display}</p>
-      {hint && <div className="text-xs text-slate-500 mt-2 font-medium">{hint}</div>}
+      <p className="mt-3 font-display text-3xl font-bold tabular-nums text-slate-800">{display}</p>
+      {hint && <div className="mt-2 text-xs font-medium text-slate-500">{hint}</div>}
     </m.div>
   );
 }

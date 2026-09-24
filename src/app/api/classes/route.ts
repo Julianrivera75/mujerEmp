@@ -2,7 +2,15 @@ import { NextResponse } from 'next/server';
 import type { Prisma } from '@prisma/client';
 import { getCurrentUser } from '@/lib/auth';
 import prisma from '@/lib/prisma';
-import { CLASS_STATUSES, MEET_HOSTS, YOUTUBE_HOSTS, cleanText, isOneOf, parseDate, parseHttpsUrl } from '@/lib/validators';
+import {
+  CLASS_STATUSES,
+  MEET_HOSTS,
+  YOUTUBE_HOSTS,
+  cleanText,
+  isOneOf,
+  parseDate,
+  parseHttpsUrl,
+} from '@/lib/validators';
 import { extractYouTubeId } from '@/lib/youtube';
 import { logError } from '@/lib/log';
 
@@ -11,15 +19,21 @@ export const dynamic = 'force-dynamic';
 type LinkResult = { ok: true; value: string | null } | { ok: false; error: string };
 
 function readMeetLink(value: unknown): LinkResult {
-  if (value === undefined || value === null || (typeof value === 'string' && value.trim() === '')) return { ok: true, value: null };
+  if (value === undefined || value === null || (typeof value === 'string' && value.trim() === ''))
+    return { ok: true, value: null };
   const url = parseHttpsUrl(value, MEET_HOSTS);
-  return url ? { ok: true, value: url } : { ok: false, error: 'El enlace de Meet debe ser una URL https de meet.google.com.' };
+  return url
+    ? { ok: true, value: url }
+    : { ok: false, error: 'El enlace de Meet debe ser una URL https de meet.google.com.' };
 }
 
 function readYoutubeLink(value: unknown): LinkResult {
-  if (value === undefined || value === null || (typeof value === 'string' && value.trim() === '')) return { ok: true, value: null };
+  if (value === undefined || value === null || (typeof value === 'string' && value.trim() === ''))
+    return { ok: true, value: null };
   const url = parseHttpsUrl(value, YOUTUBE_HOSTS);
-  return url && extractYouTubeId(url) ? { ok: true, value: url } : { ok: false, error: 'El enlace de YouTube no es válido. Usa una URL https de un video de YouTube.' };
+  return url && extractYouTubeId(url)
+    ? { ok: true, value: url }
+    : { ok: false, error: 'El enlace de YouTube no es válido. Usa una URL https de un video de YouTube.' };
 }
 
 export async function GET(req: Request) {
@@ -82,17 +96,34 @@ export async function POST(req: Request) {
   try {
     const user = await getCurrentUser();
     if (!user || user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Acceso denegado. Solo administradores pueden programar clases.' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'Acceso denegado. Solo administradores pueden programar clases.' },
+        { status: 403 },
+      );
     }
 
     const body = await req.json();
-    const { title, description, dateStart, dateEnd, mentorId, studentIds, meetLink, youtubeUrl, recordingNotes, status } = body;
+    const {
+      title,
+      description,
+      dateStart,
+      dateEnd,
+      mentorId,
+      studentIds,
+      meetLink,
+      youtubeUrl,
+      recordingNotes,
+      status,
+    } = body;
 
     const cleanTitle = cleanText(title, 200);
     const start = parseDate(dateStart);
     const end = parseDate(dateEnd);
     if (!cleanTitle || !start || !end || typeof mentorId !== 'string' || !mentorId) {
-      return NextResponse.json({ error: 'Título, fecha inicio, fecha fin y mentor son obligatorios.' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Título, fecha inicio, fecha fin y mentor son obligatorios.' },
+        { status: 400 },
+      );
     }
     if (end <= start) {
       return NextResponse.json({ error: 'La fecha de fin debe ser posterior a la de inicio.' }, { status: 400 });
@@ -126,7 +157,8 @@ export async function POST(req: Request) {
         recordingNotes: cleanText(recordingNotes, 1000),
         status: status || 'PROGRAMADA',
         monthKey,
-        enrollments: validStudentIds.length > 0 ? { create: validStudentIds.map((studentId) => ({ studentId })) } : undefined,
+        enrollments:
+          validStudentIds.length > 0 ? { create: validStudentIds.map((studentId) => ({ studentId })) } : undefined,
       },
       include: {
         mentor: { select: { id: true, name: true, email: true } },
@@ -149,7 +181,19 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { id, title, description, dateStart, dateEnd, mentorId, studentIds, meetLink, youtubeUrl, recordingNotes, status } = body;
+    const {
+      id,
+      title,
+      description,
+      dateStart,
+      dateEnd,
+      mentorId,
+      studentIds,
+      meetLink,
+      youtubeUrl,
+      recordingNotes,
+      status,
+    } = body;
 
     if (typeof id !== 'string' || !id) {
       return NextResponse.json({ error: 'ID de clase requerido.' }, { status: 400 });
@@ -160,9 +204,13 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: 'Clase no encontrada.' }, { status: 404 });
     }
 
-    const meet = meetLink === undefined ? ({ ok: true, value: existingClass.meetLink } as LinkResult) : readMeetLink(meetLink);
+    const meet =
+      meetLink === undefined ? ({ ok: true, value: existingClass.meetLink } as LinkResult) : readMeetLink(meetLink);
     if (!meet.ok) return NextResponse.json({ error: meet.error }, { status: 400 });
-    const yt = youtubeUrl === undefined ? ({ ok: true, value: existingClass.youtubeUrl } as LinkResult) : readYoutubeLink(youtubeUrl);
+    const yt =
+      youtubeUrl === undefined
+        ? ({ ok: true, value: existingClass.youtubeUrl } as LinkResult)
+        : readYoutubeLink(youtubeUrl);
     if (!yt.ok) return NextResponse.json({ error: yt.error }, { status: 400 });
 
     // Una mentora solo puede editar sus propias clases y únicamente los enlaces y las notas de la grabación.
@@ -195,7 +243,10 @@ export async function PUT(req: Request) {
     const monthKey = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}`;
 
     if (mentorId !== undefined && mentorId !== existingClass.mentorId) {
-      const mentor = typeof mentorId === 'string' ? await prisma.user.findUnique({ where: { id: mentorId }, select: { role: true } }) : null;
+      const mentor =
+        typeof mentorId === 'string'
+          ? await prisma.user.findUnique({ where: { id: mentorId }, select: { role: true } })
+          : null;
       if (!mentor || (mentor.role !== 'MENTOR' && mentor.role !== 'ADMIN')) {
         return NextResponse.json({ error: 'La mentora seleccionada no es válida.' }, { status: 400 });
       }
@@ -205,7 +256,9 @@ export async function PUT(req: Request) {
       const validStudentIds = await resolveStudentIds(studentIds);
       await prisma.classEnrollment.deleteMany({ where: { classId: id } });
       if (validStudentIds.length > 0) {
-        await prisma.classEnrollment.createMany({ data: validStudentIds.map((studentId) => ({ classId: id, studentId })) });
+        await prisma.classEnrollment.createMany({
+          data: validStudentIds.map((studentId) => ({ classId: id, studentId })),
+        });
       }
     }
 

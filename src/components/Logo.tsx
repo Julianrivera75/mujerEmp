@@ -32,13 +32,20 @@ export function Logo({ variant = 'default', tone = 'brand', className }: LogoPro
             className={cn(
               'font-display font-bold tracking-tight',
               variant === 'compact' ? 'text-base' : 'text-xl',
-              tone === 'white' ? 'text-white' : 'bg-gradient-to-r from-fuchsia-600 via-purple-700 to-indigo-800 bg-clip-text text-transparent',
+              tone === 'white'
+                ? 'text-white'
+                : 'bg-gradient-to-r from-fuchsia-600 via-purple-700 to-indigo-800 bg-clip-text text-transparent',
             )}
           >
             Empoderas Diversas
           </span>
           {variant === 'default' && (
-            <span className={cn('block text-[11px] font-semibold uppercase tracking-wider', tone === 'white' ? 'text-white/70' : 'text-purple-700')}>
+            <span
+              className={cn(
+                'block text-[11px] font-semibold uppercase tracking-wider',
+                tone === 'white' ? 'text-white/70' : 'text-purple-700',
+              )}
+            >
               Plataforma de Capacitación
             </span>
           )}

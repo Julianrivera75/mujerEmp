@@ -20,10 +20,10 @@ export function ProgressBar({ value, max = 100, className }: ProgressBarProps) {
       aria-valuenow={Math.round(pct)}
       aria-valuemin={0}
       aria-valuemax={100}
-      className={cn('w-full bg-slate-200 h-2.5 rounded-full overflow-hidden', className)}
+      className={cn('h-2.5 w-full overflow-hidden rounded-full bg-slate-200', className)}
     >
       <m.div
-        className="h-full origin-left bg-gradient-to-r from-role-from to-role-to rounded-full"
+        className="h-full origin-left rounded-full bg-gradient-to-r from-role-from to-role-to"
         initial={{ scaleX: reduce ? pct / 100 : 0 }}
         animate={{ scaleX: pct / 100 }}
         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}

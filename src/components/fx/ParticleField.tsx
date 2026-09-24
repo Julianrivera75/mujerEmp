@@ -56,12 +56,23 @@ export function ParticleField({
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const small = window.matchMedia('(max-width: 767px)').matches;
     const hero = intensity === 'hero';
-    const lift = (c: RGB): RGB =>
-      tone === 'dark' ? (c.map((v) => Math.round(v + (255 - v) * 0.35)) as RGB) : c;
+    const lift = (c: RGB): RGB => (tone === 'dark' ? (c.map((v) => Math.round(v + (255 - v) * 0.35)) as RGB) : c);
     const palette = PALETTES[variant].map(lift);
     const alphaK = tone === 'dark' ? 1.3 : 1;
 
-    type P = { x: number; y: number; vx: number; vy: number; r: number; a: number; c: RGB; tw: number; twSpeed: number; depth: number; sparkle: boolean };
+    type P = {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      r: number;
+      a: number;
+      c: RGB;
+      tw: number;
+      twSpeed: number;
+      depth: number;
+      sparkle: boolean;
+    };
     let ps: P[] = [];
     let w = 0;
     let h = 0;
@@ -270,11 +281,7 @@ export function ParticleField({
       ref={ref}
       data-fx
       aria-hidden="true"
-      className={[
-        'pointer-events-none animate-fx-in',
-        contained ? 'absolute inset-0' : 'fixed inset-0 z-fx',
-        className,
-      ]
+      className={['pointer-events-none animate-fx-in', contained ? 'absolute inset-0' : 'fixed inset-0 z-fx', className]
         .filter(Boolean)
         .join(' ')}
     />

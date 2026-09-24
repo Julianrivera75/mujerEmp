@@ -4,8 +4,13 @@ import { cn } from '@/lib/cn';
 
 export function Tip({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <p className={cn('flex items-start gap-2 text-xs text-slate-600 bg-role-soft p-3 rounded-xl border border-role-accent/30', className)}>
-      <Lightbulb className="w-4 h-4 text-role-accent flex-shrink-0 mt-0.5" />
+    <p
+      className={cn(
+        'flex items-start gap-2 rounded-xl border border-role-accent/30 bg-role-soft p-3 text-xs text-slate-600',
+        className,
+      )}
+    >
+      <Lightbulb className="mt-0.5 h-4 w-4 flex-shrink-0 text-role-accent" />
       <span>{children}</span>
     </p>
   );

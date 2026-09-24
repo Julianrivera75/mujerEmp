@@ -29,18 +29,18 @@ const fontDiploma = Cormorant_Garamond({
 
 export const metadata: Metadata = {
   title: 'Empoderas Diversas | Plataforma de Capacitación',
-  description: 'Plataforma integral de formación, mentoría, clases virtuales y seguimiento de impacto para el empoderamiento y la diversidad.',
+  description:
+    'Plataforma integral de formación, mentoría, clases virtuales y seguimiento de impacto para el empoderamiento y la diversidad.',
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className={`${fontBody.variable} ${fontDisplay.variable} ${fontDiploma.variable}`}>
-      <body className="bg-grain antialiased min-h-dvh font-sans text-slate-800 selection:bg-fuchsia-500 selection:text-white">
-        <a href="#contenido" className="skip-link px-4 py-2 rounded-xl bg-purple-600 text-white text-sm font-bold shadow-lift">
+      <body className="bg-grain min-h-dvh font-sans text-slate-800 antialiased selection:bg-fuchsia-500 selection:text-white">
+        <a
+          href="#contenido"
+          className="skip-link rounded-xl bg-purple-600 px-4 py-2 text-sm font-bold text-white shadow-lift"
+        >
           Saltar al contenido
         </a>
         <MotionProvider>

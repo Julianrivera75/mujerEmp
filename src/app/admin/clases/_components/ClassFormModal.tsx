@@ -31,7 +31,12 @@ interface ClassFormModalProps {
   onSaved: () => void;
 }
 
-function buildInitialForm(mode: 'create' | 'edit', cls: ClassItem | null, mentors: SimpleUser[], students: SimpleUser[]): ClassFormData {
+function buildInitialForm(
+  mode: 'create' | 'edit',
+  cls: ClassItem | null,
+  mentors: SimpleUser[],
+  students: SimpleUser[],
+): ClassFormData {
   if (mode === 'edit' && cls) {
     return {
       title: cls.title,
@@ -61,7 +66,9 @@ function buildInitialForm(mode: 'create' | 'edit', cls: ClassItem | null, mentor
 }
 
 export function ClassFormModal({ open, mode, editingClass, mentors, students, onClose, onSaved }: ClassFormModalProps) {
-  const [formData, setFormData] = useState<ClassFormData>(() => buildInitialForm(mode, editingClass, mentors, students));
+  const [formData, setFormData] = useState<ClassFormData>(() =>
+    buildInitialForm(mode, editingClass, mentors, students),
+  );
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -75,7 +82,9 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
 
   const toggleAllStudents = () => {
     setFormData((prev) =>
-      prev.studentIds.length === students.length ? { ...prev, studentIds: [] } : { ...prev, studentIds: students.map((s) => s.id) },
+      prev.studentIds.length === students.length
+        ? { ...prev, studentIds: [] }
+        : { ...prev, studentIds: students.map((s) => s.id) },
     );
   };
 
@@ -110,8 +119,15 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
   };
 
   return (
-    <Modal open={open} onClose={onClose} title={mode === 'create' ? 'Programar clase virtual' : 'Editar datos de clase'} size="lg">
-      {errorMsg && <div className="mb-4 p-3 rounded-xl bg-red-50 text-red-700 text-xs border border-red-200">{errorMsg}</div>}
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={mode === 'create' ? 'Programar clase virtual' : 'Editar datos de clase'}
+      size="lg"
+    >
+      {errorMsg && (
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">{errorMsg}</div>
+      )}
 
       <form id="class-form" onSubmit={handleSubmit} className="space-y-4">
         <Input
@@ -130,7 +146,7 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Input
             label="Fecha y hora inicio"
             type="datetime-local"
@@ -147,8 +163,13 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Select label="Mentora asignada" required value={formData.mentorId} onChange={(e) => setFormData({ ...formData, mentorId: e.target.value })}>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Select
+            label="Mentora asignada"
+            required
+            value={formData.mentorId}
+            onChange={(e) => setFormData({ ...formData, mentorId: e.target.value })}
+          >
             <option value="">Selecciona una mentora...</option>
             {mentors.map((m) => (
               <option key={m.id} value={m.id}>
@@ -156,7 +177,11 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
               </option>
             ))}
           </Select>
-          <Select label="Estado de la clase" value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })}>
+          <Select
+            label="Estado de la clase"
+            value={formData.status}
+            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+          >
             <option value="PROGRAMADA">Programada</option>
             <option value="FINALIZADA">Finalizada</option>
             <option value="CANCELADA">Cancelada</option>
@@ -168,52 +193,66 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
             label="Enlace de Google Meet"
             type="url"
             placeholder="https://meet.google.com/xxx-yyyy-zzz"
-            leftIcon={<Video className="w-4 h-4 text-teal-600" />}
+            leftIcon={<Video className="h-4 w-4 text-teal-600" />}
             value={formData.meetLink}
             onChange={(e) => setFormData({ ...formData, meetLink: e.target.value })}
           />
-          <Tip className="mt-2">Al hacer clic en este enlace, el sistema registrará automáticamente la asistencia de la estudiante.</Tip>
+          <Tip className="mt-2">
+            Al hacer clic en este enlace, el sistema registrará automáticamente la asistencia de la estudiante.
+          </Tip>
         </div>
 
-        <div className="p-4 rounded-2xl bg-red-50/50 border border-red-100 space-y-2">
-          <label className="flex items-center gap-1.5 text-xs font-bold text-red-900 uppercase tracking-wider">
-            <Youtube className="w-4 h-4 text-red-600" />
+        <div className="space-y-2 rounded-2xl border border-red-100 bg-red-50/50 p-4">
+          <label
+            htmlFor="class-youtube-url"
+            className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-red-900"
+          >
+            <Youtube className="h-4 w-4 text-red-600" />
             <span>Grabación en YouTube (para repositorio)</span>
           </label>
           <input
+            id="class-youtube-url"
             type="url"
             placeholder="https://www.youtube.com/watch?v=... o https://youtu.be/..."
             value={formData.youtubeUrl}
             onChange={(e) => setFormData({ ...formData, youtubeUrl: e.target.value })}
-            className="w-full px-3.5 py-2 rounded-xl border border-red-200 text-xs text-red-900 focus:outline-none focus:ring-2 focus:ring-red-500/20 bg-white"
+            className="w-full rounded-xl border border-red-200 bg-white px-3.5 py-2 text-xs text-red-900 focus:outline-none focus:ring-2 focus:ring-red-500/20"
           />
           <input
             type="text"
+            aria-label="Notas de la grabación"
             placeholder="Notas u observaciones de la grabación..."
             value={formData.recordingNotes}
             onChange={(e) => setFormData({ ...formData, recordingNotes: e.target.value })}
-            className="w-full px-3.5 py-1.5 rounded-xl border border-red-200 text-xs text-slate-700 bg-white"
+            className="w-full rounded-xl border border-red-200 bg-white px-3.5 py-1.5 text-xs text-slate-700"
           />
         </div>
 
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+          <div className="mb-2 flex items-center justify-between">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
               Estudiantes asignadas ({formData.studentIds.length} seleccionadas)
             </label>
-            <button type="button" onClick={toggleAllStudents} className="text-xs text-role-accent font-bold hover:underline">
+            <button
+              type="button"
+              onClick={toggleAllStudents}
+              className="text-xs font-bold text-role-accent hover:underline"
+            >
               {formData.studentIds.length === students.length ? 'Deseleccionar todas' : 'Seleccionar todas'}
             </button>
           </div>
 
-          <div className="max-h-36 overflow-y-auto border border-slate-200 rounded-2xl p-2.5 divide-y divide-slate-100 bg-white">
+          <div className="max-h-36 divide-y divide-slate-100 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-2.5">
             {students.length === 0 ? (
-              <p className="text-xs text-slate-400 p-2">No hay estudiantes activas registradas.</p>
+              <p className="p-2 text-xs text-slate-400">No hay estudiantes activas registradas.</p>
             ) : (
               students.map((st) => {
                 const checked = formData.studentIds.includes(st.id);
                 return (
-                  <label key={st.id} className="flex items-center justify-between py-2 px-2 hover:bg-role-soft rounded-xl cursor-pointer text-xs">
+                  <label
+                    key={st.id}
+                    className="flex cursor-pointer items-center justify-between rounded-xl px-2 py-2 text-xs hover:bg-role-soft"
+                  >
                     <span className="font-semibold text-slate-800">
                       {st.name} ({st.email})
                     </span>
@@ -223,10 +262,12 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
                       onChange={() =>
                         setFormData((prev) => ({
                           ...prev,
-                          studentIds: checked ? prev.studentIds.filter((id) => id !== st.id) : [...prev.studentIds, st.id],
+                          studentIds: checked
+                            ? prev.studentIds.filter((id) => id !== st.id)
+                            : [...prev.studentIds, st.id],
                         }))
                       }
-                      className="rounded text-role-accent focus:ring-primary/40 h-4 w-4"
+                      className="h-4 w-4 rounded text-role-accent focus:ring-primary/40"
                     />
                   </label>
                 );
@@ -236,7 +277,7 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
         </div>
       </form>
 
-      <div className="flex items-center justify-end gap-3 pt-5 mt-5 border-t border-slate-100">
+      <div className="mt-5 flex items-center justify-end gap-3 border-t border-slate-100 pt-5">
         <Button variant="ghost" onClick={onClose} disabled={submitting}>
           Cancelar
         </Button>

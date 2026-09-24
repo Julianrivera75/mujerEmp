@@ -13,7 +13,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
 import { safeHref } from '@/lib/validators';
 import { ClassFormModal } from './_components/ClassFormModal';
-import type { ClassItem, SimpleUser } from './types';
+import type { ClassItem, ManagedUser, SimpleUser } from './types';
 
 export default function AdminClassesPage() {
   const [classes, setClasses] = useState<ClassItem[]>([]);
@@ -42,8 +42,8 @@ export default function AdminClassesPage() {
 
       const usersData = await usersRes.json();
       const allUsers = usersData.users || [];
-      setMentors(allUsers.filter((u: any) => u.role === 'MENTOR' && u.status === 'ACTIVO'));
-      setStudents(allUsers.filter((u: any) => u.role === 'STUDENT' && u.status === 'ACTIVO'));
+      setMentors(allUsers.filter((u: ManagedUser) => u.role === 'MENTOR' && u.status === 'ACTIVO'));
+      setStudents(allUsers.filter((u: ManagedUser) => u.role === 'STUDENT' && u.status === 'ACTIVO'));
     } catch (err) {
       console.error('Error al cargar datos:', err);
     } finally {
@@ -94,19 +94,19 @@ export default function AdminClassesPage() {
   };
 
   return (
-    <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
       <PageHeader
         eyebrow="Programación"
         title="Programación mensual de clases"
         description="Programa las clases virtuales, vincula Google Meet y carga las grabaciones de YouTube para las estudiantes."
         actions={
-          <Button leftIcon={<PlusCircle className="w-4 h-4" />} onClick={handleOpenCreate}>
+          <Button leftIcon={<PlusCircle className="h-4 w-4" />} onClick={handleOpenCreate}>
             Programar nueva clase
           </Button>
         }
       />
 
-      <Card variant="glass" className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <Card variant="glass" className="flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center">
         <div className="flex items-center gap-3">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Filtrar por mes</span>
           <Select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="w-auto">
@@ -124,7 +124,7 @@ export default function AdminClassesPage() {
       </Card>
 
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <SkeletonCard />
           <SkeletonCard />
         </div>
@@ -137,7 +137,7 @@ export default function AdminClassesPage() {
           />
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {classes.map((cls) => {
             const start = new Date(cls.dateStart);
             const end = new Date(cls.dateEnd);
@@ -145,21 +145,25 @@ export default function AdminClassesPage() {
             const formattedTime = `${start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`;
 
             return (
-              <Card key={cls.id} variant="interactive" className="p-6 flex flex-col justify-between cursor-default">
+              <Card key={cls.id} variant="interactive" className="flex cursor-default flex-col justify-between p-6">
                 <div>
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <StatusPill label={cls.status} tone={cls.status === 'FINALIZADA' ? 'neutral' : 'success'} pulse={cls.status !== 'FINALIZADA'} />
-                    <span className="text-xs font-semibold text-role-accent capitalize">{formattedDate}</span>
+                  <div className="mb-3 flex items-center justify-between gap-2">
+                    <StatusPill
+                      label={cls.status}
+                      tone={cls.status === 'FINALIZADA' ? 'neutral' : 'success'}
+                      pulse={cls.status !== 'FINALIZADA'}
+                    />
+                    <span className="text-xs font-semibold capitalize text-role-accent">{formattedDate}</span>
                   </div>
 
-                  <h2 className="text-lg font-bold text-slate-800 mb-1">{cls.title}</h2>
-                  {cls.description && <p className="text-xs text-slate-500 line-clamp-2 mb-4">{cls.description}</p>}
+                  <h2 className="mb-1 text-lg font-bold text-slate-800">{cls.title}</h2>
+                  {cls.description && <p className="mb-4 line-clamp-2 text-xs text-slate-500">{cls.description}</p>}
 
-                  <div className="space-y-2 mb-4 text-xs text-slate-600 bg-slate-50/80 p-3.5 rounded-2xl border border-slate-100">
+                  <div className="mb-4 space-y-2 rounded-2xl border border-slate-100 bg-slate-50/80 p-3.5 text-xs text-slate-600">
                     <div className="flex items-center justify-between">
                       <span className="text-slate-500">Horario:</span>
-                      <span className="font-bold text-slate-700 flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-role-accent" />
+                      <span className="flex items-center gap-1 font-bold text-slate-700">
+                        <Clock className="h-3.5 w-3.5 text-role-accent" />
                         {formattedTime}
                       </span>
                     </div>
@@ -179,42 +183,62 @@ export default function AdminClassesPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-2 mb-5">
+                  <div className="mb-5 space-y-2">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="flex items-center gap-1.5 text-slate-600 font-semibold">
-                        <Video className="w-4 h-4 text-teal-600" />
+                      <span className="flex items-center gap-1.5 font-semibold text-slate-600">
+                        <Video className="h-4 w-4 text-teal-600" />
                         Google Meet:
                       </span>
                       {cls.meetLink ? (
-                        <a href={safeHref(cls.meetLink)} target="_blank" rel="noopener noreferrer" className="text-teal-700 hover:text-teal-900 font-bold underline truncate max-w-[200px]">
+                        <a
+                          href={safeHref(cls.meetLink)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="max-w-[200px] truncate font-bold text-teal-700 underline hover:text-teal-900"
+                        >
                           {cls.meetLink}
                         </a>
                       ) : (
-                        <span className="text-amber-600 italic">No configurado</span>
+                        <span className="italic text-amber-600">No configurado</span>
                       )}
                     </div>
 
                     <div className="flex items-center justify-between text-xs">
-                      <span className="flex items-center gap-1.5 text-slate-600 font-semibold">
-                        <Youtube className="w-4 h-4 text-red-600" />
+                      <span className="flex items-center gap-1.5 font-semibold text-slate-600">
+                        <Youtube className="h-4 w-4 text-red-600" />
                         Grabación YouTube:
                       </span>
                       {cls.youtubeUrl ? (
-                        <a href={safeHref(cls.youtubeUrl)} target="_blank" rel="noopener noreferrer" className="text-red-600 hover:text-red-800 font-bold underline truncate max-w-[200px]">
+                        <a
+                          href={safeHref(cls.youtubeUrl)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="max-w-[200px] truncate font-bold text-red-600 underline hover:text-red-800"
+                        >
                           Ver en YouTube
                         </a>
                       ) : (
-                        <span className="text-slate-400 italic">Sin grabación cargada</span>
+                        <span className="italic text-slate-400">Sin grabación cargada</span>
                       )}
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
-                  <Button variant="secondary" size="sm" leftIcon={<Edit3 className="w-3.5 h-3.5" />} onClick={() => handleOpenEdit(cls)}>
+                <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-4">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    leftIcon={<Edit3 className="h-3.5 w-3.5" />}
+                    onClick={() => handleOpenEdit(cls)}
+                  >
                     Editar
                   </Button>
-                  <Button variant="danger" size="sm" leftIcon={<Trash2 className="w-3.5 h-3.5" />} onClick={() => setDeleteTarget(cls)}>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    leftIcon={<Trash2 className="h-3.5 w-3.5" />}
+                    onClick={() => setDeleteTarget(cls)}
+                  >
                     Eliminar
                   </Button>
                 </div>
@@ -239,7 +263,11 @@ export default function AdminClassesPage() {
         onCancel={() => setDeleteTarget(null)}
         onConfirm={handleConfirmDelete}
         title="¿Eliminar esta clase?"
-        description={deleteTarget ? `Se eliminará "${deleteTarget.title}" y todos sus registros de asistencia y tareas asociadas.` : undefined}
+        description={
+          deleteTarget
+            ? `Se eliminará "${deleteTarget.title}" y todos sus registros de asistencia y tareas asociadas.`
+            : undefined
+        }
         confirmLabel="Eliminar clase"
         loading={deleting}
       />

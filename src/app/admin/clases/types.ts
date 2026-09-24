@@ -19,3 +19,9 @@ export interface SimpleUser {
   name: string;
   email: string;
 }
+
+/** Usuaria tal como la devuelve /api/admin/users (solo los campos que usa esta pantalla). */
+export interface ManagedUser extends SimpleUser {
+  role: string;
+  status: string;
+}

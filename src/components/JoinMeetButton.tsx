@@ -28,7 +28,9 @@ export default function JoinMeetButton({
   const [loading, setLoading] = useState(false);
   const [attended, setAttended] = useState(initialAttended);
   const [attendedTime, setAttendedTime] = useState<string | null>(
-    initialAttendedAt ? new Date(initialAttendedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : null,
+    initialAttendedAt
+      ? new Date(initialAttendedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+      : null,
   );
 
   const handleJoin = async () => {
@@ -56,8 +58,15 @@ export default function JoinMeetButton({
         const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (!reduceMotion) {
           try {
-            confetti({ particleCount: 80, spread: 60, origin: { y: 0.7 }, colors: ['#D946EF', '#9333EA', '#6366F1', '#14B8A6'] });
-          } catch {}
+            confetti({
+              particleCount: 80,
+              spread: 60,
+              origin: { y: 0.7 },
+              colors: ['#D946EF', '#9333EA', '#6366F1', '#14B8A6'],
+            });
+          } catch {
+            // la animación es opcional
+          }
         }
 
         if (onAttendanceSuccess) {
@@ -80,25 +89,25 @@ export default function JoinMeetButton({
   }
 
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+    <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
       <Button
         onClick={handleJoin}
         loading={loading}
         size="lg"
         className="!bg-gradient-to-r !from-emerald-500 !via-teal-600 !to-cyan-600 !shadow-teal-500/25"
-        leftIcon={!loading ? <Video className="w-5 h-5" /> : undefined}
-        rightIcon={<ExternalLink className="w-4 h-4 opacity-75" />}
+        leftIcon={!loading ? <Video className="h-5 w-5" /> : undefined}
+        rightIcon={<ExternalLink className="h-4 w-4 opacity-75" />}
       >
         Unirme a clase en Google Meet
       </Button>
 
       {attended ? (
-        <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3.5 py-2 rounded-xl">
-          <CheckCircle className="w-4 h-4 text-emerald-600" />
+        <div className="flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-700">
+          <CheckCircle className="h-4 w-4 text-emerald-600" />
           <span>¡Asistencia registrada{attendedTime ? ` (${attendedTime})` : ''}!</span>
         </div>
       ) : (
-        <Tip className="bg-transparent border-none p-0">Dar clic registrará tu asistencia automáticamente.</Tip>
+        <Tip className="border-none bg-transparent p-0">Dar clic registrará tu asistencia automáticamente.</Tip>
       )}
     </div>
   );

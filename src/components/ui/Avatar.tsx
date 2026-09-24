@@ -21,7 +21,11 @@ interface AvatarProps {
 
 export function Avatar({ avatarKey, fallbackInitial, size = 'md', ring, className }: AvatarProps) {
   return (
-    <div className={cn(ring && 'p-0.5 rounded-[inherit] bg-gradient-to-tr from-role-from to-role-to shadow-glow inline-block')}>
+    <div
+      className={cn(
+        ring && 'inline-block rounded-[inherit] bg-gradient-to-tr from-role-from to-role-to p-0.5 shadow-glow',
+      )}
+    >
       <AvatarImage
         avatarKey={avatarKey}
         fallbackInitial={fallbackInitial}

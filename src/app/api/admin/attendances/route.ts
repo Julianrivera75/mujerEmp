@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import { getCurrentUser } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { logError } from '@/lib/log';
@@ -16,7 +17,7 @@ export async function GET(req: Request) {
     const classId = searchParams.get('classId');
     const studentIdParam = searchParams.get('studentId');
 
-    const where: any = {};
+    const where: Prisma.AttendanceWhereInput = {};
     if (classId) where.classId = classId;
 
     if (user.role === 'STUDENT') {
@@ -75,12 +76,14 @@ export async function GET(req: Request) {
           name: true,
           email: true,
           status: true,
-          attendances: user.role === 'MENTOR'
-            ? { where: { classSession: { mentorId: user.id } }, select: { classId: true, joinedAt: true } }
-            : { select: { classId: true, joinedAt: true } },
-          enrolledClasses: user.role === 'MENTOR'
-            ? { where: { classSession: { mentorId: user.id } }, select: { classId: true } }
-            : { select: { classId: true } },
+          attendances:
+            user.role === 'MENTOR'
+              ? { where: { classSession: { mentorId: user.id } }, select: { classId: true, joinedAt: true } }
+              : { select: { classId: true, joinedAt: true } },
+          enrolledClasses:
+            user.role === 'MENTOR'
+              ? { where: { classSession: { mentorId: user.id } }, select: { classId: true } }
+              : { select: { classId: true } },
         },
       });
 

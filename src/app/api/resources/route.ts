@@ -16,7 +16,14 @@ export async function POST(req: Request) {
     const { classId, title, type, url } = body;
 
     const cleanTitle = cleanText(title, 200);
-    if (typeof classId !== 'string' || !classId || !cleanTitle || !isOneOf(RESOURCE_TYPES, type) || typeof url !== 'string' || !url) {
+    if (
+      typeof classId !== 'string' ||
+      !classId ||
+      !cleanTitle ||
+      !isOneOf(RESOURCE_TYPES, type) ||
+      typeof url !== 'string' ||
+      !url
+    ) {
       return NextResponse.json({ error: 'Todos los campos son obligatorios y deben ser válidos.' }, { status: 400 });
     }
 
@@ -32,7 +39,10 @@ export async function POST(req: Request) {
     if (type === 'DOCUMENT') {
       // Archivo subido a nuestro almacenamiento: debe ser propio, existir y cumplir tipo y tamaño.
       if (!keyBelongsTo(url, 'resource', user.id) || !(await verifyUploadedObject(url, 'resource'))) {
-        return NextResponse.json({ error: 'El archivo no es válido. Sube un PDF o una imagen de hasta 25 MB.' }, { status: 400 });
+        return NextResponse.json(
+          { error: 'El archivo no es válido. Sube un PDF o una imagen de hasta 25 MB.' },
+          { status: 400 },
+        );
       }
       storedUrl = url;
     } else {

@@ -13,13 +13,17 @@ export function StudentsModal({ cls, onClose }: { cls: MentorClass | null; onClo
       onClose={onClose}
       title="Estudiantes asignadas"
       description={cls ? `Clase: ${cls.title}` : undefined}
-      footer={<Button variant="secondary" onClick={onClose}>Cerrar</Button>}
+      footer={
+        <Button variant="secondary" onClick={onClose}>
+          Cerrar
+        </Button>
+      }
     >
-      <div className="max-h-80 overflow-y-auto space-y-2 divide-y divide-slate-100">
+      <div className="max-h-80 space-y-2 divide-y divide-slate-100 overflow-y-auto">
         {cls?.enrollments.map((e) => {
           const attended = cls.attendances.find((a) => a.studentId === e.student.id);
           return (
-            <div key={e.student.id} className="pt-2 flex items-center justify-between text-xs">
+            <div key={e.student.id} className="flex items-center justify-between pt-2 text-xs">
               <div>
                 <p className="font-bold text-slate-800">{e.student.name}</p>
                 <p className="text-[11px] text-slate-400">{e.student.email}</p>

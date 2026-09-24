@@ -9,11 +9,11 @@ export function RoleBadge({ role, className }: { role: Role; className?: string 
     <span
       data-role={meta.variant}
       className={cn(
-        'inline-flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full text-white shadow-sm bg-gradient-to-r from-role-from to-role-to',
+        'inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-role-from to-role-to px-2.5 py-1 text-[10px] font-semibold text-white shadow-sm',
         className,
       )}
     >
-      <Icon className="w-3 h-3" strokeWidth={2} />
+      <Icon className="h-3 w-3" strokeWidth={2} />
       <span>{meta.label}</span>
     </span>
   );

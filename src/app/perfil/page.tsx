@@ -94,7 +94,11 @@ export default function ProfilePage() {
       const res = await fetch('/api/auth/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, currentPassword: currentPassword || undefined, newPassword: newPassword || undefined }),
+        body: JSON.stringify({
+          phone,
+          currentPassword: currentPassword || undefined,
+          newPassword: newPassword || undefined,
+        }),
       });
 
       const data = await res.json();
@@ -115,20 +119,22 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-8">
-        <h1 className="font-display text-2xl sm:text-3xl font-bold text-slate-800 flex items-center gap-3">
-          <User className="w-7 h-7 text-role-accent" />
+        <h1 className="flex items-center gap-3 font-display text-2xl font-bold text-slate-800 sm:text-3xl">
+          <User className="h-7 w-7 text-role-accent" />
           <span>Mi perfil y seguridad</span>
         </h1>
-        <p className="text-slate-500 text-sm mt-1">Consulta los datos de tu cuenta, periodo de vinculación y actualiza tu contraseña de acceso.</p>
+        <p className="mt-1 text-sm text-slate-500">
+          Consulta los datos de tu cuenta, periodo de vinculación y actualiza tu contraseña de acceso.
+        </p>
       </div>
 
       {loading || !profile ? (
         <SkeletonCard />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card variant="glass" className="p-6 space-y-4">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <Card variant="glass" className="space-y-4 p-6">
             <Avatar avatarKey={avatarKey} fallbackInitial={profile.name.charAt(0)} size="xl" ring className="mx-auto" />
 
             <div className="flex justify-center">
@@ -143,14 +149,16 @@ export default function ProfilePage() {
             <div className="text-center">
               <h2 className="text-lg font-bold text-slate-800">{profile.name}</h2>
               <p className="text-xs text-slate-500">{profile.email}</p>
-              <span className="inline-block mt-2 text-[11px] font-bold px-3 py-0.5 rounded-full bg-role-soft text-role-accent">{ROLE_META[profile.role].label}</span>
+              <span className="mt-2 inline-block rounded-full bg-role-soft px-3 py-0.5 text-[11px] font-bold text-role-accent">
+                {ROLE_META[profile.role].label}
+              </span>
             </div>
 
-            <div className="space-y-2.5 pt-4 border-t border-slate-100 text-xs text-slate-600">
+            <div className="space-y-2.5 border-t border-slate-100 pt-4 text-xs text-slate-600">
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Estado:</span>
-                <span className="font-bold text-emerald-600 flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
+                <span className="flex items-center gap-1 font-bold text-emerald-600">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
                   {profile.status}
                 </span>
               </div>
@@ -160,58 +168,93 @@ export default function ProfilePage() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Fecha inicio:</span>
-                <span className="font-semibold text-slate-700">{profile.startDate ? new Date(profile.startDate).toLocaleDateString('es-ES') : 'Indefinido'}</span>
+                <span className="font-semibold text-slate-700">
+                  {profile.startDate ? new Date(profile.startDate).toLocaleDateString('es-ES') : 'Indefinido'}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Fecha fin:</span>
-                <span className="font-semibold text-slate-700">{profile.endDate ? new Date(profile.endDate).toLocaleDateString('es-ES') : 'Indefinido'}</span>
+                <span className="font-semibold text-slate-700">
+                  {profile.endDate ? new Date(profile.endDate).toLocaleDateString('es-ES') : 'Indefinido'}
+                </span>
               </div>
             </div>
           </Card>
 
-          <Card variant="glass" className="md:col-span-2 p-6 sm:p-8">
-            <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-role-accent" />
+          <Card variant="glass" className="p-6 sm:p-8 md:col-span-2">
+            <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-800">
+              <ShieldCheck className="h-5 w-5 text-role-accent" />
               <span>Actualizar datos de contacto y contraseña</span>
             </h2>
 
-            {errorMsg && <div role="alert" className="mb-4 p-3 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs">{errorMsg}</div>}
+            {errorMsg && (
+              <div role="alert" className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-3 text-xs text-red-800">
+                {errorMsg}
+              </div>
+            )}
 
             <form onSubmit={handleSave} className="space-y-4">
-              <Input label="Teléfono de contacto" placeholder="+57 300 000 0000" value={phone} onChange={(e) => setPhone(e.target.value)} leftIcon={<Phone className="w-4 h-4" />} />
+              <Input
+                label="Teléfono de contacto"
+                placeholder="+57 300 000 0000"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                leftIcon={<Phone className="h-4 w-4" />}
+              />
 
-              <div className="pt-4 border-t border-slate-100 space-y-3">
-                <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">Cambiar contraseña (opcional)</h3>
-                <Input label="Contraseña actual" type="password" placeholder="••••••••" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Input label="Nueva contraseña" type="password" placeholder="Mínimo 8 caracteres" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-                  <Input label="Confirmar nueva contraseña" type="password" placeholder="Repite la nueva contraseña" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+              <div className="space-y-3 border-t border-slate-100 pt-4">
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">
+                  Cambiar contraseña (opcional)
+                </h3>
+                <Input
+                  label="Contraseña actual"
+                  type="password"
+                  placeholder="••••••••"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                />
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Input
+                    label="Nueva contraseña"
+                    type="password"
+                    placeholder="Mínimo 8 caracteres"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                  />
+                  <Input
+                    label="Confirmar nueva contraseña"
+                    type="password"
+                    placeholder="Repite la nueva contraseña"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
                 </div>
               </div>
 
-              <div className="pt-4 flex justify-end">
-                <Button type="submit" loading={saving} leftIcon={<Save className="w-4 h-4" />}>
+              <div className="flex justify-end pt-4">
+                <Button type="submit" loading={saving} leftIcon={<Save className="h-4 w-4" />}>
                   Guardar cambios
                 </Button>
               </div>
             </form>
           </Card>
 
-          <Card variant="glass" className="md:col-span-3 p-6 sm:p-8">
-            <h2 className="text-lg font-bold text-slate-800 mb-1 flex items-center gap-2">
-              <Download className="w-5 h-5 text-role-accent" />
+          <Card variant="glass" className="p-6 sm:p-8 md:col-span-3">
+            <h2 className="mb-1 flex items-center gap-2 text-lg font-bold text-slate-800">
+              <Download className="h-5 w-5 text-role-accent" />
               <span>Tus datos personales</span>
             </h2>
-            <p className="text-sm text-slate-600 leading-6 max-w-2xl">
-              Tienes derecho a conocer los datos que guardamos sobre ti. Descarga una copia en formato JSON con tu información de cuenta, asistencia, entregas y calificaciones.
-              Para solicitar la rectificación o la supresión de tus datos, consulta la{' '}
-              <Link href="/privacidad" className="text-role-accent font-semibold underline">
+            <p className="max-w-2xl text-sm leading-6 text-slate-600">
+              Tienes derecho a conocer los datos que guardamos sobre ti. Descarga una copia en formato JSON con tu
+              información de cuenta, asistencia, entregas y calificaciones. Para solicitar la rectificación o la
+              supresión de tus datos, consulta la{' '}
+              <Link href="/privacidad" className="font-semibold text-role-accent underline">
                 política de tratamiento de datos
               </Link>
               .
             </p>
             <div className="mt-4">
-              <Button href="/api/auth/export" variant="secondary" leftIcon={<Download className="w-4 h-4" />} download>
+              <Button href="/api/auth/export" variant="secondary" leftIcon={<Download className="h-4 w-4" />} download>
                 Descargar mis datos
               </Button>
             </div>

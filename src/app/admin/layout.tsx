@@ -13,7 +13,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   requireAcceptedTerms(user);
 
   return (
-    <div data-role="admin" className="min-h-dvh flex flex-col">
+    <div data-role="admin" className="flex min-h-dvh flex-col">
       <UserProvider user={user}>
         <div className="no-print">
           <Navbar user={user} />

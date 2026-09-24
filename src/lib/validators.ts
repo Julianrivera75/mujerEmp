@@ -7,7 +7,7 @@ export const SUBMISSION_FILE_TYPES = ['PDF', 'IMAGE', 'LINK'] as const;
 export const MEET_HOSTS = ['meet.google.com'];
 export const YOUTUBE_HOSTS = ['youtube.com', 'youtu.be', 'youtube-nocookie.com'];
 
-export const PASSWORD_MIN_LENGTH = 8;
+const PASSWORD_MIN_LENGTH = 8;
 export const PASSWORD_MAX_LENGTH = 128;
 
 const COMMON_PASSWORDS = new Set([

@@ -24,7 +24,7 @@ async function main() {
   const passwordHash = await bcrypt.hash('123456', 10);
 
   // 1. Administrador
-  const admin = await prisma.user.create({
+  await prisma.user.create({
     data: {
       name: 'Directora General (Admin)',
       email: 'admin@empoderas.org',
@@ -35,7 +35,7 @@ async function main() {
       phone: '+57 300 123 4567',
       startDate: new Date('2026-01-01'),
       endDate: new Date('2028-12-31'),
-    }
+    },
   });
 
   // 2. Mentores
@@ -50,7 +50,7 @@ async function main() {
       phone: '+57 311 987 6543',
       startDate: new Date('2026-01-15'),
       endDate: new Date('2026-12-31'),
-    }
+    },
   });
 
   const mentor2 = await prisma.user.create({
@@ -64,7 +64,7 @@ async function main() {
       phone: '+57 312 876 5432',
       startDate: new Date('2026-02-01'),
       endDate: new Date('2026-12-31'),
-    }
+    },
   });
 
   // 3. Estudiantes
@@ -79,7 +79,7 @@ async function main() {
       phone: '+57 315 443 2211',
       startDate: new Date('2026-03-01'),
       endDate: new Date('2026-11-30'),
-    }
+    },
   });
 
   const student2 = await prisma.user.create({
@@ -93,7 +93,7 @@ async function main() {
       phone: '+57 316 554 3322',
       startDate: new Date('2026-03-01'),
       endDate: new Date('2026-11-30'),
-    }
+    },
   });
 
   const student3 = await prisma.user.create({
@@ -107,11 +107,11 @@ async function main() {
       phone: '+57 317 665 4433',
       startDate: new Date('2026-03-01'),
       endDate: new Date('2026-11-30'),
-    }
+    },
   });
 
   // Estudiante Inactivo para validar que el sistema le impida el login
-  const studentInactive = await prisma.user.create({
+  await prisma.user.create({
     data: {
       name: 'Mariana Inactiva (Prueba Inactiva)',
       email: 'inactiva@empoderas.org',
@@ -122,7 +122,7 @@ async function main() {
       phone: '+57 310 000 0000',
       startDate: new Date('2025-01-01'),
       endDate: new Date('2025-12-31'),
-    }
+    },
   });
 
   console.log('🌱 Creando clases del mes...');
@@ -143,19 +143,23 @@ async function main() {
       monthKey: currentMonthKey,
       mentorId: mentor1.id,
       enrollments: {
-        create: [
-          { studentId: student1.id },
-          { studentId: student2.id },
-          { studentId: student3.id },
-        ]
+        create: [{ studentId: student1.id }, { studentId: student2.id }, { studentId: student3.id }],
       },
       resources: {
         create: [
-          { title: 'Guía de Liderazgo Comunitario (PDF)', type: 'DOCUMENT', url: 'https://ejemplo.org/docs/guia-liderazgo.pdf' },
-          { title: 'Grabación de la Sesión en YouTube', type: 'YOUTUBE', url: 'https://www.youtube.com/watch?v=7g1Fp-wG610' }
-        ]
-      }
-    }
+          {
+            title: 'Guía de Liderazgo Comunitario (PDF)',
+            type: 'DOCUMENT',
+            url: 'https://ejemplo.org/docs/guia-liderazgo.pdf',
+          },
+          {
+            title: 'Grabación de la Sesión en YouTube',
+            type: 'YOUTUBE',
+            url: 'https://www.youtube.com/watch?v=7g1Fp-wG610',
+          },
+        ],
+      },
+    },
   });
 
   // Registrar asistencia previa a la Clase 1 para Sofía
@@ -163,8 +167,8 @@ async function main() {
     data: {
       classId: class1.id,
       studentId: student1.id,
-      joinedAt: new Date('2026-09-02T14:02:15Z')
-    }
+      joinedAt: new Date('2026-09-02T14:02:15Z'),
+    },
   });
 
   // Tarea de la Clase 1
@@ -173,9 +177,10 @@ async function main() {
       classId: class1.id,
       creatorId: mentor1.id,
       title: 'Ensayo reflexivo: Mi proyecto de impacto personal',
-      description: 'Escribir una reflexión de 1 a 2 páginas sobre cómo aplicar las herramientas de liderazgo en tu territorio o entorno comunitario.',
+      description:
+        'Escribir una reflexión de 1 a 2 páginas sobre cómo aplicar las herramientas de liderazgo en tu territorio o entorno comunitario.',
       dueDate: new Date('2026-09-15T23:59:00Z'),
-    }
+    },
   });
 
   // Entrega ya calificada de Sofía
@@ -188,9 +193,10 @@ async function main() {
       fileType: 'PDF',
       notes: 'Envío mi ensayo profesora Carolina, quedo atenta a sus valiosas observaciones.',
       grade: 4.8,
-      feedback: 'Excelente reflexión, Sofía. Identificas muy bien las problemáticas territoriales y planteas soluciones prácticas y empáticas. ¡Sigue así!',
-      gradedAt: new Date('2026-09-05T10:15:00Z')
-    }
+      feedback:
+        'Excelente reflexión, Sofía. Identificas muy bien las problemáticas territoriales y planteas soluciones prácticas y empáticas. ¡Sigue así!',
+      gradedAt: new Date('2026-09-05T10:15:00Z'),
+    },
   });
 
   // Clase 2: Próxima clase virtual (Google Meet activo)
@@ -205,13 +211,9 @@ async function main() {
       monthKey: currentMonthKey,
       mentorId: mentor1.id,
       enrollments: {
-        create: [
-          { studentId: student1.id },
-          { studentId: student2.id },
-          { studentId: student3.id },
-        ]
-      }
-    }
+        create: [{ studentId: student1.id }, { studentId: student2.id }, { studentId: student3.id }],
+      },
+    },
   });
 
   // Tarea pendiente para la clase 2
@@ -222,11 +224,11 @@ async function main() {
       title: 'Mapa conceptual: Herramientas tecnológicas comunitarias',
       description: 'Crear un esquema o mapa mental con al menos 3 herramientas digitales para la gestión comunitaria.',
       dueDate: new Date('2026-09-20T23:59:00Z'),
-    }
+    },
   });
 
   // Clase 3: Impartida por Valeria Quintana
-  const class3 = await prisma.classSession.create({
+  await prisma.classSession.create({
     data: {
       title: 'Módulo 3: Formulación de Proyectos Sociales y Sostenibilidad',
       description: 'Metodología de marco lógico aplicada a iniciativas comunitarias y búsqueda de financiamiento.',
@@ -237,12 +239,9 @@ async function main() {
       monthKey: currentMonthKey,
       mentorId: mentor2.id,
       enrollments: {
-        create: [
-          { studentId: student1.id },
-          { studentId: student2.id },
-        ]
-      }
-    }
+        create: [{ studentId: student1.id }, { studentId: student2.id }],
+      },
+    },
   });
 
   console.log('✅ Base de datos inicializada exitosamente.');

@@ -59,7 +59,8 @@ export async function POST(req: Request) {
     if (user.status === 'INACTIVO') {
       return NextResponse.json(
         {
-          error: 'Tu cuenta se encuentra inactiva. Comunícate con la administración de Empoderas Diversas para reactivar tu acceso.',
+          error:
+            'Tu cuenta se encuentra inactiva. Comunícate con la administración de Empoderas Diversas para reactivar tu acceso.',
           inactive: true,
         },
         { status: 403 },
@@ -69,14 +70,18 @@ export async function POST(req: Request) {
     const now = new Date();
     if (user.startDate && new Date(user.startDate) > now) {
       return NextResponse.json(
-        { error: `Tu periodo de formación inicia el ${new Date(user.startDate).toLocaleDateString('es-ES')}. Aún no tienes acceso habilitado.` },
+        {
+          error: `Tu periodo de formación inicia el ${new Date(user.startDate).toLocaleDateString('es-ES')}. Aún no tienes acceso habilitado.`,
+        },
         { status: 403 },
       );
     }
 
     if (user.endDate && new Date(user.endDate) < now) {
       return NextResponse.json(
-        { error: `Tu periodo de vinculación finalizó el ${new Date(user.endDate).toLocaleDateString('es-ES')}. Contacta a la administración.` },
+        {
+          error: `Tu periodo de vinculación finalizó el ${new Date(user.endDate).toLocaleDateString('es-ES')}. Contacta a la administración.`,
+        },
         { status: 403 },
       );
     }
