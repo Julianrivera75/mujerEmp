@@ -1,13 +1,12 @@
 import type { Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { HttpError, MAX_ROWS, parseBody, parseValue, withAuth } from '@/lib/api';
+import { monthKeyOf } from '@/lib/months';
 import prisma from '@/lib/prisma';
 import { createClassSchema, meetLink, updateClassSchema, youtubeLink } from '@/lib/schemas';
 import { CLASS_STATUSES, cleanText, isOneOf, parseDate } from '@/lib/validators';
 
 export const dynamic = 'force-dynamic';
-
-const monthKeyOf = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
 export const GET = withAuth('classes GET', 'any', async (req, user) => {
   const { searchParams } = new URL(req.url);

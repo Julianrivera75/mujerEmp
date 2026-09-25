@@ -12,6 +12,8 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonRow } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
+import { formatDate, formatDateTimeSeconds, formatTimeSeconds } from '@/lib/format';
+import { logClientError } from '@/lib/client-log';
 
 interface AttendanceLog {
   id: string;
@@ -52,7 +54,7 @@ export default function AdminAttendancePage() {
         setAttendances(data.attendances || []);
         setStudentSummary(data.studentSummary || []);
       } catch (err) {
-        console.error('Error cargando asistencias:', err);
+        logClientError('Error cargando asistencias:', err);
       } finally {
         setLoading(false);
       }
@@ -83,8 +85,8 @@ export default function AdminAttendancePage() {
         `"${log.student.email.replace(/"/g, '""')}"`,
         `"${log.classSession.title.replace(/"/g, '""')}"`,
         `"${log.classSession.mentor.name.replace(/"/g, '""')}"`,
-        `"${d.toLocaleDateString('es-ES')}"`,
-        `"${d.toLocaleTimeString('es-ES')}"`,
+        `"${formatDate(d)}"`,
+        `"${formatTimeSeconds(d)}"`,
         '"PRESENTE"',
       ].join(',');
     });
@@ -180,7 +182,7 @@ export default function AdminAttendancePage() {
         ) : filteredLogs.length === 0 ? (
           <EmptyState icon={CheckCircle2} title="No se encontraron registros de asistencia" />
         ) : (
-          <Table>
+          <Table caption="Registro de asistencias a clases">
             <THead>
               <TRow>
                 <TCell head>Estudiante</TCell>
@@ -195,7 +197,7 @@ export default function AdminAttendancePage() {
             <tbody>
               {filteredLogs.map((log) => {
                 const clickDate = new Date(log.joinedAt);
-                const formatted = `${clickDate.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })} a las ${clickDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+                const formatted = formatDateTimeSeconds(clickDate);
 
                 return (
                   <TRow key={log.id}>

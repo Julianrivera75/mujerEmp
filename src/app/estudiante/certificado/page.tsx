@@ -8,6 +8,8 @@ import { Card } from '@/components/ui/Card';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { useSessionUser } from '@/lib/user-context';
 import { CERTIFICATE_MIN_ATTENDANCE_PERCENT } from '@/lib/legal';
+import { formatDateLong } from '@/lib/format';
+import { logClientError } from '@/lib/client-log';
 
 export default function StudentCertificatePage() {
   const user = useSessionUser();
@@ -27,7 +29,7 @@ export default function StudentCertificatePage() {
         const allAtt: { student: { id: string } }[] = attData.attendances || [];
         setTotalAttended(allAtt.filter((a) => a.student.id === user.id).length);
       } catch (err) {
-        console.error('Error cargando certificado:', err);
+        logClientError('Error cargando certificado:', err);
       } finally {
         setLoading(false);
       }
@@ -147,10 +149,7 @@ export default function StudentCertificatePage() {
                   Código de referencia: <strong>ED-{user.id.slice(-8).toUpperCase()}</strong>
                 </span>
               </span>
-              <span>
-                Fecha de expedición:{' '}
-                {new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
-              </span>
+              <span>Fecha de expedición: {formatDateLong(new Date())}</span>
             </div>
           </div>
         </div>

@@ -9,6 +9,8 @@ import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { cn } from '@/lib/cn';
+import { formatDateLong, formatDayMonthShort } from '@/lib/format';
+import { logClientError } from '@/lib/client-log';
 
 interface ClassSessionWithResources {
   id: string;
@@ -38,7 +40,7 @@ export default function StudentRepositoryPage() {
         const withYoutube = allClasses.find((c) => c.youtubeUrl);
         setSelectedClass(withYoutube || allClasses[0] || null);
       } catch (err) {
-        console.error('Error cargando repositorio:', err);
+        logClientError('Error cargando repositorio:', err);
       } finally {
         setLoading(false);
       }
@@ -81,12 +83,7 @@ export default function StudentRepositoryPage() {
                     <h2 className="text-xl font-bold text-slate-800">{selectedClass.title}</h2>
                     <p className="mt-1 text-xs text-slate-500">
                       Impartida por: <strong className="text-teal-700">{selectedClass.mentor.name}</strong> · Fecha de
-                      la sesión:{' '}
-                      {new Date(selectedClass.dateStart).toLocaleDateString('es-ES', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric',
-                      })}
+                      la sesión: {formatDateLong(selectedClass.dateStart)}
                     </p>
                   </div>
 
@@ -152,7 +149,7 @@ export default function StudentRepositoryPage() {
                           isSelected ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600',
                         )}
                       >
-                        {new Date(cls.dateStart).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                        {formatDayMonthShort(cls.dateStart)}
                       </span>
                       {cls.youtubeUrl ? (
                         <span

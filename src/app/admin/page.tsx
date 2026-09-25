@@ -20,6 +20,7 @@ import { Card } from '@/components/ui/Card';
 import { StatusPill } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { safeHref } from '@/lib/validators';
+import { formatTimeRange, formatWeekdayDate } from '@/lib/format';
 
 export default async function AdminDashboardPage() {
   const user = await getCurrentUser();
@@ -167,12 +168,8 @@ export default async function AdminDashboardPage() {
             {currentMonthClasses.map((cls) => {
               const dateStart = new Date(cls.dateStart);
               const dateEnd = new Date(cls.dateEnd);
-              const formattedDate = dateStart.toLocaleDateString('es-ES', {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-              });
-              const formattedTime = `${dateStart.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} - ${dateEnd.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`;
+              const formattedDate = formatWeekdayDate(dateStart);
+              const formattedTime = formatTimeRange(dateStart, dateEnd);
 
               return (
                 <div

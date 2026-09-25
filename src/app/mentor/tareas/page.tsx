@@ -12,6 +12,8 @@ import FileLink from '@/components/FileLink';
 import { CreateAssignmentModal } from './_components/CreateAssignmentModal';
 import { GradeModal } from './_components/GradeModal';
 import type { Assignment, Submission } from './types';
+import { formatDate, formatDue, formatTime } from '@/lib/format';
+import { logClientError } from '@/lib/client-log';
 
 export default function MentorTasksPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -30,7 +32,7 @@ export default function MentorTasksPage() {
       const classesData = await classesRes.json();
       setClasses(classesData.classes || []);
     } catch (err) {
-      console.error('Error al cargar tareas:', err);
+      logClientError('Error al cargar tareas:', err);
     } finally {
       setLoading(false);
     }
@@ -70,13 +72,7 @@ export default function MentorTasksPage() {
         <div className="space-y-6">
           {assignments.map((ass) => {
             const dueDate = new Date(ass.dueDate);
-            const formattedDue = dueDate.toLocaleDateString('es-ES', {
-              weekday: 'short',
-              day: 'numeric',
-              month: 'long',
-              hour: '2-digit',
-              minute: '2-digit',
-            });
+            const formattedDue = formatDue(dueDate);
 
             return (
               <Card key={ass.id} variant="glass" className="p-6 sm:p-8">
@@ -125,11 +121,7 @@ export default function MentorTasksPage() {
                             </div>
 
                             <p className="mb-2 text-xs text-slate-400">
-                              Entregada: {new Date(sub.submittedAt).toLocaleDateString('es-ES')} a las{' '}
-                              {new Date(sub.submittedAt).toLocaleTimeString('es-ES', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
+                              Entregada: {formatDate(sub.submittedAt)} a las {formatTime(sub.submittedAt)}
                             </p>
 
                             {sub.notes && (

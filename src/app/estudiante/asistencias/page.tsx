@@ -10,6 +10,8 @@ import { StatusPill } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonRow } from '@/components/ui/Skeleton';
 import { useSessionUser } from '@/lib/user-context';
+import { formatDayMonthLongTime } from '@/lib/format';
+import { logClientError } from '@/lib/client-log';
 
 interface AttendanceItem {
   id: string;
@@ -35,7 +37,7 @@ export default function StudentAttendanceHistoryPage() {
         const allAtt: (AttendanceItem & { student: { id: string } })[] = attData.attendances || [];
         setAttendances(allAtt.filter((a) => a.student.id === user.id));
       } catch (err) {
-        console.error('Error cargando asistencias:', err);
+        logClientError('Error cargando asistencias:', err);
       } finally {
         setLoading(false);
       }
@@ -81,7 +83,7 @@ export default function StudentAttendanceHistoryPage() {
             description="Conéctate a tus próximas clases para marcar tu presencia."
           />
         ) : (
-          <Table>
+          <Table caption="Mis asistencias a clases">
             <THead>
               <TRow>
                 <TCell head>Clase / sesión</TCell>
@@ -95,7 +97,7 @@ export default function StudentAttendanceHistoryPage() {
             <tbody>
               {attendances.map((item) => {
                 const clickDate = new Date(item.joinedAt);
-                const formatted = `${clickDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })} a las ${clickDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`;
+                const formatted = formatDayMonthLongTime(clickDate);
                 return (
                   <TRow key={item.id}>
                     <TCell className="font-bold text-slate-800">{item.classSession.title}</TCell>

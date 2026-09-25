@@ -7,6 +7,7 @@ import { Textarea, Input } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
 import FileUpload from '@/components/FileUpload';
 import type { StudentAssignment } from '../types';
+import { logClientError } from '@/lib/client-log';
 
 interface SubmitAssignmentModalProps {
   assignment: StudentAssignment | null;
@@ -66,7 +67,7 @@ export function SubmitAssignmentModal({ assignment, onClose, onSubmitted }: Subm
         onSubmitted();
       }
     } catch (err) {
-      console.error('Error al enviar entrega:', err);
+      logClientError('Error al enviar entrega:', err);
     } finally {
       setSending(false);
     }

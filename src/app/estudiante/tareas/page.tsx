@@ -11,6 +11,8 @@ import { SkeletonCard } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { SubmitAssignmentModal } from './_components/SubmitAssignmentModal';
 import type { StudentAssignment } from './types';
+import { formatDate, formatDue } from '@/lib/format';
+import { logClientError } from '@/lib/client-log';
 
 export default function StudentTasksPage() {
   const [assignments, setAssignments] = useState<StudentAssignment[]>([]);
@@ -25,7 +27,7 @@ export default function StudentTasksPage() {
       const data = await res.json();
       setAssignments(data.assignments || []);
     } catch (err) {
-      console.error('Error al cargar tareas del estudiante:', err);
+      logClientError('Error al cargar tareas del estudiante:', err);
     } finally {
       setLoading(false);
     }
@@ -63,13 +65,7 @@ export default function StudentTasksPage() {
             const isSubmitted = Boolean(mySub);
             const isGraded = mySub && mySub.grade !== null;
             const dueDate = new Date(ass.dueDate);
-            const formattedDue = dueDate.toLocaleDateString('es-ES', {
-              weekday: 'short',
-              day: 'numeric',
-              month: 'long',
-              hour: '2-digit',
-              minute: '2-digit',
-            });
+            const formattedDue = formatDue(dueDate);
 
             return (
               <Card key={ass.id} variant="glass" className="p-6 sm:p-8">
@@ -131,7 +127,7 @@ export default function StudentTasksPage() {
                       <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-3.5 text-xs text-emerald-900">
                         <p className="mb-1 flex items-center gap-1 font-bold">
                           <CheckCircle className="h-4 w-4 text-emerald-600" />
-                          Entregaste esta tarea el {new Date(mySub.submittedAt).toLocaleDateString('es-ES')}
+                          Entregaste esta tarea el {formatDate(mySub.submittedAt)}
                         </p>
                         {mySub.notes && <p className="italic text-slate-600">&ldquo;{mySub.notes}&rdquo;</p>}
                       </div>

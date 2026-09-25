@@ -18,6 +18,8 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Badge } from '@/components/ui/Badge';
 import { UserFormModal } from './_components/UserFormModal';
 import type { UserItem } from './types';
+import { formatDate } from '@/lib/format';
+import { logClientError } from '@/lib/client-log';
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<UserItem[]>([]);
@@ -40,7 +42,7 @@ export default function AdminUsersPage() {
       const usersData = await usersRes.json();
       setUsers(usersData.users || []);
     } catch (err) {
-      console.error('Error cargando usuarios:', err);
+      logClientError('Error cargando usuarios:', err);
     } finally {
       setLoading(false);
     }
@@ -187,7 +189,7 @@ export default function AdminUsersPage() {
           <>
             {/* Tabla — visible ≥ sm */}
             <div className="hidden sm:block">
-              <Table>
+              <Table caption="Usuarias de la plataforma">
                 <THead>
                   <TRow>
                     <TCell head>Usuario &amp; rol</TCell>
@@ -244,11 +246,11 @@ export default function AdminUsersPage() {
                       <TCell className="text-xs">
                         <p>
                           <span className="font-semibold text-slate-700">Inicio: </span>
-                          {u.startDate ? new Date(u.startDate).toLocaleDateString('es-ES') : 'Indefinido'}
+                          {u.startDate ? formatDate(u.startDate) : 'Indefinido'}
                         </p>
                         <p>
                           <span className="font-semibold text-slate-700">Fin: </span>
-                          {u.endDate ? new Date(u.endDate).toLocaleDateString('es-ES') : 'Indefinido'}
+                          {u.endDate ? formatDate(u.endDate) : 'Indefinido'}
                         </p>
                       </TCell>
                       <TCell className="text-xs">
@@ -333,7 +335,7 @@ export default function AdminUsersPage() {
                       { label: 'Documento', value: u.documentId || 'Sin documento' },
                       {
                         label: 'Vigencia',
-                        value: u.endDate ? new Date(u.endDate).toLocaleDateString('es-ES') : 'Indefinido',
+                        value: u.endDate ? formatDate(u.endDate) : 'Indefinido',
                       },
                     ]}
                   />

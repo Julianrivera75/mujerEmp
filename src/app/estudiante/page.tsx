@@ -22,6 +22,8 @@ import { SkeletonCard } from '@/components/ui/Skeleton';
 import { useSessionUser } from '@/lib/user-context';
 import { CERTIFICATE_MIN_ATTENDANCE_PERCENT } from '@/lib/legal';
 import JoinMeetButton from '@/components/JoinMeetButton';
+import { formatDateLong, formatTimeRange, formatWeekdayDate } from '@/lib/format';
+import { logClientError } from '@/lib/client-log';
 
 interface StudentClass {
   id: string;
@@ -48,7 +50,7 @@ export default function StudentDashboardPage() {
       const data = await res.json();
       setClasses(data.classes || []);
     } catch (err) {
-      console.error('Error cargando datos del estudiante:', err);
+      logClientError('Error cargando datos del estudiante:', err);
     } finally {
       setLoading(false);
     }
@@ -190,12 +192,8 @@ export default function StudentDashboardPage() {
             {upcomingClasses.map((cls, i) => {
               const start = new Date(cls.dateStart);
               const end = new Date(cls.dateEnd);
-              const formattedDate = start.toLocaleDateString('es-ES', {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-              });
-              const formattedTime = `${start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`;
+              const formattedDate = formatWeekdayDate(start);
+              const formattedTime = formatTimeRange(start, end);
               const myAttendance = cls.attendances.find((a) => a.studentId === user.id);
 
               return (
@@ -274,13 +272,7 @@ export default function StudentDashboardPage() {
               >
                 <div>
                   <div className="mb-2 flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-slate-400">
-                      {new Date(cls.dateStart).toLocaleDateString('es-ES', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric',
-                      })}
-                    </span>
+                    <span className="text-[11px] font-bold text-slate-400">{formatDateLong(cls.dateStart)}</span>
                     <StatusPill
                       label={myAttendance ? 'Asististe' : 'No asististe en vivo'}
                       tone={myAttendance ? 'success' : 'neutral'}

@@ -8,6 +8,8 @@ import { Table, THead, TRow, TCell } from '@/components/ui/Table';
 import { StatusPill } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonRow } from '@/components/ui/Skeleton';
+import { formatDayMonthTime } from '@/lib/format';
+import { logClientError } from '@/lib/client-log';
 
 interface MentorAttendanceLog {
   id: string;
@@ -28,7 +30,7 @@ export default function MentorAttendancesPage() {
         const data = await res.json();
         setAttendances(data.attendances || []);
       } catch (err) {
-        console.error('Error cargando asistencias del mentor:', err);
+        logClientError('Error cargando asistencias del mentor:', err);
       } finally {
         setLoading(false);
       }
@@ -53,7 +55,7 @@ export default function MentorAttendancesPage() {
         ) : attendances.length === 0 ? (
           <EmptyState icon={CheckCircle2} title="Aún no hay registros de asistencia a tus clases" />
         ) : (
-          <Table>
+          <Table caption="Asistencias de las estudiantes a mis clases">
             <THead>
               <TRow>
                 <TCell head>Estudiante</TCell>
@@ -67,7 +69,7 @@ export default function MentorAttendancesPage() {
             <tbody>
               {attendances.map((log) => {
                 const clickDate = new Date(log.joinedAt);
-                const formatted = `${clickDate.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })} a las ${clickDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`;
+                const formatted = formatDayMonthTime(clickDate);
 
                 return (
                   <TRow key={log.id}>

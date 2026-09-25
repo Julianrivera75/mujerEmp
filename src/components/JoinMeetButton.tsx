@@ -8,6 +8,8 @@ import { safeHref } from '@/lib/validators';
 import { StatusPill } from '@/components/ui/Badge';
 import { Tip } from '@/components/ui/Tip';
 import { useToast } from '@/components/ui/Toast';
+import { formatTime } from '@/lib/format';
+import { logClientError } from '@/lib/client-log';
 
 interface JoinMeetButtonProps {
   classId: string;
@@ -28,9 +30,7 @@ export default function JoinMeetButton({
   const [loading, setLoading] = useState(false);
   const [attended, setAttended] = useState(initialAttended);
   const [attendedTime, setAttendedTime] = useState<string | null>(
-    initialAttendedAt
-      ? new Date(initialAttendedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
-      : null,
+    initialAttendedAt ? formatTime(initialAttendedAt) : null,
   );
 
   const handleJoin = async () => {
@@ -53,7 +53,7 @@ export default function JoinMeetButton({
       if (res.ok) {
         setAttended(true);
         const now = new Date();
-        setAttendedTime(now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }));
+        setAttendedTime(formatTime(now));
 
         const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (!reduceMotion) {
@@ -73,10 +73,10 @@ export default function JoinMeetButton({
           onAttendanceSuccess();
         }
       } else {
-        console.warn('Registro de asistencia:', data.error);
+        logClientError('Registro de asistencia:', data.error);
       }
     } catch (err) {
-      console.error('Error al marcar asistencia:', err);
+      logClientError('Error al marcar asistencia:', err);
     } finally {
       setLoading(false);
       const safeMeetLink = safeHref(meetLink);

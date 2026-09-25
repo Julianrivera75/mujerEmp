@@ -23,6 +23,7 @@ import { Logo } from '@/components/Logo';
 import { Avatar } from '@/components/ui/Avatar';
 import { RoleBadge } from '@/components/ui/RoleBadge';
 import { cn } from '@/lib/cn';
+import { logClientError } from '@/lib/client-log';
 
 interface NavbarProps {
   user: {
@@ -97,7 +98,7 @@ export default function Navbar({ user }: NavbarProps) {
       router.push('/login');
       router.refresh();
     } catch (err) {
-      console.error('Error cerrando sesión:', err);
+      logClientError('Error cerrando sesión:', err);
     }
   };
 

@@ -5,6 +5,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Input, Textarea } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
 import type { Submission } from '../types';
+import { logClientError } from '@/lib/client-log';
 
 interface GradeModalProps {
   submission: Submission | null;
@@ -36,7 +37,7 @@ export function GradeModal({ submission, onClose, onSaved }: GradeModalProps) {
       });
       if (res.ok) onSaved();
     } catch (err) {
-      console.error('Error al calificar:', err);
+      logClientError('Error al calificar:', err);
     } finally {
       setSaving(false);
     }

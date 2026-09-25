@@ -11,6 +11,8 @@ import { SkeletonCard } from '@/components/ui/Skeleton';
 import FileUpload from '@/components/FileUpload';
 import { useToast } from '@/components/ui/Toast';
 import { ROLE_META, type Role } from '@/lib/roles';
+import { formatDate } from '@/lib/format';
+import { logClientError } from '@/lib/client-log';
 
 interface FullProfile {
   id: string;
@@ -51,7 +53,7 @@ export default function ProfilePage() {
           setAvatarKey(data.user.avatar || null);
         }
       } catch (err) {
-        console.error('Error cargando perfil:', err);
+        logClientError('Error cargando perfil:', err);
       } finally {
         setLoading(false);
       }
@@ -169,13 +171,13 @@ export default function ProfilePage() {
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Fecha inicio:</span>
                 <span className="font-semibold text-slate-700">
-                  {profile.startDate ? new Date(profile.startDate).toLocaleDateString('es-ES') : 'Indefinido'}
+                  {profile.startDate ? formatDate(profile.startDate) : 'Indefinido'}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Fecha fin:</span>
                 <span className="font-semibold text-slate-700">
-                  {profile.endDate ? new Date(profile.endDate).toLocaleDateString('es-ES') : 'Indefinido'}
+                  {profile.endDate ? formatDate(profile.endDate) : 'Indefinido'}
                 </span>
               </div>
             </div>

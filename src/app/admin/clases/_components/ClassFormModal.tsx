@@ -6,6 +6,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Input, Select, Textarea } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
 import { Tip } from '@/components/ui/Tip';
+import { localInputValue } from '@/lib/months';
 import type { ClassItem, SimpleUser } from '../types';
 
 export interface ClassFormData {
@@ -41,8 +42,8 @@ function buildInitialForm(
     return {
       title: cls.title,
       description: cls.description || '',
-      dateStart: new Date(cls.dateStart).toISOString().slice(0, 16),
-      dateEnd: new Date(cls.dateEnd).toISOString().slice(0, 16),
+      dateStart: localInputValue(new Date(cls.dateStart)),
+      dateEnd: localInputValue(new Date(cls.dateEnd)),
       mentorId: cls.mentor.id,
       meetLink: cls.meetLink || '',
       youtubeUrl: cls.youtubeUrl || '',
@@ -51,11 +52,13 @@ function buildInitialForm(
       studentIds: cls.enrollments.map((e) => e.student.id),
     };
   }
+  const today = new Date();
+  const at = (hour: number) => localInputValue(new Date(today.getFullYear(), today.getMonth(), today.getDate(), hour));
   return {
     title: '',
     description: '',
-    dateStart: '2026-09-18T15:00',
-    dateEnd: '2026-09-18T17:00',
+    dateStart: at(15),
+    dateEnd: at(17),
     mentorId: mentors[0]?.id || '',
     meetLink: 'https://meet.google.com/new',
     youtubeUrl: '',
@@ -96,7 +99,12 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
     try {
       const url = '/api/classes';
       const method = mode === 'create' ? 'POST' : 'PUT';
-      const payload = mode === 'create' ? formData : { ...formData, id: editingClass?.id };
+      // El campo datetime-local no lleva zona horaria: se envía como instante absoluto.
+      const dates = {
+        dateStart: new Date(formData.dateStart).toISOString(),
+        dateEnd: new Date(formData.dateEnd).toISOString(),
+      };
+      const payload = mode === 'create' ? { ...formData, ...dates } : { ...formData, ...dates, id: editingClass?.id };
 
       const res = await fetch(url, {
         method,

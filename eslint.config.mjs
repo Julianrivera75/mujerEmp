@@ -33,7 +33,12 @@ export default tseslint.config(
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' },
       ],
       eqeqeq: ['error', 'always'],
+      'no-console': 'error',
     },
+  },
+  {
+    files: ['src/lib/log.ts', 'src/lib/client-log.ts', 'tests/**/*.ts'],
+    rules: { 'no-console': 'off' },
   },
   {
     files: ['tests/**/*.ts'],

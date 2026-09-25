@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Calendar as CalendarIcon, PlusCircle, Video, Youtube, Clock, Edit3, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
@@ -11,16 +11,20 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
+import { formatTimeRange, formatWeekdayDate } from '@/lib/format';
+import { monthKeyOf, monthOptions } from '@/lib/months';
 import { safeHref } from '@/lib/validators';
 import { ClassFormModal } from './_components/ClassFormModal';
 import type { ClassItem, ManagedUser, SimpleUser } from './types';
+import { logClientError } from '@/lib/client-log';
 
 export default function AdminClassesPage() {
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [mentors, setMentors] = useState<SimpleUser[]>([]);
   const [students, setStudents] = useState<SimpleUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedMonth, setSelectedMonth] = useState('2026-09');
+  const [selectedMonth, setSelectedMonth] = useState(() => monthKeyOf(new Date()));
+  const months = useMemo(() => monthOptions(), []);
   const { show } = useToast();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -45,7 +49,7 @@ export default function AdminClassesPage() {
       setMentors(allUsers.filter((u: ManagedUser) => u.role === 'MENTOR' && u.status === 'ACTIVO'));
       setStudents(allUsers.filter((u: ManagedUser) => u.role === 'STUDENT' && u.status === 'ACTIVO'));
     } catch (err) {
-      console.error('Error al cargar datos:', err);
+      logClientError('Error al cargar datos:', err);
     } finally {
       setLoading(false);
     }
@@ -110,11 +114,12 @@ export default function AdminClassesPage() {
         <div className="flex items-center gap-3">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Filtrar por mes</span>
           <Select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="w-auto">
-            <option value="2026-08">Agosto 2026</option>
-            <option value="2026-09">Septiembre 2026 (actual)</option>
-            <option value="2026-10">Octubre 2026</option>
-            <option value="2026-11">Noviembre 2026</option>
-            <option value="2026-12">Diciembre 2026</option>
+            {months.map((month) => (
+              <option key={month.value} value={month.value}>
+                {month.label}
+                {month.current ? ' (actual)' : ''}
+              </option>
+            ))}
             <option value="ALL">Ver todas las clases</option>
           </Select>
         </div>
@@ -141,8 +146,8 @@ export default function AdminClassesPage() {
           {classes.map((cls) => {
             const start = new Date(cls.dateStart);
             const end = new Date(cls.dateEnd);
-            const formattedDate = start.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
-            const formattedTime = `${start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`;
+            const formattedDate = formatWeekdayDate(start);
+            const formattedTime = formatTimeRange(start, end);
 
             return (
               <Card key={cls.id} variant="interactive" className="flex cursor-default flex-col justify-between p-6">

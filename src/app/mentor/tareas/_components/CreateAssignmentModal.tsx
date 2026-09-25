@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Input, Select, Textarea } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
+import { logClientError } from '@/lib/client-log';
 
 interface ClassOption {
   id: string;
@@ -44,7 +45,7 @@ export function CreateAssignmentModal({ open, classes, onClose, onCreated }: Cre
         onCreated();
       }
     } catch (err) {
-      console.error('Error creando tarea:', err);
+      logClientError('Error creando tarea:', err);
     } finally {
       setCreating(false);
     }

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { safeHref } from '@/lib/validators';
+import { logClientError } from '@/lib/client-log';
 
 interface FileLinkProps {
   /** URL externa, o key de S3 cuando isStoredFile es true. */
@@ -35,7 +36,7 @@ export default function FileLink({ fileUrl, isStoredFile, className, children }:
         window.open(data.url, '_blank', 'noreferrer');
       }
     } catch (err) {
-      console.error('Error al obtener el archivo:', err);
+      logClientError('Error al obtener el archivo:', err);
     } finally {
       setLoading(false);
     }

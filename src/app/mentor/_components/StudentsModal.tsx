@@ -5,6 +5,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { StatusPill } from '@/components/ui/Badge';
 import type { MentorClass } from '../types';
+import { formatTime } from '@/lib/format';
 
 export function StudentsModal({ cls, onClose }: { cls: MentorClass | null; onClose: () => void }) {
   return (
@@ -29,10 +30,7 @@ export function StudentsModal({ cls, onClose }: { cls: MentorClass | null; onClo
                 <p className="text-[11px] text-slate-400">{e.student.email}</p>
               </div>
               {attended ? (
-                <StatusPill
-                  tone="success"
-                  label={`Asistió (${new Date(attended.joinedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })})`}
-                />
+                <StatusPill tone="success" label={`Asistió (${formatTime(attended.joinedAt)})`} />
               ) : (
                 <StatusPill tone="neutral" label="Pendiente" />
               )}

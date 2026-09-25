@@ -25,6 +25,8 @@ import { safeHref } from '@/lib/validators';
 import { StudentsModal } from './_components/StudentsModal';
 import { ResourcesModal } from './_components/ResourcesModal';
 import type { MentorClass } from './types';
+import { formatTimeRange, formatWeekdayDateLong } from '@/lib/format';
+import { logClientError } from '@/lib/client-log';
 
 export default function MentorDashboardPage() {
   const user = useSessionUser();
@@ -47,7 +49,7 @@ export default function MentorDashboardPage() {
       const data = await res.json();
       setClasses(data.classes || []);
     } catch (err) {
-      console.error('Error cargando datos del mentor:', err);
+      logClientError('Error cargando datos del mentor:', err);
     } finally {
       setLoading(false);
     }
@@ -93,7 +95,7 @@ export default function MentorDashboardPage() {
         setEditingClassId(null);
       }
     } catch (err) {
-      console.error('Error guardando enlaces:', err);
+      logClientError('Error guardando enlaces:', err);
     } finally {
       setSaving(false);
     }
@@ -152,13 +154,8 @@ export default function MentorDashboardPage() {
           {classes.map((cls) => {
             const start = new Date(cls.dateStart);
             const end = new Date(cls.dateEnd);
-            const formattedDate = start.toLocaleDateString('es-ES', {
-              weekday: 'long',
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-            });
-            const formattedTime = `${start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`;
+            const formattedDate = formatWeekdayDateLong(start);
+            const formattedTime = formatTimeRange(start, end);
             const isEditing = editingClassId === cls.id;
             const attendedCount = cls.attendances.length;
             const totalEnrolled = cls.enrollments.length;

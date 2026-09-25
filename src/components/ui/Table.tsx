@@ -1,10 +1,25 @@
 import React from 'react';
 import { cn } from '@/lib/cn';
 
-export function Table({ className, ...rest }: React.TableHTMLAttributes<HTMLTableElement>) {
+export function Table({
+  className,
+  caption,
+  children,
+  ...rest
+}: React.TableHTMLAttributes<HTMLTableElement> & { caption: string }) {
   return (
-    <div className="overflow-x-auto rounded-2xl border border-slate-100">
-      <table className={cn('w-full text-sm', className)} {...rest} />
+    <div
+      className="overflow-x-auto rounded-2xl border border-slate-100"
+      role="region"
+      aria-label={caption}
+      // La región con desplazamiento debe poder enfocarse para recorrerla con el teclado.
+      // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+      tabIndex={0}
+    >
+      <table className={cn('w-full text-sm', className)} {...rest}>
+        <caption className="sr-only">{caption}</caption>
+        {children}
+      </table>
     </div>
   );
 }

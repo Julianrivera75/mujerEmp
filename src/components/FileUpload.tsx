@@ -2,6 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import { Upload, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { logClientError } from '@/lib/client-log';
 
 type UploadCategory = 'submission' | 'resource' | 'avatar' | 'certificate';
 
@@ -57,7 +58,7 @@ export default function FileUpload({ category, accept, onUploaded, label }: File
       setUploadedName(file.name);
       onUploaded(presignData.key, file.name);
     } catch (err) {
-      console.error('Error al subir archivo:', err);
+      logClientError('Error al subir archivo:', err);
       setError('Error de red al subir el archivo.');
     } finally {
       setUploading(false);
