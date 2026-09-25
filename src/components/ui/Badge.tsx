@@ -11,7 +11,7 @@ const TONE_CLS: Record<NonNullable<BadgeProps['tone']>, string> = {
   warning: 'bg-amber-100 text-amber-700',
   danger: 'bg-red-100 text-red-700',
   info: 'bg-indigo-100 text-indigo-700',
-  role: 'bg-role-soft text-role-accent',
+  role: 'bg-role-soft text-role-ink',
 };
 
 export function Badge({ tone = 'neutral', className, ...rest }: BadgeProps) {

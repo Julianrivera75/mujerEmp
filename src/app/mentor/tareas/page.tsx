@@ -78,7 +78,7 @@ export default function MentorTasksPage() {
               <Card key={ass.id} variant="glass" className="p-6 sm:p-8">
                 <div className="mb-4 flex flex-col justify-between gap-4 border-b border-slate-100 pb-4 sm:flex-row sm:items-start">
                   <div>
-                    <span className="mb-1 block text-xs font-bold uppercase tracking-wider text-role-accent">
+                    <span className="mb-1 block text-xs font-bold uppercase tracking-wider text-role-ink">
                       Clase: {ass.classSession.title}
                     </span>
                     <h2 className="text-xl font-bold text-slate-800">{ass.title}</h2>
@@ -89,7 +89,7 @@ export default function MentorTasksPage() {
                       <Calendar className="h-3.5 w-3.5" />
                       Vence: {formattedDue}
                     </span>
-                    <p className="mt-1 text-xs text-slate-400">{ass.submissions.length} entregas recibidas</p>
+                    <p className="mt-1 text-xs text-slate-500">{ass.submissions.length} entregas recibidas</p>
                   </div>
                 </div>
 
@@ -98,7 +98,7 @@ export default function MentorTasksPage() {
                 </h3>
 
                 {ass.submissions.length === 0 ? (
-                  <p className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-xs italic text-slate-400">
+                  <p className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-xs italic text-slate-500">
                     Aún ninguna estudiante ha enviado su entrega para esta tarea.
                   </p>
                 ) : (
@@ -114,13 +114,13 @@ export default function MentorTasksPage() {
                             <div className="mb-2 flex items-center justify-between">
                               <span className="text-sm font-bold text-slate-800">{sub.student.name}</span>
                               <span
-                                className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${isGraded ? 'bg-role-soft text-role-accent' : 'bg-amber-100 text-amber-800'}`}
+                                className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${isGraded ? 'bg-role-soft text-role-ink' : 'bg-amber-100 text-amber-800'}`}
                               >
                                 {isGraded ? `Nota: ${sub.grade} / 5.0` : 'Sin calificar'}
                               </span>
                             </div>
 
-                            <p className="mb-2 text-xs text-slate-400">
+                            <p className="mb-2 text-xs text-slate-500">
                               Entregada: {formatDate(sub.submittedAt)} a las {formatTime(sub.submittedAt)}
                             </p>
 
@@ -134,7 +134,7 @@ export default function MentorTasksPage() {
                               <FileLink
                                 fileUrl={sub.fileUrl}
                                 isStoredFile={sub.fileType === 'PDF' || sub.fileType === 'IMAGE'}
-                                className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold text-role-accent hover:brightness-90"
+                                className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold text-role-ink hover:brightness-90"
                               >
                                 <FileText className="h-3.5 w-3.5" />
                                 <span>Ver archivo / enlace entregado</span>
@@ -144,7 +144,7 @@ export default function MentorTasksPage() {
 
                             {sub.feedback && (
                               <div className="mt-2 rounded-xl border border-role-accent/15 bg-role-soft p-2.5 text-xs">
-                                <p className="mb-0.5 flex items-center gap-1 font-bold text-role-accent">
+                                <p className="mb-0.5 flex items-center gap-1 font-bold text-role-ink">
                                   <MessageSquare className="h-3 w-3" />
                                   Tu comentario a la estudiante:
                                 </p>

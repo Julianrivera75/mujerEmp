@@ -92,7 +92,7 @@ export function ResourcesModal({ cls, onClose, onUpdated }: ResourcesModalProps)
       >
         <div className="mb-5 max-h-56 space-y-2 overflow-y-auto">
           {cls?.resources.length === 0 ? (
-            <p className="py-3 text-center text-xs italic text-slate-400">Sin materiales agregados todavía.</p>
+            <p className="py-3 text-center text-xs italic text-slate-500">Sin materiales agregados todavía.</p>
           ) : (
             cls?.resources.map((res) => (
               <div
@@ -102,14 +102,14 @@ export function ResourcesModal({ cls, onClose, onUpdated }: ResourcesModalProps)
                 <FileLink
                   fileUrl={res.url}
                   isStoredFile={res.type === 'DOCUMENT'}
-                  className="flex items-center gap-1.5 font-bold text-slate-800 hover:text-role-accent"
+                  className="flex items-center gap-1.5 font-bold text-slate-800 hover:text-role-ink"
                 >
                   <FileText className="h-3.5 w-3.5" />
                   <span className="max-w-[220px] truncate">{res.title}</span>
                 </FileLink>
                 <button
                   onClick={() => setDeleteTarget(res.id)}
-                  className="ml-2 text-slate-400 hover:text-red-600"
+                  className="ml-2 text-slate-500 hover:text-red-600"
                   aria-label={`Eliminar ${res.title}`}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
@@ -141,7 +141,7 @@ export function ResourcesModal({ cls, onClose, onUpdated }: ResourcesModalProps)
 
           <div className="flex items-center">
             <div className="h-px flex-1 bg-slate-200" />
-            <span className="px-2 text-[10px] font-bold uppercase text-slate-400">o subí un archivo</span>
+            <span className="px-2 text-[10px] font-bold uppercase text-slate-500">o subí un archivo</span>
             <div className="h-px flex-1 bg-slate-200" />
           </div>
 

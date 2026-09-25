@@ -17,9 +17,9 @@ export default function YouTubeEmbed({ url, title = 'Clase Grabada', notes }: Yo
   if (!embedUrl) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-slate-100 p-8 text-center text-slate-500">
-        <Video className="mx-auto mb-2 h-12 w-12 text-slate-400" />
+        <Video className="mx-auto mb-2 h-12 w-12 text-slate-500" />
         <p className="font-medium">Aún no se ha cargado el enlace de grabación en YouTube para esta clase.</p>
-        <p className="mt-1 text-xs text-slate-400">
+        <p className="mt-1 text-xs text-slate-500">
           El docente o la administradora lo publicarán una vez finalizada la sesión.
         </p>
       </div>

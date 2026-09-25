@@ -64,7 +64,7 @@ export function ResponsiveRow({
     <div className={cn('space-y-2 rounded-2xl border border-slate-100 p-4 sm:hidden', className)}>
       {columns.map((c, i) => (
         <div key={i} className="flex items-center justify-between gap-3 text-sm">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">{c.label}</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-500">{c.label}</span>
           <span className={cn(c.emphasize ? 'font-bold text-slate-800' : 'text-slate-600')}>{c.value}</span>
         </div>
       ))}

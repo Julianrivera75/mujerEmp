@@ -125,7 +125,7 @@ export default function Navbar({ user }: NavbarProps) {
                   href={item.href}
                   className={cn(
                     'relative flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-colors duration-200',
-                    isActive ? 'text-white' : 'text-slate-600 hover:bg-role-soft/70 hover:text-role-accent',
+                    isActive ? 'text-white' : 'text-slate-600 hover:bg-role-soft/70 hover:text-role-ink',
                   )}
                 >
                   {isActive && (
@@ -156,7 +156,7 @@ export default function Navbar({ user }: NavbarProps) {
                   <RoleBadge role={user.role} className="mt-0.5" />
                 </div>
                 <ChevronDown
-                  className={cn('h-3.5 w-3.5 text-slate-400 transition-transform', menuOpen && 'rotate-180')}
+                  className={cn('h-3.5 w-3.5 text-slate-500 transition-transform', menuOpen && 'rotate-180')}
                 />
               </button>
 
@@ -169,7 +169,7 @@ export default function Navbar({ user }: NavbarProps) {
                     href="/perfil"
                     role="menuitem"
                     onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-role-soft hover:text-role-accent"
+                    className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-role-soft hover:text-role-ink"
                   >
                     <UserIcon className="h-4 w-4" />
                     <span>Mi perfil</span>

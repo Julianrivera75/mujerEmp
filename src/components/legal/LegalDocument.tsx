@@ -21,7 +21,7 @@ export function LegalDocument({ title, intro, children }: LegalDocumentProps) {
           </Link>
           <Link
             href="/login"
-            className="inline-flex items-center gap-1 text-xs font-bold text-role-accent hover:underline"
+            className="inline-flex items-center gap-1 text-xs font-bold text-role-ink hover:underline"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             <span>Volver</span>
@@ -50,13 +50,13 @@ export function LegalDocument({ title, intro, children }: LegalDocumentProps) {
           aria-label="Otros documentos"
           className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-xs font-medium text-slate-500"
         >
-          <Link href="/terminos" className="hover:text-role-accent hover:underline">
+          <Link href="/terminos" className="hover:text-role-ink hover:underline">
             Términos y condiciones
           </Link>
-          <Link href="/privacidad" className="hover:text-role-accent hover:underline">
+          <Link href="/privacidad" className="hover:text-role-ink hover:underline">
             Tratamiento de datos personales
           </Link>
-          <Link href="/cookies" className="hover:text-role-accent hover:underline">
+          <Link href="/cookies" className="hover:text-role-ink hover:underline">
             Cookies
           </Link>
         </nav>

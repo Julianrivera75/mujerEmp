@@ -95,7 +95,7 @@ export function SubmitAssignmentModal({ assignment, onClose, onSubmitted }: Subm
 
         <div className="flex items-center">
           <div className="h-px flex-1 bg-slate-200" />
-          <span className="px-2 text-[10px] font-bold uppercase text-slate-400">o subí un archivo</span>
+          <span className="px-2 text-[10px] font-bold uppercase text-slate-500">o subí un archivo</span>
           <div className="h-px flex-1 bg-slate-200" />
         </div>
 

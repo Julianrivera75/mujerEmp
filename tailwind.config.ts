@@ -36,6 +36,7 @@ const config: Config = {
           from: 'rgb(var(--role-from) / <alpha-value>)',
           to: 'rgb(var(--role-to) / <alpha-value>)',
           accent: 'rgb(var(--role-accent) / <alpha-value>)',
+          ink: 'rgb(var(--role-ink) / <alpha-value>)',
           soft: 'rgb(var(--role-soft) / <alpha-value>)',
         },
       },

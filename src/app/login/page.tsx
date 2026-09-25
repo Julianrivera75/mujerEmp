@@ -133,7 +133,7 @@ function LoginFormContent() {
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="p-1 text-slate-400 hover:text-slate-600"
+                className="p-1 text-slate-500 hover:text-slate-600"
                 aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -162,7 +162,7 @@ function LoginFormContent() {
                   key={acc.email}
                   type="button"
                   onClick={() => setTestAccount(acc.email, acc.password)}
-                  className="flex flex-col items-center gap-1 rounded-xl border border-role-accent/20 bg-role-soft px-2 py-2.5 text-center text-xs font-bold text-role-accent transition-colors hover:brightness-95"
+                  className="flex flex-col items-center gap-1 rounded-xl border border-role-accent/20 bg-role-soft px-2 py-2.5 text-center text-xs font-bold text-role-ink transition-colors hover:brightness-95"
                 >
                   <acc.icon className="h-4 w-4" strokeWidth={1.75} />
                   <span>{acc.label}</span>
@@ -180,13 +180,13 @@ function LoginFormContent() {
         aria-label="Información legal"
         className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs font-medium text-slate-500"
       >
-        <Link href="/terminos" className="hover:text-role-accent hover:underline">
+        <Link href="/terminos" className="hover:text-role-ink hover:underline">
           Términos y condiciones
         </Link>
-        <Link href="/privacidad" className="hover:text-role-accent hover:underline">
+        <Link href="/privacidad" className="hover:text-role-ink hover:underline">
           Tratamiento de datos
         </Link>
-        <Link href="/cookies" className="hover:text-role-accent hover:underline">
+        <Link href="/cookies" className="hover:text-role-ink hover:underline">
           Cookies
         </Link>
       </nav>

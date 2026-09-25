@@ -28,12 +28,12 @@ export const Input = React.forwardRef<HTMLInputElement, InputOwnProps & React.In
         {label && (
           <label htmlFor={fieldId} className="block text-xs font-bold uppercase tracking-wider text-slate-700">
             {label}
-            {required && <span className="ml-0.5 text-role-accent">*</span>}
+            {required && <span className="ml-0.5 text-role-ink">*</span>}
           </label>
         )}
         <div className="relative">
           {leftIcon && (
-            <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+            <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
               {leftIcon}
             </span>
           )}
@@ -86,7 +86,7 @@ export const Textarea = React.forwardRef<
       {label && (
         <label htmlFor={fieldId} className="block text-xs font-bold uppercase tracking-wider text-slate-700">
           {label}
-          {required && <span className="ml-0.5 text-role-accent">*</span>}
+          {required && <span className="ml-0.5 text-role-ink">*</span>}
         </label>
       )}
       <textarea
@@ -135,7 +135,7 @@ export const Select = React.forwardRef<
       {label && (
         <label htmlFor={fieldId} className="block text-xs font-bold uppercase tracking-wider text-slate-700">
           {label}
-          {required && <span className="ml-0.5 text-role-accent">*</span>}
+          {required && <span className="ml-0.5 text-role-ink">*</span>}
         </label>
       )}
       <select

@@ -10,13 +10,13 @@ export default function LegalFooter() {
           aria-label="Información legal"
           className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 font-medium"
         >
-          <Link href="/terminos" className="hover:text-role-accent hover:underline">
+          <Link href="/terminos" className="hover:text-role-ink hover:underline">
             Términos y condiciones
           </Link>
-          <Link href="/privacidad" className="hover:text-role-accent hover:underline">
+          <Link href="/privacidad" className="hover:text-role-ink hover:underline">
             Tratamiento de datos personales
           </Link>
-          <Link href="/cookies" className="hover:text-role-accent hover:underline">
+          <Link href="/cookies" className="hover:text-role-ink hover:underline">
             Cookies
           </Link>
         </nav>

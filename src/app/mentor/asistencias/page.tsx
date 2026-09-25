@@ -75,12 +75,12 @@ export default function MentorAttendancesPage() {
                   <TRow key={log.id}>
                     <TCell>
                       <p className="font-bold text-slate-800">{log.student.name}</p>
-                      <p className="text-[11px] text-slate-400">{log.student.email}</p>
+                      <p className="text-[11px] text-slate-500">{log.student.email}</p>
                     </TCell>
                     <TCell className="font-semibold text-slate-700">{log.classSession.title}</TCell>
                     <TCell>
                       <span className="flex items-center gap-1.5 font-medium text-slate-700">
-                        <Clock className="h-3.5 w-3.5 text-role-accent" />
+                        <Clock className="h-3.5 w-3.5 text-role-ink" />
                         {formatted}
                       </span>
                     </TCell>

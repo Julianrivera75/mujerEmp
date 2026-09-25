@@ -7,16 +7,18 @@ import { cn } from '@/lib/cn';
 interface ProgressBarProps {
   value: number;
   max?: number;
+  label?: string;
   className?: string;
 }
 
-export function ProgressBar({ value, max = 100, className }: ProgressBarProps) {
+export function ProgressBar({ value, max = 100, label = 'Progreso', className }: ProgressBarProps) {
   const reduce = useReducedMotion();
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
 
   return (
     <div
       role="progressbar"
+      aria-label={label}
       aria-valuenow={Math.round(pct)}
       aria-valuemin={0}
       aria-valuemax={100}

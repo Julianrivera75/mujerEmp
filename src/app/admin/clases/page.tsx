@@ -124,7 +124,7 @@ export default function AdminClassesPage() {
           </Select>
         </div>
         <div className="text-xs font-semibold text-slate-500">
-          Total en este periodo: <strong className="text-role-accent">{classes.length} clases</strong>
+          Total en este periodo: <strong className="text-role-ink">{classes.length} clases</strong>
         </div>
       </Card>
 
@@ -158,7 +158,7 @@ export default function AdminClassesPage() {
                       tone={cls.status === 'FINALIZADA' ? 'neutral' : 'success'}
                       pulse={cls.status !== 'FINALIZADA'}
                     />
-                    <span className="text-xs font-semibold capitalize text-role-accent">{formattedDate}</span>
+                    <span className="text-xs font-semibold capitalize text-role-ink">{formattedDate}</span>
                   </div>
 
                   <h2 className="mb-1 text-lg font-bold text-slate-800">{cls.title}</h2>
@@ -168,7 +168,7 @@ export default function AdminClassesPage() {
                     <div className="flex items-center justify-between">
                       <span className="text-slate-500">Horario:</span>
                       <span className="flex items-center gap-1 font-bold text-slate-700">
-                        <Clock className="h-3.5 w-3.5 text-role-accent" />
+                        <Clock className="h-3.5 w-3.5 text-role-ink" />
                         {formattedTime}
                       </span>
                     </div>
@@ -178,7 +178,7 @@ export default function AdminClassesPage() {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-slate-500">Estudiantes citadas:</span>
-                      <span className="font-bold text-role-accent">{cls.enrollments.length} alumnas</span>
+                      <span className="font-bold text-role-ink">{cls.enrollments.length} alumnas</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-slate-500">Asistencia registrada:</span>
@@ -223,7 +223,7 @@ export default function AdminClassesPage() {
                           Ver en YouTube
                         </a>
                       ) : (
-                        <span className="italic text-slate-400">Sin grabación cargada</span>
+                        <span className="italic text-slate-500">Sin grabación cargada</span>
                       )}
                     </div>
                   </div>

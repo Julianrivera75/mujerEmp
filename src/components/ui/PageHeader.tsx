@@ -28,7 +28,7 @@ export function PageHeader({ eyebrow, title, description, date, actions, classNa
         {eyebrow && (
           <m.span
             variants={fadeUp}
-            className="mb-2 inline-block rounded-full bg-role-soft px-3 py-1 text-xs font-bold uppercase tracking-wider text-role-accent"
+            className="mb-2 inline-block rounded-full bg-role-soft px-3 py-1 text-xs font-bold uppercase tracking-wider text-role-ink"
           >
             {eyebrow}
           </m.span>
@@ -46,7 +46,7 @@ export function PageHeader({ eyebrow, title, description, date, actions, classNa
             variants={fadeUp}
             className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold capitalize text-slate-500"
           >
-            <CalendarDays className="h-3.5 w-3.5 text-role-accent" />
+            <CalendarDays className="h-3.5 w-3.5 text-role-ink" />
             <span>{date}</span>
           </m.p>
         )}

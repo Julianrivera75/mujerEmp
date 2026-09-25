@@ -258,7 +258,7 @@ export default function AdminUsersPage() {
                         {u.role === 'STUDENT' && (
                           <p>
                             Asistencias: <strong className="text-emerald-700">{u._count.attendances}</strong> · Tareas:{' '}
-                            <strong className="text-role-accent">{u._count.submissions}</strong>
+                            <strong className="text-role-ink">{u._count.submissions}</strong>
                           </p>
                         )}
                         {u.role === 'MENTOR' && (
@@ -266,14 +266,14 @@ export default function AdminUsersPage() {
                             Clases asignadas: <strong className="text-teal-700">{u._count.mentoredClasses}</strong>
                           </p>
                         )}
-                        {u.role === 'ADMIN' && <span className="text-slate-400">Acceso total</span>}
+                        {u.role === 'ADMIN' && <span className="text-slate-500">Acceso total</span>}
                       </TCell>
                       <TCell className="text-right">
                         <div className="inline-flex items-center gap-1">
                           <button
                             onClick={() => handleOpenEdit(u)}
                             disabled={Boolean(u.anonymizedAt)}
-                            className="rounded-xl p-2 text-role-accent transition-colors hover:bg-role-soft disabled:pointer-events-none disabled:opacity-40"
+                            className="rounded-xl p-2 text-role-ink transition-colors hover:bg-role-soft disabled:pointer-events-none disabled:opacity-40"
                             aria-label={`Editar ${u.name}`}
                           >
                             <Edit3 className="h-4 w-4" />
@@ -308,7 +308,7 @@ export default function AdminUsersPage() {
                     <button
                       onClick={() => handleOpenEdit(u)}
                       disabled={Boolean(u.anonymizedAt)}
-                      className="rounded-xl p-2 text-role-accent hover:bg-role-soft disabled:opacity-40"
+                      className="rounded-xl p-2 text-role-ink hover:bg-role-soft disabled:opacity-40"
                       aria-label={`Editar ${u.name}`}
                     >
                       <Edit3 className="h-4 w-4" />

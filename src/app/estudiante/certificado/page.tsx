@@ -45,7 +45,7 @@ export default function StudentCertificatePage() {
         <div>
           <Link
             href="/estudiante"
-            className="mb-2 inline-flex items-center gap-1 text-xs font-bold text-role-accent hover:underline"
+            className="mb-2 inline-flex items-center gap-1 text-xs font-bold text-role-ink hover:underline"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             <span>Volver a mis clases</span>
@@ -66,7 +66,7 @@ export default function StudentCertificatePage() {
       </div>
 
       {loading ? (
-        <div className="py-24 text-center text-sm text-slate-400">Generando acreditación...</div>
+        <div className="py-24 text-center text-sm text-slate-500">Generando acreditación...</div>
       ) : !isEligible ? (
         <Card variant="glass" className="mx-auto max-w-lg p-10 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-amber-100 text-amber-600">
@@ -81,11 +81,11 @@ export default function StudentCertificatePage() {
           <div className="mb-6 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-xs text-slate-600">
             <div className="mb-1.5 flex justify-between font-bold">
               <span>Tu asistencia actual:</span>
-              <span className="text-role-accent">
+              <span className="text-role-ink">
                 {percentage}% ({totalAttended} de {totalClasses} clases)
               </span>
             </div>
-            <ProgressBar value={percentage} />
+            <ProgressBar value={percentage} label="Avance de asistencia para la constancia" />
           </div>
 
           <Button href="/estudiante">Ir a mis próximas clases</Button>
@@ -124,7 +124,7 @@ export default function StudentCertificatePage() {
               {totalAttended} de {totalClasses}).
             </p>
 
-            <p className="mx-auto max-w-xl text-[10px] leading-relaxed text-slate-400">
+            <p className="mx-auto max-w-xl text-[10px] leading-relaxed text-slate-500">
               Este documento acredita la participación en una actividad de formación complementaria. No constituye
               título académico ni certificación de educación formal ni de competencias laborales.
             </p>
@@ -142,7 +142,7 @@ export default function StudentCertificatePage() {
               </div>
             </div>
 
-            <div className="flex flex-col items-center justify-between gap-2 border-t border-slate-200/80 pt-8 text-[11px] text-slate-400 sm:flex-row">
+            <div className="flex flex-col items-center justify-between gap-2 border-t border-slate-200/80 pt-8 text-[11px] text-slate-500 sm:flex-row">
               <span className="flex items-center gap-1">
                 <ShieldCheck className="h-4 w-4 text-emerald-600" />
                 <span>

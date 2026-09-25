@@ -42,3 +42,7 @@ Thumbs.db
 *.xls
 *.csv
 datos-privados/
+
+# Playwright
+test-results/
+playwright-report/

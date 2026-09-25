@@ -77,7 +77,7 @@ export default function AcceptTermsForm({ userName, version, blockedMinor, homeH
             </>
           ) : (
             <>
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-role-soft text-role-accent">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-role-soft text-role-ink">
                 <ShieldCheck className="h-6 w-6" />
               </div>
               <h1 className="font-display text-xl font-bold text-slate-800">Antes de continuar</h1>
@@ -88,12 +88,12 @@ export default function AcceptTermsForm({ userName, version, blockedMinor, homeH
 
               <ul className="mt-3 space-y-1 text-sm">
                 <li>
-                  <Link href="/terminos" target="_blank" className="font-semibold text-role-accent underline">
+                  <Link href="/terminos" target="_blank" className="font-semibold text-role-ink underline">
                     Términos y condiciones de uso
                   </Link>
                 </li>
                 <li>
-                  <Link href="/privacidad" target="_blank" className="font-semibold text-role-accent underline">
+                  <Link href="/privacidad" target="_blank" className="font-semibold text-role-ink underline">
                     Política de tratamiento de datos personales
                   </Link>
                 </li>

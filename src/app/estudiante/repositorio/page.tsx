@@ -107,10 +107,10 @@ export default function StudentRepositoryPage() {
                             className="flex items-center justify-between rounded-xl border border-role-accent/15 bg-role-soft p-3 text-xs font-bold text-slate-800 transition-colors hover:brightness-95"
                           >
                             <span className="flex items-center gap-2">
-                              <FileText className="h-4 w-4 text-role-accent" />
+                              <FileText className="h-4 w-4 text-role-ink" />
                               <span>{res.title}</span>
                             </span>
-                            <ExternalLink className="h-3.5 w-3.5 text-role-accent" />
+                            <ExternalLink className="h-3.5 w-3.5 text-role-ink" />
                           </FileLink>
                         ))}
                       </div>
@@ -119,7 +119,7 @@ export default function StudentRepositoryPage() {
                 </Card>
               </>
             ) : (
-              <div className="p-8 text-center text-slate-400">Selecciona una clase para reproducir.</div>
+              <div className="p-8 text-center text-slate-500">Selecciona una clase para reproducir.</div>
             )}
           </div>
 
@@ -162,13 +162,13 @@ export default function StudentRepositoryPage() {
                           <span>Video listo</span>
                         </span>
                       ) : (
-                        <span className={cn('text-[10px] italic', isSelected ? 'text-white/70' : 'text-slate-400')}>
+                        <span className={cn('text-[10px] italic', isSelected ? 'text-white/70' : 'text-slate-500')}>
                           Próximamente
                         </span>
                       )}
                     </div>
                     <h3 className="line-clamp-2 text-xs font-bold leading-snug">{cls.title}</h3>
-                    <p className={cn('mt-1 text-[11px]', isSelected ? 'text-red-100' : 'text-slate-400')}>
+                    <p className={cn('mt-1 text-[11px]', isSelected ? 'text-red-100' : 'text-slate-500')}>
                       {cls.mentor.name}
                     </p>
                   </button>

@@ -179,7 +179,7 @@ export default function MentorDashboardPage() {
                     <div className="flex flex-wrap items-center gap-3 pt-2">
                       <button
                         onClick={() => setSelectedClassForStudents(cls)}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-role-soft px-3.5 py-2 text-xs font-bold text-role-accent transition-colors hover:brightness-90"
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-role-soft px-3.5 py-2 text-xs font-bold text-role-ink transition-colors hover:brightness-90"
                       >
                         <Users className="h-4 w-4" />
                         <span>Estudiantes asignadas ({totalEnrolled})</span>
@@ -244,7 +244,7 @@ export default function MentorDashboardPage() {
                               <span>Ver video de la clase grabada</span>
                             </a>
                           ) : (
-                            <span className="text-xs italic text-slate-400">Sin enlace de YouTube</span>
+                            <span className="text-xs italic text-slate-500">Sin enlace de YouTube</span>
                           )}
                         </div>
 

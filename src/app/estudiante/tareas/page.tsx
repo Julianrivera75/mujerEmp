@@ -72,7 +72,7 @@ export default function StudentTasksPage() {
                 <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-start">
                   <div className="flex-1 space-y-3">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full bg-role-soft px-3 py-1 text-[11px] font-bold text-role-accent">
+                      <span className="rounded-full bg-role-soft px-3 py-1 text-[11px] font-bold text-role-ink">
                         Clase: {ass.classSession.title}
                       </span>
                       <StatusPill
@@ -100,11 +100,11 @@ export default function StudentTasksPage() {
                     {isGraded && (
                       <div className="mt-4 rounded-2xl border border-role-accent/20 bg-gradient-to-r from-role-soft to-white p-5">
                         <div className="mb-2 flex items-center justify-between">
-                          <span className="flex items-center gap-1 text-xs font-black uppercase tracking-wider text-role-accent">
+                          <span className="flex items-center gap-1 text-xs font-black uppercase tracking-wider text-role-ink">
                             <Star className="h-4 w-4 fill-current" />
                             Calificación obtenida
                           </span>
-                          <span className="font-display text-xl font-bold tabular-nums text-role-accent">
+                          <span className="font-display text-xl font-bold tabular-nums text-role-ink">
                             {mySub.grade} <span className="text-xs font-normal text-slate-500">/ 5.0</span>
                           </span>
                         </div>
@@ -112,7 +112,7 @@ export default function StudentTasksPage() {
                         {mySub.feedback && (
                           <div className="mt-2 border-t border-role-accent/15 pt-2">
                             <p className="mb-1 flex items-center gap-1 text-xs font-bold text-slate-700">
-                              <MessageSquare className="h-3.5 w-3.5 text-role-accent" />
+                              <MessageSquare className="h-3.5 w-3.5 text-role-ink" />
                               Comentarios de tu mentora
                             </p>
                             <p className="rounded-xl border border-role-accent/15 bg-white p-3 text-xs italic leading-relaxed text-slate-800">

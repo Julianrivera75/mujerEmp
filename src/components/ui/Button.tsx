@@ -33,8 +33,8 @@ const SIZE_CLS: Record<Size, string> = {
 const VARIANT_CLS: Record<Variant, string> = {
   primary: 'text-white bg-gradient-to-r from-role-from to-role-to shadow-glow hover:brightness-105',
   secondary:
-    'glass-card--flat text-slate-700 border border-slate-200/80 hover:border-role-accent/40 hover:text-role-accent',
-  ghost: 'text-slate-600 hover:bg-role-soft hover:text-role-accent',
+    'glass-card--flat text-slate-700 border border-slate-200/80 hover:border-role-accent/40 hover:text-role-ink',
+  ghost: 'text-slate-600 hover:bg-role-soft hover:text-role-ink',
   danger: 'text-white bg-gradient-to-r from-red-600 to-rose-600 shadow-lift hover:brightness-105',
 };
 

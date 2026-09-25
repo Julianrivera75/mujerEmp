@@ -248,7 +248,7 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
             <button
               type="button"
               onClick={toggleAllStudents}
-              className="text-xs font-bold text-role-accent hover:underline"
+              className="text-xs font-bold text-role-ink hover:underline"
             >
               {formData.studentIds.length === students.length ? 'Deseleccionar todas' : 'Seleccionar todas'}
             </button>
@@ -256,7 +256,7 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
 
           <div className="max-h-36 divide-y divide-slate-100 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-2.5">
             {students.length === 0 ? (
-              <p className="p-2 text-xs text-slate-400">No hay estudiantes activas registradas.</p>
+              <p className="p-2 text-xs text-slate-500">No hay estudiantes activas registradas.</p>
             ) : (
               students.map((st) => {
                 const checked = formData.studentIds.includes(st.id);
@@ -279,7 +279,7 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
                             : [...prev.studentIds, st.id],
                         }))
                       }
-                      className="h-4 w-4 rounded text-role-accent focus:ring-primary/40"
+                      className="h-4 w-4 rounded text-role-ink focus:ring-primary/40"
                     />
                   </label>
                 );

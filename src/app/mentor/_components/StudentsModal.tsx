@@ -27,7 +27,7 @@ export function StudentsModal({ cls, onClose }: { cls: MentorClass | null; onClo
             <div key={e.student.id} className="flex items-center justify-between pt-2 text-xs">
               <div>
                 <p className="font-bold text-slate-800">{e.student.name}</p>
-                <p className="text-[11px] text-slate-400">{e.student.email}</p>
+                <p className="text-[11px] text-slate-500">{e.student.email}</p>
               </div>
               {attended ? (
                 <StatusPill tone="success" label={`Asistió (${formatTime(attended.joinedAt)})`} />

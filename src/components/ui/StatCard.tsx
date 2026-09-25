@@ -55,7 +55,7 @@ export function StatCard({ label, value, icon: Icon, hint, emphasize, className 
     >
       <div className="flex items-center justify-between">
         <span className="text-xs font-bold uppercase tracking-wider text-slate-500">{label}</span>
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-role-soft text-role-accent">
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-role-soft text-role-ink">
           <Icon className="h-5 w-5" strokeWidth={1.75} />
         </div>
       </div>

@@ -124,7 +124,7 @@ export default function ProfilePage() {
     <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-8">
         <h1 className="flex items-center gap-3 font-display text-2xl font-bold text-slate-800 sm:text-3xl">
-          <User className="h-7 w-7 text-role-accent" />
+          <User className="h-7 w-7 text-role-ink" />
           <span>Mi perfil y seguridad</span>
         </h1>
         <p className="mt-1 text-sm text-slate-500">
@@ -151,31 +151,31 @@ export default function ProfilePage() {
             <div className="text-center">
               <h2 className="text-lg font-bold text-slate-800">{profile.name}</h2>
               <p className="text-xs text-slate-500">{profile.email}</p>
-              <span className="mt-2 inline-block rounded-full bg-role-soft px-3 py-0.5 text-[11px] font-bold text-role-accent">
+              <span className="mt-2 inline-block rounded-full bg-role-soft px-3 py-0.5 text-[11px] font-bold text-role-ink">
                 {ROLE_META[profile.role].label}
               </span>
             </div>
 
             <div className="space-y-2.5 border-t border-slate-100 pt-4 text-xs text-slate-600">
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">Estado:</span>
+                <span className="text-slate-500">Estado:</span>
                 <span className="flex items-center gap-1 font-bold text-emerald-600">
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   {profile.status}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">Documento:</span>
+                <span className="text-slate-500">Documento:</span>
                 <span className="font-semibold text-slate-700">{profile.documentId || 'N/A'}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">Fecha inicio:</span>
+                <span className="text-slate-500">Fecha inicio:</span>
                 <span className="font-semibold text-slate-700">
                   {profile.startDate ? formatDate(profile.startDate) : 'Indefinido'}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">Fecha fin:</span>
+                <span className="text-slate-500">Fecha fin:</span>
                 <span className="font-semibold text-slate-700">
                   {profile.endDate ? formatDate(profile.endDate) : 'Indefinido'}
                 </span>
@@ -185,7 +185,7 @@ export default function ProfilePage() {
 
           <Card variant="glass" className="p-6 sm:p-8 md:col-span-2">
             <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-800">
-              <ShieldCheck className="h-5 w-5 text-role-accent" />
+              <ShieldCheck className="h-5 w-5 text-role-ink" />
               <span>Actualizar datos de contacto y contraseña</span>
             </h2>
 
@@ -205,7 +205,7 @@ export default function ProfilePage() {
               />
 
               <div className="space-y-3 border-t border-slate-100 pt-4">
-                <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">
                   Cambiar contraseña (opcional)
                 </h3>
                 <Input
@@ -243,14 +243,14 @@ export default function ProfilePage() {
 
           <Card variant="glass" className="p-6 sm:p-8 md:col-span-3">
             <h2 className="mb-1 flex items-center gap-2 text-lg font-bold text-slate-800">
-              <Download className="h-5 w-5 text-role-accent" />
+              <Download className="h-5 w-5 text-role-ink" />
               <span>Tus datos personales</span>
             </h2>
             <p className="max-w-2xl text-sm leading-6 text-slate-600">
               Tienes derecho a conocer los datos que guardamos sobre ti. Descarga una copia en formato JSON con tu
               información de cuenta, asistencia, entregas y calificaciones. Para solicitar la rectificación o la
               supresión de tus datos, consulta la{' '}
-              <Link href="/privacidad" className="font-semibold text-role-accent underline">
+              <Link href="/privacidad" className="font-semibold text-role-ink underline">
                 política de tratamiento de datos
               </Link>
               .

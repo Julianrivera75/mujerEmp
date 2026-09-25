@@ -118,7 +118,7 @@ export default function AdminAttendancePage() {
 
       <div>
         <h2 className="mb-4 flex items-center gap-2 font-display text-lg font-bold text-slate-800">
-          <Award className="h-5 w-5 text-role-accent" />
+          <Award className="h-5 w-5 text-role-ink" />
           <span>Porcentaje de asistencia por estudiante</span>
         </h2>
 
@@ -141,13 +141,13 @@ export default function AdminAttendancePage() {
                     />
                   </div>
                   <p className="mb-3 text-xs text-slate-500">{st.email}</p>
-                  <ProgressBar value={st.percentage} className="mb-2" />
+                  <ProgressBar value={st.percentage} label={`Asistencia de ${st.name}`} className="mb-2" />
                 </div>
                 <div className="flex items-center justify-between border-t border-slate-100 pt-2 text-xs text-slate-600">
                   <span>
                     Asistió a <strong>{st.totalAttended}</strong> de {st.totalEnrolled}
                   </span>
-                  <span className="text-sm font-black text-role-accent">{st.percentage}%</span>
+                  <span className="text-sm font-black text-role-ink">{st.percentage}%</span>
                 </div>
               </Card>
             ))}
@@ -203,7 +203,7 @@ export default function AdminAttendancePage() {
                   <TRow key={log.id}>
                     <TCell>
                       <p className="font-bold text-slate-800">{log.student.name}</p>
-                      <p className="text-[11px] text-slate-400">{log.student.email}</p>
+                      <p className="text-[11px] text-slate-500">{log.student.email}</p>
                     </TCell>
                     <TCell>
                       <p className="font-semibold text-slate-700">{log.classSession.title}</p>

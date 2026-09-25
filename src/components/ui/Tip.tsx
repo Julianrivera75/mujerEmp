@@ -10,7 +10,7 @@ export function Tip({ children, className }: { children: React.ReactNode; classN
         className,
       )}
     >
-      <Lightbulb className="mt-0.5 h-4 w-4 flex-shrink-0 text-role-accent" />
+      <Lightbulb className="mt-0.5 h-4 w-4 flex-shrink-0 text-role-ink" />
       <span>{children}</span>
     </p>
   );

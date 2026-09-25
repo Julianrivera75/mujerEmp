@@ -64,7 +64,7 @@ export default async function AdminDashboardPage() {
             <Button
               href="/admin/usuarios"
               variant="secondary"
-              leftIcon={<PlusCircle className="h-4 w-4 text-role-accent" />}
+              leftIcon={<PlusCircle className="h-4 w-4 text-role-ink" />}
               className="border-none !bg-white !text-purple-900 hover:!bg-purple-50"
             >
               Crear usuario
@@ -145,7 +145,7 @@ export default async function AdminDashboardPage() {
         <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h2 className="flex items-center gap-2 font-display text-xl font-bold capitalize text-slate-800">
-              <Calendar className="h-5 w-5 text-role-accent" />
+              <Calendar className="h-5 w-5 text-role-ink" />
               <span>Cronograma de clases · {monthLabel}</span>
             </h2>
             <p className="mt-0.5 text-xs text-slate-500">
@@ -190,7 +190,7 @@ export default async function AdminDashboardPage() {
                     <h3 className="text-base font-bold text-slate-800">{cls.title}</h3>
                     <p className="text-xs text-slate-500">
                       Docente: <strong className="text-slate-700">{cls.mentor.name}</strong> · Inscritas:{' '}
-                      <strong className="text-role-accent">{cls._count.enrollments}</strong> · Asistieron:{' '}
+                      <strong className="text-role-ink">{cls._count.enrollments}</strong> · Asistieron:{' '}
                       <strong className="text-emerald-700">{cls._count.attendances}</strong>
                     </p>
                   </div>
@@ -210,7 +210,7 @@ export default async function AdminDashboardPage() {
                     {cls.youtubeUrl ? (
                       <StatusPill label="Grabación lista" tone="danger" />
                     ) : (
-                      <span className="text-[11px] italic text-slate-400">Sin grabación aún</span>
+                      <span className="text-[11px] italic text-slate-500">Sin grabación aún</span>
                     )}
                   </div>
                 </div>
