@@ -23,6 +23,7 @@ const LOGOS = [
     crop: { left: 100, top: 565, width: 720, height: 730 },
   },
   { file: 'Mujeres en break.jpeg', out: 'mujeres-en-break.png', width: 300, background: '#ffffff' },
+  { file: 'alcaldialocalsantafefondorojo.jpeg', out: 'alcaldia-santa-fe.png', width: 360, background: '#e00000' },
   { file: 'Museo.jpeg', out: 'museo-empresarial-cultural.png', width: 360, background: '#ffffff' },
 ];
 

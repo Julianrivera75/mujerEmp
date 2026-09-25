@@ -9,9 +9,18 @@ interface Partner {
   height: number;
   /** Logos pensados para fondo oscuro se muestran sobre una base oscura. */
   dark?: boolean;
+  /** El logo ya trae su propio fondo de color: no lleva base ni margen. */
+  bare?: boolean;
 }
 
 const PARTNERS: Partner[] = [
+  {
+    name: 'Alcaldía Local de Santa Fe, Bogotá',
+    src: '/logos/alcaldia-santa-fe.png',
+    width: 360,
+    height: 128,
+    bare: true,
+  },
   { name: 'Fundación Voces Poderosas', src: '/logos/voces-poderosas.png', width: 360, height: 155 },
   { name: 'Impacto 360', src: '/logos/impacto-360.png', width: 360, height: 360 },
   { name: 'CUC University', src: '/logos/cuc-university.png', width: 360, height: 107, dark: true },
@@ -38,8 +47,13 @@ export function PartnerLogos({ className }: { className?: string }) {
           <li
             key={partner.name}
             className={cn(
-              'flex items-center justify-center rounded-xl px-2.5 py-1.5',
-              partner.dark ? 'bg-slate-900' : 'bg-white shadow-soft ring-1 ring-slate-100',
+              'flex items-center justify-center rounded-xl',
+              partner.bare ? '' : 'px-2.5 py-1.5',
+              partner.bare
+                ? 'overflow-hidden p-0'
+                : partner.dark
+                  ? 'bg-slate-900'
+                  : 'bg-white shadow-soft ring-1 ring-slate-100',
             )}
           >
             <Image
