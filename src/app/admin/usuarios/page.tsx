@@ -34,6 +34,7 @@ export default function AdminUsersPage() {
   const [selectedUser, setSelectedUser] = useState<UserItem | null>(null);
   const [anonTarget, setAnonTarget] = useState<UserItem | null>(null);
   const [anonymizing, setAnonymizing] = useState(false);
+  const [deactivateTarget, setDeactivateTarget] = useState<UserItem | null>(null);
 
   const loadData = async () => {
     try {
@@ -230,7 +231,7 @@ export default function AdminUsersPage() {
                         <div className="flex items-center gap-2.5">
                           <Switch
                             checked={u.status === 'ACTIVO'}
-                            onChange={() => handleToggleStatus(u)}
+                            onChange={() => (u.status === 'ACTIVO' ? setDeactivateTarget(u) : handleToggleStatus(u))}
                             label={`Cambiar estado de ${u.name}`}
                           />
                           <StatusPill
@@ -345,6 +346,23 @@ export default function AdminUsersPage() {
           </>
         )}
       </Card>
+
+      <ConfirmDialog
+        open={Boolean(deactivateTarget)}
+        onCancel={() => setDeactivateTarget(null)}
+        onConfirm={() => {
+          if (deactivateTarget) handleToggleStatus(deactivateTarget);
+          setDeactivateTarget(null);
+        }}
+        title="¿Desactivar esta cuenta?"
+        description={
+          deactivateTarget
+            ? `${deactivateTarget.name} no podrá iniciar sesión hasta que la actives de nuevo.`
+            : undefined
+        }
+        confirmLabel="Desactivar"
+        danger
+      />
 
       <ConfirmDialog
         open={Boolean(anonTarget)}

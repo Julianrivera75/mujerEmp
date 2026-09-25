@@ -93,8 +93,12 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
     setErrorMsg('');
+    if (new Date(formData.dateEnd) <= new Date(formData.dateStart)) {
+      setErrorMsg('La fecha de fin debe ser posterior a la de inicio.');
+      return;
+    }
+    setSubmitting(true);
 
     try {
       const url = '/api/classes';
