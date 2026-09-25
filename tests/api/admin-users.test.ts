@@ -214,3 +214,35 @@ describe('POST /api/admin/users/anonymize', () => {
     ).toBe(409);
   });
 });
+
+describe('revocación de sesiones', () => {
+  const version = async (id: string) => (await prisma.user.findUniqueOrThrow({ where: { id } })).tokenVersion;
+
+  it('cambiar la contraseña, el rol o desactivar la cuenta invalida las sesiones abiertas', async () => {
+    actAs(w.admin);
+    expect(await version(w.sofia.id)).toBe(0);
+
+    await update({ id: w.sofia.id, password: 'otra-clave-larga-7' });
+    expect(await version(w.sofia.id)).toBe(1);
+
+    await update({ id: w.sofia.id, role: 'MENTOR' });
+    expect(await version(w.sofia.id)).toBe(2);
+
+    await toggleStatus(
+      request('/api/admin/users/toggle-status', { method: 'POST', body: { id: w.sofia.id, status: 'INACTIVO' } }),
+    );
+    expect(await version(w.sofia.id)).toBe(3);
+  });
+
+  it('editar datos que no afectan al acceso no cierra la sesión', async () => {
+    actAs(w.admin);
+    await update({ id: w.sofia.id, phone: '3111111111' });
+    expect(await version(w.sofia.id)).toBe(0);
+  });
+
+  it('anonimizar la cuenta también la revoca', async () => {
+    actAs(w.admin);
+    await anonymize(request('/api/admin/users/anonymize', { method: 'POST', body: { id: w.lucia.id } }));
+    expect(await version(w.lucia.id)).toBe(1);
+  });
+});

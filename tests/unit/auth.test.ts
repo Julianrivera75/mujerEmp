@@ -55,10 +55,11 @@ beforeEach(async () => {
 
 describe('signToken', () => {
   it('firma con el secreto del entorno (HS256) y vence en 7 días', async () => {
-    const token = await auth.signToken({ id: 'u1', email: 'a@b.co', role: 'ADMIN', name: 'A', status: 'ACTIVO' });
+    const token = await auth.signToken({ id: 'u1', email: 'a@b.co', role: 'ADMIN', name: 'A', status: 'ACTIVO' }, 3);
     const { payload, protectedHeader } = await jwtVerify(token, encode(SECRET));
     expect(protectedHeader.alg).toBe('HS256');
     expect(payload.id).toBe('u1');
+    expect(payload.tv).toBe(3);
     expect(payload.role).toBe('ADMIN');
     expect((payload.exp ?? 0) - (payload.iat ?? 0)).toBe(7 * 24 * 3600);
     expect(decodeJwt(token).email).toBe('a@b.co');
@@ -112,6 +113,14 @@ describe('getCurrentUser', () => {
     await prisma.user.update({ where: { id: w.sofia.id }, data: { role: 'MENTOR' } });
     store.values[COOKIE] = await tokenFor(w.sofia, 'STUDENT');
     expect((await auth.getCurrentUser())?.role).toBe('MENTOR');
+  });
+
+  it('una sesión con versión anterior deja de valer cuando se revoca', async () => {
+    store.values[COOKIE] = await tokenFor(w.sofia);
+    expect(await auth.getCurrentUser()).not.toBeNull();
+
+    await prisma.user.update({ where: { id: w.sofia.id }, data: { tokenVersion: { increment: 1 } } });
+    expect(await auth.getCurrentUser()).toBeNull();
   });
 
   it('rechaza una cuenta inactiva o eliminada aunque el token siga vigente', async () => {

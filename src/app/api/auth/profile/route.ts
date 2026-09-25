@@ -1,6 +1,8 @@
+import type { Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { NextResponse } from 'next/server';
 import { HttpError, parseBody, withAuth } from '@/lib/api';
+import { setSessionCookie, signToken } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { profileSchema } from '@/lib/schemas';
 import { deleteObject, keyBelongsTo, verifyUploadedObject } from '@/lib/s3';
@@ -16,7 +18,7 @@ export const PUT = withAuth('auth/profile', 'any', async (req, user) => {
   const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
   if (!dbUser) throw new HttpError(404, 'Usuario no encontrado.');
 
-  const updateData: { phone?: string | null; avatar?: string | null; passwordHash?: string } = {};
+  const updateData: Prisma.UserUpdateInput = {};
   let previousAvatar: string | null = null;
 
   if (phone !== undefined) {
@@ -48,17 +50,27 @@ export const PUT = withAuth('auth/profile', 'any', async (req, user) => {
     if (passwordError) throw new HttpError(400, passwordError);
 
     updateData.passwordHash = await bcrypt.hash(newPassword.trim(), BCRYPT_COST);
+    // Cierra las demás sesiones abiertas; la actual se renueva más abajo.
+    updateData.tokenVersion = { increment: 1 };
   }
 
   const updated = await prisma.user.update({
     where: { id: user.id },
     data: updateData,
-    select: { id: true, name: true, email: true, phone: true, avatar: true },
+    select: { id: true, name: true, email: true, phone: true, avatar: true, tokenVersion: true },
   });
+
+  if (updateData.passwordHash) {
+    setSessionCookie(await signToken(user, updated.tokenVersion));
+  }
 
   if (previousAvatar) {
     await deleteObject(previousAvatar).catch(() => undefined);
   }
 
-  return NextResponse.json({ success: true, message: 'Perfil actualizado exitosamente.', user: updated });
+  return NextResponse.json({
+    success: true,
+    message: 'Perfil actualizado exitosamente.',
+    user: { id: updated.id, email: updated.email, phone: updated.phone, avatar: updated.avatar },
+  });
 });

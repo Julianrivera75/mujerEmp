@@ -16,7 +16,7 @@ export const POST = withAuth('admin/users toggle-status', ['ADMIN'], async (req,
 
   const updated = await prisma.user.update({
     where: { id },
-    data: { status },
+    data: status === 'INACTIVO' ? { status, tokenVersion: { increment: 1 } } : { status },
     select: { id: true, name: true, email: true, status: true },
   });
 

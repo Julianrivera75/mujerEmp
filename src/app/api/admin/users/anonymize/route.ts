@@ -58,6 +58,7 @@ export const POST = withAuth('admin/users anonymize', ['ADMIN'], async (req, cur
         guardianName: null,
         guardianContact: null,
         anonymizedAt: new Date(),
+        tokenVersion: { increment: 1 },
       },
     }),
   ]);

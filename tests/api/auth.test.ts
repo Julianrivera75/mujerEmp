@@ -207,3 +207,25 @@ describe('GET /api/health', () => {
     expect(res.body.status).toBe('ok');
   });
 });
+
+describe('intentos de inicio de sesión persistentes', () => {
+  it('los fallos quedan en la base de datos y un acierto limpia los de la cuenta', async () => {
+    const ip = '203.0.113.77';
+    await tryLogin('sofia@prueba.test', 'incorrecta-1234', ip);
+    await tryLogin('sofia@prueba.test', 'incorrecta-1234', ip);
+    expect(await prisma.loginAttempt.count({ where: { key: { startsWith: 'login:sofia@prueba.test' } } })).toBe(2);
+    expect(await prisma.loginAttempt.count({ where: { key: `login:ip:${ip}` } })).toBe(2);
+
+    expect((await tryLogin('sofia@prueba.test', PASSWORD, ip)).status).toBe(200);
+    expect(await prisma.loginAttempt.count({ where: { key: { startsWith: 'login:sofia@prueba.test' } } })).toBe(0);
+  });
+
+  it('el bloqueo se levanta cuando pasa la ventana', async () => {
+    const ip = '203.0.113.78';
+    for (let i = 0; i < 5; i++) await tryLogin('sofia@prueba.test', 'incorrecta-1234', ip);
+    expect((await tryLogin('sofia@prueba.test', PASSWORD, ip)).status).toBe(429);
+
+    await prisma.loginAttempt.updateMany({ data: { createdAt: new Date(Date.now() - 16 * 60 * 1000) } });
+    expect((await tryLogin('sofia@prueba.test', PASSWORD, ip)).status).toBe(200);
+  });
+});

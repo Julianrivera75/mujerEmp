@@ -34,7 +34,7 @@ export const GET = withAuth('admin/users GET', ['ADMIN'], async (req) => {
   const roleFilter = searchParams.get('role');
   const statusFilter = searchParams.get('status');
 
-  const where: { role?: string; status?: string } = {};
+  const where: Prisma.UserWhereInput = {};
   if (roleFilter && isOneOf(ROLES, roleFilter)) where.role = roleFilter;
   if (statusFilter && isOneOf(USER_STATUSES, statusFilter)) where.status = statusFilter;
 
@@ -131,6 +131,11 @@ export const PUT = withAuth('admin/users PUT', ['ADMIN'], async (req, currentUse
     const passwordError = validatePassword(newPassword);
     if (passwordError) throw new HttpError(400, passwordError);
     data.passwordHash = await bcrypt.hash(newPassword, BCRYPT_COST);
+  }
+
+  // Cambiar la contraseña, el rol o desactivar la cuenta cierra las sesiones abiertas.
+  if (newPassword || (body.role !== undefined && body.role !== target.role) || body.status === 'INACTIVO') {
+    data.tokenVersion = { increment: 1 };
   }
 
   const updatedUser = await prisma.user.update({ where: { id: body.id }, data, select: SAFE_USER_SELECT });

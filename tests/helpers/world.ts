@@ -5,7 +5,7 @@ export const PASSWORD = 'clave-de-prueba-123';
 
 export async function resetDb() {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE "Attendance","Submission","Assignment","ClassResource","ClassEnrollment","ClassSession","User" RESTART IDENTITY CASCADE',
+    'TRUNCATE "Attendance","Submission","Assignment","ClassResource","ClassEnrollment","ClassSession","LoginAttempt","User" RESTART IDENTITY CASCADE',
   );
 }
 

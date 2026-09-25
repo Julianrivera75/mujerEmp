@@ -3,7 +3,9 @@ import { NextResponse } from 'next/server';
 import { HttpError, parseBody, withErrors } from '@/lib/api';
 import { setSessionCookie, signToken } from '@/lib/auth';
 import prisma from '@/lib/prisma';
-import { getClientIp, rateLimit, resetRateLimit } from '@/lib/rate-limit';
+import { checkAttempts, clearAttempts, purgeAttempts, recordAttempt } from '@/lib/login-attempts';
+import { formatDate } from '@/lib/format';
+import { getClientIp } from '@/lib/rate-limit';
 import { loginSchema } from '@/lib/schemas';
 import { PASSWORD_MAX_LENGTH } from '@/lib/validators';
 
@@ -24,15 +26,16 @@ function tooManyAttempts(retryAfterSec: number) {
 
 export const POST = withErrors('auth/login', async (req) => {
   const ip = getClientIp(req);
-  const ipLimit = rateLimit(`login:ip:${ip}`, MAX_ATTEMPTS_PER_IP, WINDOW_MS);
-  if (!ipLimit.ok) throw tooManyAttempts(ipLimit.retryAfterSec);
+  const ipKey = `login:ip:${ip}`;
+  const ipLimit = await checkAttempts(ipKey, MAX_ATTEMPTS_PER_IP, WINDOW_MS);
+  if (ipLimit.blocked) throw tooManyAttempts(ipLimit.retryAfterSec);
 
   const { email, password } = await parseBody(req, loginSchema);
 
   const normalizedEmail = email.trim().toLowerCase().slice(0, 254);
   const accountKey = `login:${normalizedEmail}:${ip}`;
-  const accountLimit = rateLimit(accountKey, MAX_ATTEMPTS_PER_ACCOUNT, WINDOW_MS);
-  if (!accountLimit.ok) throw tooManyAttempts(accountLimit.retryAfterSec);
+  const accountLimit = await checkAttempts(accountKey, MAX_ATTEMPTS_PER_ACCOUNT, WINDOW_MS);
+  if (accountLimit.blocked) throw tooManyAttempts(accountLimit.retryAfterSec);
 
   const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
 
@@ -41,6 +44,9 @@ export const POST = withErrors('auth/login', async (req) => {
   const isMatch = await bcrypt.compare(candidate, user?.passwordHash ?? DUMMY_HASH);
 
   if (!user || !isMatch || password.length > PASSWORD_MAX_LENGTH) {
+    await recordAttempt(ipKey, accountKey);
+    // Limpieza ocasional de intentos vencidos.
+    if (Math.random() < 0.02) await purgeAttempts(WINDOW_MS).catch(() => undefined);
     throw new HttpError(401, INVALID_CREDENTIALS);
   }
 
@@ -58,25 +64,22 @@ export const POST = withErrors('auth/login', async (req) => {
   if (user.startDate && user.startDate > now) {
     throw new HttpError(
       403,
-      `Tu periodo de formación inicia el ${user.startDate.toLocaleDateString('es-ES')}. Aún no tienes acceso habilitado.`,
+      `Tu periodo de formación inicia el ${formatDate(user.startDate)}. Aún no tienes acceso habilitado.`,
     );
   }
   if (user.endDate && user.endDate < now) {
     throw new HttpError(
       403,
-      `Tu periodo de vinculación finalizó el ${user.endDate.toLocaleDateString('es-ES')}. Contacta a la administración.`,
+      `Tu periodo de vinculación finalizó el ${formatDate(user.endDate)}. Contacta a la administración.`,
     );
   }
 
-  resetRateLimit(accountKey);
+  await clearAttempts(accountKey);
 
-  const token = await signToken({
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    role: user.role as 'ADMIN' | 'MENTOR' | 'STUDENT',
-    status: user.status as 'ACTIVO' | 'INACTIVO',
-  });
+  const token = await signToken(
+    { id: user.id, email: user.email, name: user.name, role: user.role, status: user.status },
+    user.tokenVersion,
+  );
   setSessionCookie(token);
 
   const redirectUrl = user.role === 'ADMIN' ? '/admin' : user.role === 'MENTOR' ? '/mentor' : '/estudiante';

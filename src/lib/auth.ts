@@ -1,3 +1,4 @@
+import type { Role, UserStatus } from '@prisma/client';
 import { jwtVerify, SignJWT } from 'jose';
 import { cookies } from 'next/headers';
 import prisma from './prisma';
@@ -18,23 +19,26 @@ const SESSION_SECONDS = 60 * 60 * 24 * 7; // 7 días
 export interface TokenPayload {
   id: string;
   email: string;
-  role: 'ADMIN' | 'MENTOR' | 'STUDENT';
+  role: Role;
   name: string;
-  status: 'ACTIVO' | 'INACTIVO';
+  status: UserStatus;
 }
 
-export async function signToken(payload: TokenPayload): Promise<string> {
-  return new SignJWT({ ...payload })
+/** `tokenVersion` (claim `tv`) permite revocar de golpe todas las sesiones de una cuenta. */
+export async function signToken(payload: TokenPayload, tokenVersion: number): Promise<string> {
+  return new SignJWT({ ...payload, tv: tokenVersion })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime(`${SESSION_SECONDS}s`)
     .sign(JWT_SECRET);
 }
 
-async function readUserId(token: string): Promise<string | null> {
+async function readClaims(token: string): Promise<{ id: string; tv: number } | null> {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET, { algorithms: ['HS256'] });
-    return typeof payload.id === 'string' ? payload.id : null;
+    if (typeof payload.id !== 'string') return null;
+    // Los tokens emitidos antes de existir la revocación no traen `tv` y equivalen a la versión 0.
+    return { id: payload.id, tv: typeof payload.tv === 'number' ? payload.tv : 0 };
   } catch {
     return null;
   }
@@ -45,24 +49,24 @@ export async function getCurrentUser(): Promise<TokenPayload | null> {
   const token = cookies().get(TOKEN_NAME)?.value;
   if (!token) return null;
 
-  const id = await readUserId(token);
-  if (!id) return null;
+  const claims = await readClaims(token);
+  if (!claims) return null;
 
   const user = await prisma.user.findUnique({
-    where: { id },
-    select: { id: true, email: true, role: true, name: true, status: true },
+    where: { id: claims.id },
+    select: { id: true, email: true, role: true, name: true, status: true, tokenVersion: true },
   });
 
-  if (!user || user.status === 'INACTIVO') {
+  if (!user || user.status === 'INACTIVO' || user.tokenVersion !== claims.tv) {
     return null;
   }
 
   return {
     id: user.id,
     email: user.email,
-    role: user.role as TokenPayload['role'],
+    role: user.role,
     name: user.name,
-    status: user.status as TokenPayload['status'],
+    status: user.status,
   };
 }
 
