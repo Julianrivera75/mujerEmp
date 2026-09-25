@@ -94,9 +94,9 @@ describe('POST /api/auth/login', () => {
 
 describe('GET /api/auth/me', () => {
   it('rechaza a una persona anónima y devuelve solo los datos propios', async () => {
-    expect((await read(await me())).status).toBe(401);
+    expect((await read(await me(request('/api/auth/me')))).status).toBe(401);
     actAs(w.sofia);
-    const res = await read(await me());
+    const res = await read(await me(request('/api/auth/me')));
     expect(res.body.user.email).toBe('sofia@prueba.test');
     expect(res.raw).not.toContain('passwordHash');
   });
@@ -157,12 +157,12 @@ function mockVerifyOnce(value: boolean) {
 
 describe('GET /api/auth/export', () => {
   it('rechaza a una persona anónima', async () => {
-    expect((await read(await exportData())).status).toBe(401);
+    expect((await read(await exportData(request('/api/auth/export')))).status).toBe(401);
   });
 
   it('entrega como descarga solo los datos de la propia persona', async () => {
     actAs(w.sofia);
-    const res = await exportData();
+    const res = await exportData(request('/api/auth/export'));
     expect(res.headers.get('Content-Disposition')).toContain('attachment');
     const { raw, body } = await read(res);
     expect(body.data.email).toBe('sofia@prueba.test');

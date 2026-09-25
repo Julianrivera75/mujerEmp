@@ -1,15 +1,10 @@
 import { NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
+import { withAuth } from '@/lib/api';
 import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
-  }
-
+export const GET = withAuth('auth/me', 'any', async (_req, user) => {
   const fullUser = await prisma.user.findUnique({
     where: { id: user.id },
     select: {
@@ -27,4 +22,4 @@ export async function GET() {
   });
 
   return NextResponse.json({ user: fullUser });
-}
+});

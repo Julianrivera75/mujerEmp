@@ -21,7 +21,7 @@ describe('POST /api/submissions', () => {
     for (const actor of [null, w.carolina, w.admin]) {
       actAs(actor);
       const res = await read(await submit({ assignmentId: w.tarea.id, notes: 'x' }));
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(actor ? 403 : 401);
     }
   });
 
@@ -93,7 +93,7 @@ describe('PUT /api/submissions (calificar)', () => {
     for (const actor of [null, w.sofia]) {
       actAs(actor);
       const res = await read(await grade({ submissionId: w.entrega.id, grade: 5 }));
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(actor ? 403 : 401);
     }
   });
 

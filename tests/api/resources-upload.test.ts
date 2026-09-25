@@ -24,7 +24,7 @@ describe('POST /api/resources', () => {
   it('solo mentoras y administradoras', async () => {
     for (const actor of [null, w.sofia]) {
       actAs(actor);
-      expect((await read(await addResource(base()))).status).toBe(403);
+      expect((await read(await addResource(base()))).status).toBe(actor ? 403 : 401);
     }
   });
 

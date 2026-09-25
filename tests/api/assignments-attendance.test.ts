@@ -167,6 +167,6 @@ describe('GET /api/admin/attendances', () => {
     expect((await read(await getAttendances(request('/api/admin/attendances')))).body.attendances).toHaveLength(2);
 
     actAs(null);
-    expect((await read(await getAttendances(request('/api/admin/attendances')))).status).toBe(403);
+    expect((await read(await getAttendances(request('/api/admin/attendances')))).status).toBe(401);
   });
 });

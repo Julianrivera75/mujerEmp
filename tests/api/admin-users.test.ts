@@ -31,18 +31,19 @@ describe('acceso a la administración de usuarias', () => {
   it('solo la administradora entra', async () => {
     for (const actor of [null, w.sofia, w.carolina]) {
       actAs(actor);
-      expect((await read(await GET(request('/api/admin/users')))).status).toBe(403);
-      expect((await read(await create(newUser()))).status).toBe(403);
-      expect((await read(await update({ id: w.sofia.id, role: 'ADMIN' }))).status).toBe(403);
+      const denied = actor ? 403 : 401;
+      expect((await read(await GET(request('/api/admin/users')))).status).toBe(denied);
+      expect((await read(await create(newUser()))).status).toBe(denied);
+      expect((await read(await update({ id: w.sofia.id, role: 'ADMIN' }))).status).toBe(denied);
       expect(
         (
           await read(
             await toggleStatus(request('/x', { method: 'POST', body: { id: w.sofia.id, status: 'INACTIVO' } })),
           )
         ).status,
-      ).toBe(403);
+      ).toBe(denied);
       expect((await read(await anonymize(request('/x', { method: 'POST', body: { id: w.sofia.id } })))).status).toBe(
-        403,
+        denied,
       );
     }
   });

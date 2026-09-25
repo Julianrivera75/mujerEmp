@@ -36,8 +36,7 @@ export default async function AdminDashboardPage() {
         where: { monthKey },
         include: {
           mentor: { select: { name: true } },
-          attendances: true,
-          enrollments: true,
+          _count: { select: { attendances: true, enrollments: true } },
         },
         orderBy: { dateStart: 'asc' },
       }),
@@ -194,8 +193,8 @@ export default async function AdminDashboardPage() {
                     <h3 className="text-base font-bold text-slate-800">{cls.title}</h3>
                     <p className="text-xs text-slate-500">
                       Docente: <strong className="text-slate-700">{cls.mentor.name}</strong> · Inscritas:{' '}
-                      <strong className="text-role-accent">{cls.enrollments.length}</strong> · Asistieron:{' '}
-                      <strong className="text-emerald-700">{cls.attendances.length}</strong>
+                      <strong className="text-role-accent">{cls._count.enrollments}</strong> · Asistieron:{' '}
+                      <strong className="text-emerald-700">{cls._count.attendances}</strong>
                     </p>
                   </div>
 

@@ -24,11 +24,18 @@ Navegador ──► middleware (verifica sesión y rol)
 
 ## Autenticación y sesión
 
-- Inicio de sesión con correo y contraseña (hash con bcrypt).
-- La sesión es un JWT HS256 de 7 días en la cookie `empoderas_session` (`HttpOnly`, `SameSite=Lax`, `Secure` en producción).
+- Inicio de sesión con correo y contraseña (hash con bcrypt, costo 12 en las contraseñas nuevas).
+- La sesión es un JWT HS256 (librería `jose`) de 7 días en la cookie `empoderas_session` (`HttpOnly`, `SameSite=Lax`, `Secure` en producción).
 - El middleware verifica la firma y redirige según el rol. Cada llamada a la API vuelve a consultar a la usuaria en la base para confirmar que sigue activa.
 - El inicio de sesión limita los intentos por cuenta y por dirección IP y responde igual si la cuenta no existe.
 - Las cuentas tienen periodo de vigencia (`startDate`, `endDate`) y estado (`ACTIVO`, `INACTIVO`).
+
+## Convenciones de la API
+
+- Cada ruta se define con `withAuth(alcance, roles, manejador)` (`src/lib/api.ts`): exige sesión (401), comprueba el rol (403) y traduce los errores.
+- Los cuerpos se validan con esquemas de `zod` (`src/lib/schemas.ts`) mediante `parseBody`; un dato inválido responde 400 con el primer problema.
+- Los errores siempre tienen la forma `{ "error": "mensaje" }`. Los errores conocidos de la base de datos se traducen (duplicado a 409, no encontrado a 404); cualquier otro responde 500 sin detalles.
+- Los listados tienen un tope de 500 filas (`MAX_ROWS`).
 
 ## Permisos por rol
 

@@ -6,7 +6,7 @@ import prisma from '@/lib/prisma';
 import { CURRENT_TERMS_VERSION } from '@/lib/legal';
 import type * as LegalModule from '@/lib/legal';
 import type { SessionUser } from '@/lib/user-context';
-import { read } from '../helpers/http';
+import { read, request } from '../helpers/http';
 import { actAs } from '../helpers/state';
 import { createWorld, resetDb } from '../helpers/world';
 
@@ -44,7 +44,7 @@ describe('logError', () => {
 
 describe('POST /api/auth/logout', () => {
   it('borra la cookie de sesión', async () => {
-    const res = await read(await logout());
+    const res = await read(await logout(request('/api/auth/logout', { method: 'POST' })));
     expect(res.status).toBe(200);
     expect(clearSessionCookie).toHaveBeenCalled();
   });
