@@ -22,7 +22,8 @@
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "prisma:migrate:deploy": "prisma migrate deploy",
-    "prisma:seed": "node prisma/seed.js"
+    "prisma:seed": "node prisma/seed.js",
+    "lock": "node scripts/regenerate-lock.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1134.0",

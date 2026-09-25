@@ -38,6 +38,10 @@ Crear una migración en local:
 npx prisma migrate dev --name descripcion_corta
 ```
 
+## Cambiar dependencias
+
+Desde Windows, después de `npm install` o `npm uninstall` hay que regenerar el lock en Linux con `npm run lock` (necesita Docker). Si no, `npm ci` falla en el CI y en Railway por dos paquetes opcionales de Linux que npm omite en Windows.
+
 ## Copias de seguridad y restauración
 
 Copia manual de la base (requiere el CLI de Railway y `pg_dump`):
