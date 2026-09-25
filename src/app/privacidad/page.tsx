@@ -10,11 +10,25 @@ export default function PrivacyPage() {
       title="Política de tratamiento de datos personales"
       intro="Esta política explica qué datos personales tratamos, para qué, con quién los compartimos y cómo puedes ejercer tus derechos, de acuerdo con la Ley 1581 de 2012, el Decreto 1377 de 2013 (compilado en el Decreto 1074 de 2015) y demás normas aplicables en Colombia."
     >
+      <LegalSection title="Alcance y marco legal">
+        <p>
+          Empoderadas Diversas tiene su sede en Miami, Florida (Estados Unidos) y sus participantes viven en varios
+          países. Los derechos de acceso, corrección y eliminación de esta política se reconocen a todas las
+          participantes, sin importar dónde residan. A las participantes que residen en Colombia se les aplican además
+          la Ley 1581 de 2012 y sus decretos reglamentarios, que se citan más abajo.
+        </p>
+        <p>
+          {
+            '[Borrador: la Organización debe confirmar con asesoría legal las normas de Florida y de EE. UU. aplicables a sus datos (por ejemplo, la Ley de Protección de Información de Florida) y el trato de menores de 13 años (COPPA). La plataforma no está dirigida a menores de 13 años.]'
+          }
+        </p>
+      </LegalSection>
+
       <LegalSection title="1. Responsable del tratamiento">
         <LegalList
           items={[
             <>Razón social: {CONTROLLER.legalName}</>,
-            <>NIT: {CONTROLLER.taxId}</>,
+            <>Registro (EIN): {CONTROLLER.taxId}</>,
             <>Domicilio: {CONTROLLER.address}</>,
             <>Correo para consultas y reclamos: {CONTROLLER.email}</>,
             <>Teléfono: {CONTROLLER.phone}</>,
@@ -67,7 +81,7 @@ export default function PrivacyPage() {
             'Crear y administrar tu cuenta y verificar tu identidad al ingresar.',
             'Prestar el servicio de formación: inscribirte en clases, registrar tu asistencia, recibir y calificar tus tareas y darte retroalimentación.',
             'Publicar grabaciones de las clases para consulta de las participantes del programa.',
-            'Expedir constancias de participación.',
+            'Expedir certificados de participación por módulo.',
             'Enviarte comunicaciones necesarias sobre el servicio (accesos, vigencia, cambios en los términos).',
             'Garantizar la seguridad de la Plataforma, prevenir fraudes y atender requerimientos de autoridades.',
             'Elaborar estadísticas e informes de impacto con datos agregados o anonimizados, que no permiten identificarte.',
@@ -171,12 +185,12 @@ export default function PrivacyPage() {
       <LegalSection title="10. Conservación">
         <p>
           Conservamos tus datos mientras dure tu vinculación y durante {'[PERIODO DE CONSERVACIÓN]'} después, para
-          atender solicitudes sobre constancias y obligaciones legales. Vencido ese plazo, o cuando lo solicites y
+          atender solicitudes sobre certificados y obligaciones legales. Vencido ese plazo, o cuando lo solicites y
           proceda, los suprimimos o anonimizamos.
         </p>
       </LegalSection>
 
-      <LegalSection title="11. Registro Nacional de Bases de Datos">
+      <LegalSection title="11. Registro de bases de datos (Colombia)">
         <p>
           {
             '[La Organización debe confirmar si está obligada a inscribir sus bases de datos en el Registro Nacional de Bases de Datos de la SIC y, de ser así, indicar aquí el estado de la inscripción.]'

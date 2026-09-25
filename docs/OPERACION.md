@@ -76,3 +76,21 @@ Los archivos del bucket no forman parte de esa copia.
 - Rectificación: teléfono y foto desde Mi perfil; nombre, correo y documento los corrige la administración.
 - Supresión: la administración anonimiza la cuenta desde Usuarios. Se eliminan los datos de identificación y los archivos; se conservan registros académicos que ya no identifican a la persona.
 - Plazos: consultas en 10 días hábiles y reclamos en 15 días hábiles.
+
+## Certificados por módulo
+
+Los cinco módulos de la cohorte se definen en `src/lib/modules.ts`: mes (`monthKey`, igual al de las clases), título, fecha de emisión que ya viene impresa en el arte y la posición del nombre y del número de estudiante sobre la imagen.
+
+- Los artes están en `public/certificados/modulo-N.jpg` (1776 x 1296). La fecha y el resto del diseño son parte de la imagen; el sistema solo estampa el nombre completo y el número de estudiante, por eso la fecha no cambia según el día de descarga.
+- El certificado de un módulo se habilita en los últimos 5 días del mes y exige el porcentaje mínimo de asistencia (`CERTIFICATE_MIN_ATTENDANCE_PERCENT` en `src/lib/legal.ts`, hoy 80 %) a las clases de ese mes en las que la estudiante está inscrita.
+- La API `GET /api/certificates` calcula el estado; la página `/estudiante/certificado` compone la imagen en el navegador.
+- Para cambiar un arte, reemplaza el archivo con el mismo nombre. Si el nuevo diseño mueve las líneas en blanco, ajusta las coordenadas del módulo y revisa el resultado con un nombre largo.
+- El diploma final de graduación se gestiona aparte y no se sirve desde la plataforma.
+
+## Logos
+
+Los originales se guardan fuera del repositorio (`docs/imagenes/`, ignorada por git). `node scripts/optimize-logos.js` recorta los márgenes y genera las versiones ligeras en `public/logos/`. El logo oficial se muestra con `src/components/Logo.tsx` y los logos de las organizaciones aliadas con `src/components/PartnerLogos.tsx`.
+
+## Número de estudiante y contraseñas iniciales
+
+El campo `studentNumber` guarda el número de estudiante (la columna de la base de datos sigue llamándose `documentId`). Al crear una cuenta desde el panel, la contraseña inicial se propone como ese número sin guiones ni espacios. Cada persona debe cambiarla en su primer ingreso desde su perfil.

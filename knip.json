@@ -1,5 +1,5 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": ["scripts/*.js", "e2e/*.spec.ts", "playwright.config.ts"],
+  "entry": ["scripts/*.js", "e2e/*.spec.ts"],
   "project": ["src/**/*.{ts,tsx}", "scripts/*.js"]
 }

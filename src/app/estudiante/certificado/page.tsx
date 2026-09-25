@@ -2,197 +2,240 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Printer, ShieldCheck, Lock, ArrowLeft, Sparkles } from 'lucide-react';
+import { ArrowLeft, Award, Download, Eye, Lock, Printer } from 'lucide-react';
+import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ProgressBar } from '@/components/ui/ProgressBar';
-import { useSessionUser } from '@/lib/user-context';
-import { CERTIFICATE_MIN_ATTENDANCE_PERCENT } from '@/lib/legal';
-import { formatDateLong } from '@/lib/format';
+import { canvasToBlob, renderCertificate } from '@/lib/certificate-canvas';
 import { logClientError } from '@/lib/client-log';
+import { formatDateLong } from '@/lib/format';
+import { CERTIFICATE_MODULES, type ModuleStatus } from '@/lib/modules';
+import { CERTIFICATE_MIN_ATTENDANCE_PERCENT } from '@/lib/legal';
 
-export default function StudentCertificatePage() {
-  const user = useSessionUser();
-  const [totalClasses, setTotalClasses] = useState(0);
-  const [totalAttended, setTotalAttended] = useState(0);
+interface ModuleState {
+  number: number;
+  title: string;
+  issuedOn: string;
+  art: string;
+  status: ModuleStatus;
+  percentage: number;
+  attended: number;
+  total: number;
+  opensAt: string;
+}
+
+interface CertificatesResponse {
+  student: { name: string; studentNumber: string | null };
+  modules: ModuleState[];
+}
+
+interface Preview {
+  moduleNumber: number;
+  url: string;
+}
+
+export default function StudentCertificatesPage() {
+  const [data, setData] = useState<CertificatesResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [preview, setPreview] = useState<Preview | null>(null);
+  const [working, setWorking] = useState<number | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
-        setLoading(true);
-        const [classesRes, attRes] = await Promise.all([fetch('/api/classes'), fetch('/api/admin/attendances')]);
-        const classesData = await classesRes.json();
-        setTotalClasses((classesData.classes || []).length);
-
-        const attData = await attRes.json();
-        const allAtt: { student: { id: string } }[] = attData.attendances || [];
-        setTotalAttended(allAtt.filter((a) => a.student.id === user.id).length);
+        const res = await fetch('/api/certificates');
+        const body = await res.json();
+        if (!res.ok) {
+          setError(body.error || 'No se pudieron cargar tus certificados.');
+          return;
+        }
+        setData(body);
       } catch (err) {
-        logClientError('Error cargando certificado:', err);
+        logClientError('Error cargando certificados:', err);
+        setError('Error de conexión al cargar tus certificados.');
       } finally {
         setLoading(false);
       }
     })();
-  }, [user.id]);
+  }, []);
 
-  const percentage = totalClasses > 0 ? Math.round((totalAttended / totalClasses) * 100) : 0;
-  const isEligible = totalClasses > 0 && percentage >= CERTIFICATE_MIN_ATTENDANCE_PERCENT;
+  // Libera la imagen generada al cambiar de certificado o salir de la página.
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview.url);
+    };
+  }, [preview]);
+
+  const openPreview = async (module: ModuleState) => {
+    if (!data?.student.studentNumber) return;
+    const layout = CERTIFICATE_MODULES.find((m) => m.number === module.number);
+    if (!layout) return;
+    setWorking(module.number);
+    try {
+      const canvas = await renderCertificate(layout, data.student.name, data.student.studentNumber);
+      const blob = await canvasToBlob(canvas);
+      setPreview({ moduleNumber: module.number, url: URL.createObjectURL(blob) });
+    } catch (err) {
+      logClientError('Error generando el certificado:', err);
+      setError('No pudimos generar el certificado. Inténtalo de nuevo.');
+    } finally {
+      setWorking(null);
+    }
+  };
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="no-print mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <Link
-            href="/estudiante"
-            className="mb-2 inline-flex items-center gap-1 text-xs font-bold text-role-ink hover:underline"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Volver a mis clases</span>
-          </Link>
-          <h1 className="flex items-center gap-2.5 font-display text-2xl font-bold text-slate-800 sm:text-3xl">
-            <span>Constancia de participación</span>
-          </h1>
-          <p className="mt-0.5 text-xs text-slate-500">
-            Constancia de tu participación en el programa formativo de Empoderadas Diversas.
-          </p>
-        </div>
-
-        {isEligible && (
-          <Button leftIcon={<Printer className="h-4 w-4" />} onClick={() => window.print()}>
-            Descargar / imprimir diploma
-          </Button>
-        )}
+      <div className="no-print mb-8">
+        <Link
+          href="/estudiante"
+          className="mb-2 inline-flex items-center gap-1 text-xs font-bold text-role-ink hover:underline"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          <span>Volver a mis clases</span>
+        </Link>
+        <h1 className="font-display text-2xl font-bold text-slate-800 sm:text-3xl">Certificados por módulo</h1>
+        <p className="mt-0.5 text-xs text-slate-500">
+          Cada módulo se certifica al terminar el mes. Necesitas asistir al menos al{' '}
+          {CERTIFICATE_MIN_ATTENDANCE_PERCENT}% de las clases del módulo.
+        </p>
       </div>
 
       {loading ? (
-        <div className="py-24 text-center text-sm text-slate-500">Generando acreditación...</div>
-      ) : !isEligible ? (
-        <Card variant="glass" className="mx-auto max-w-lg p-10 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-amber-100 text-amber-600">
-            <Lock className="h-8 w-8" />
-          </div>
-          <h2 className="mb-2 text-xl font-bold text-slate-800">Constancia aún no disponible</h2>
-          <p className="mb-6 text-xs leading-relaxed text-slate-500">
-            Para obtener tu constancia de participación debes registrar al menos el {CERTIFICATE_MIN_ATTENDANCE_PERCENT}
-            % de asistencia a las clases virtuales, ingresando con el botón de Google Meet.
-          </p>
-
-          <div className="mb-6 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-xs text-slate-600">
-            <div className="mb-1.5 flex justify-between font-bold">
-              <span>Tu asistencia actual:</span>
-              <span className="text-role-ink">
-                {percentage}% ({totalAttended} de {totalClasses} clases)
-              </span>
-            </div>
-            <ProgressBar value={percentage} label="Avance de asistencia para la constancia" />
-          </div>
-
-          <Button href="/estudiante">Ir a mis próximas clases</Button>
-        </Card>
-      ) : (
-        <div className="relative overflow-hidden rounded-3xl border-8 border-purple-900/10 bg-white p-10 text-center shadow-2xl sm:p-14 print:m-0 print:border-4 print:p-8 print:shadow-none">
-          <CornerOrnaments />
-          <Seal />
-
-          <div className="relative z-10 space-y-6">
-            <div className="mb-2 flex justify-center">
-              <div className="inline-flex items-center gap-2 rounded-full bg-purple-100 px-4 py-1.5 text-xs font-black uppercase tracking-widest text-purple-800">
-                <Sparkles className="h-4 w-4 text-purple-600" />
-                <span>Empoderadas Diversas · Red de Formación</span>
-              </div>
-            </div>
-
-            <h2 className="text-xs font-black uppercase tracking-[0.25em] text-slate-500 sm:text-sm">
-              Constancia de Participación
-            </h2>
-
-            <p className="mx-auto max-w-lg text-xs text-slate-500">
-              La corporación y red de capacitación <strong>Empoderadas Diversas</strong> hace constar que:
-            </p>
-
-            <div className="py-3">
-              <h3 className="font-serif text-3xl font-bold tracking-tight text-purple-950 sm:text-5xl">{user.name}</h3>
-              <p className="mt-2 text-xs font-semibold text-slate-600">
-                Documento de identidad: <strong>{user.studentNumber || 'Registrada en plataforma'}</strong>
-              </p>
-            </div>
-
-            <p className="mx-auto max-w-2xl text-xs leading-relaxed text-slate-700 sm:text-sm">
-              Participó en el programa de formación de Empoderadas Diversas, con una asistencia registrada del{' '}
-              <strong>{percentage}%</strong> a las sesiones virtuales en vivo en las que estuvo inscrita (
-              {totalAttended} de {totalClasses}).
-            </p>
-
-            <p className="mx-auto max-w-xl text-[10px] leading-relaxed text-slate-500">
-              Este documento acredita la participación en una actividad de formación complementaria. No constituye
-              título académico ni certificación de educación formal ni de competencias laborales.
-            </p>
-
-            <div className="mx-auto grid max-w-xl grid-cols-2 gap-8 pt-10">
-              <div className="text-center">
-                <div className="mx-auto mb-2 w-44 border-b-2 border-slate-400" />
-                <p className="text-xs font-bold text-slate-800">Dirección General</p>
-                <p className="text-[10px] text-slate-500">Empoderadas Diversas</p>
-              </div>
-              <div className="text-center">
-                <div className="mx-auto mb-2 w-44 border-b-2 border-slate-400" />
-                <p className="text-xs font-bold text-slate-800">Coordinación de Mentorías</p>
-                <p className="text-[10px] text-slate-500">Comité Pedagógico</p>
-              </div>
-            </div>
-
-            <div className="flex flex-col items-center justify-between gap-2 border-t border-slate-200/80 pt-8 text-[11px] text-slate-500 sm:flex-row">
-              <span className="flex items-center gap-1">
-                <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                <span>
-                  Código de referencia: <strong>ED-{user.id.slice(-8).toUpperCase()}</strong>
-                </span>
-              </span>
-              <span>Fecha de expedición: {formatDateLong(new Date())}</span>
-            </div>
-          </div>
+        <div className="no-print py-24 text-center text-sm text-slate-500">Cargando tus certificados...</div>
+      ) : error ? (
+        <div role="alert" className="no-print rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {error}
         </div>
-      )}
+      ) : data ? (
+        <>
+          {!data.student.studentNumber && (
+            <div className="no-print mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800">
+              Tu número de estudiante aún no está registrado. Comunícate con la administración para poder descargar tus
+              certificados.
+            </div>
+          )}
+
+          <ul className="no-print grid grid-cols-1 gap-4 md:grid-cols-2">
+            {data.modules.map((module) => (
+              <li key={module.number}>
+                <ModuleCard
+                  module={module}
+                  canDownload={Boolean(data.student.studentNumber)}
+                  busy={working === module.number}
+                  onView={() => openPreview(module)}
+                />
+              </li>
+            ))}
+          </ul>
+
+          {preview && (
+            <section aria-label={`Certificado del módulo ${preview.moduleNumber}`} className="mt-8">
+              <div className="no-print mb-3 flex flex-wrap items-center justify-between gap-3">
+                <h2 className="font-display text-lg font-bold text-slate-800">
+                  Certificado del módulo {preview.moduleNumber}
+                </h2>
+                <div className="flex gap-2">
+                  <Button
+                    href={preview.url}
+                    download={`certificado-modulo-${preview.moduleNumber}.png`}
+                    leftIcon={<Download className="h-4 w-4" />}
+                  >
+                    Descargar
+                  </Button>
+                  <Button variant="secondary" leftIcon={<Printer className="h-4 w-4" />} onClick={() => window.print()}>
+                    Imprimir
+                  </Button>
+                </div>
+              </div>
+              <img
+                src={preview.url}
+                alt={`Certificado del módulo ${preview.moduleNumber} de ${data.student.name}`}
+                className="w-full rounded-2xl border border-slate-200 shadow-lift print:rounded-none print:border-0 print:shadow-none"
+              />
+            </section>
+          )}
+        </>
+      ) : null}
     </div>
   );
 }
 
-const CORNER_POSITIONS = [
-  'top-0 left-0',
-  'top-0 right-0 -scale-x-100',
-  'bottom-0 right-0 rotate-180',
-  'bottom-0 left-0 -scale-y-100',
-];
+function ModuleCard({
+  module,
+  canDownload,
+  busy,
+  onView,
+}: {
+  module: ModuleState;
+  canDownload: boolean;
+  busy: boolean;
+  onView: () => void;
+}) {
+  const available = module.status === 'available';
 
-/** Las 4 esquinas del diploma, un único componente que reutiliza un mismo trazo SVG rotado/reflejado. */
-function CornerOrnaments() {
   return (
-    <>
-      {CORNER_POSITIONS.map((pos, i) => (
-        <svg
-          key={i}
-          aria-hidden="true"
-          width="72"
-          height="72"
-          viewBox="0 0 72 72"
-          className={`pointer-events-none absolute ${pos}`}
-        >
-          <path d="M6 6 L56 6 M6 6 L6 56" stroke="#7e22ce" strokeWidth="6" strokeLinecap="round" fill="none" />
-        </svg>
-      ))}
-    </>
+    <Card variant="glass" className="flex h-full flex-col gap-3 p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Módulo {module.number}</p>
+          <h2 className="font-display text-base font-bold text-slate-800">{module.title}</h2>
+        </div>
+        <StatusBadge status={module.status} />
+      </div>
+
+      <div className="text-xs text-slate-600">
+        <div className="mb-1.5 flex justify-between font-semibold">
+          <span>Asistencia</span>
+          <span className="text-role-ink">
+            {module.percentage}% ({module.attended} de {module.total} clases)
+          </span>
+        </div>
+        <ProgressBar value={module.percentage} label={`Asistencia del módulo ${module.number}`} />
+      </div>
+
+      <p className="text-xs text-slate-500">
+        {module.status === 'locked'
+          ? `Disponible desde el ${formatDateLong(module.opensAt)}.`
+          : module.status === 'no-classes'
+            ? 'Este módulo aún no tiene clases registradas para ti.'
+            : module.status === 'low-attendance'
+              ? `Necesitas al menos ${CERTIFICATE_MIN_ATTENDANCE_PERCENT}% de asistencia para descargarlo.`
+              : `Fecha de emisión del certificado: ${module.issuedOn}.`}
+      </p>
+
+      <div className="mt-auto pt-1">
+        {available ? (
+          <Button
+            size="sm"
+            loading={busy}
+            disabled={!canDownload}
+            leftIcon={<Eye className="h-4 w-4" />}
+            onClick={onView}
+          >
+            Ver y descargar
+          </Button>
+        ) : (
+          <Button size="sm" variant="secondary" disabled leftIcon={<Lock className="h-4 w-4" />}>
+            No disponible
+          </Button>
+        )}
+      </div>
+    </Card>
   );
 }
 
-function Seal() {
-  return (
-    <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-[0.04]">
-      <svg width="380" height="380" viewBox="0 0 100 100" aria-hidden="true">
-        <circle cx="50" cy="50" r="46" fill="none" stroke="#581c87" strokeWidth="2" />
-        <circle cx="50" cy="50" r="38" fill="none" stroke="#581c87" strokeWidth="1" />
-        <path d="M50 20 L58 42 L82 42 L62 56 L70 78 L50 64 L30 78 L38 56 L18 42 L42 42 Z" fill="#581c87" />
-      </svg>
-    </div>
-  );
+function StatusBadge({ status }: { status: ModuleStatus }) {
+  if (status === 'available') {
+    return (
+      <Badge tone="success">
+        <Award className="mr-1 h-3 w-3" />
+        Disponible
+      </Badge>
+    );
+  }
+  if (status === 'locked') return <Badge tone="neutral">Bloqueado</Badge>;
+  if (status === 'low-attendance') return <Badge tone="warning">Falta asistencia</Badge>;
+  return <Badge tone="neutral">Sin clases</Badge>;
 }

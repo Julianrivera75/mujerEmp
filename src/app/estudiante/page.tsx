@@ -78,7 +78,7 @@ export default function StudentDashboardPage() {
             <h1 className="font-display text-3xl font-bold sm:text-4xl">Bienvenida, {user.name.split(' ')[0]}</h1>
             <p className="mt-2 max-w-xl text-sm text-purple-100 sm:text-base">
               Conéctate a tus clases en Google Meet con un clic. Tu asistencia se registra de inmediato para tu
-              constancia de participación.
+              certificado de cada módulo.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -142,7 +142,7 @@ export default function StudentDashboardPage() {
                 <Award className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-slate-800">Tu progreso hacia la constancia de participación</h2>
+                <h2 className="text-base font-bold text-slate-800">Tu progreso hacia los certificados por módulo</h2>
                 <p className="text-xs text-slate-600">
                   Requiere al menos un {CERTIFICATE_MIN_ATTENDANCE_PERCENT}% de asistencia a las sesiones en vivo vía
                   Google Meet.
@@ -161,7 +161,7 @@ export default function StudentDashboardPage() {
               size="sm"
               leftIcon={<Award className="h-4 w-4" />}
             >
-              Ver mi constancia
+              Ver mis certificados
             </Button>
           </div>
         </Card>

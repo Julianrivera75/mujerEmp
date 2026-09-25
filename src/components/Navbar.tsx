@@ -54,7 +54,7 @@ const studentLinks = [
   { href: '/estudiante/repositorio', label: 'Repositorio', icon: BookOpen },
   { href: '/estudiante/tareas', label: 'Mis tareas', icon: ClipboardList },
   { href: '/estudiante/asistencias', label: 'Mi asistencia', icon: CheckCircle2 },
-  { href: '/estudiante/certificado', label: 'Constancia', icon: Award },
+  { href: '/estudiante/certificado', label: 'Certificados', icon: Award },
 ];
 
 export default function Navbar({ user }: NavbarProps) {

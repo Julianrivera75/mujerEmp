@@ -41,6 +41,7 @@ async function route(request: NextRequest, requestHeaders: Headers) {
     pathname.startsWith('/api/auth/login') ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon.ico') ||
+    pathname.startsWith('/logos/') ||
     pathname.startsWith('/public')
   ) {
     return next();

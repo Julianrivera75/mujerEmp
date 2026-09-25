@@ -22,7 +22,7 @@ export default function TermsPage() {
           items={[
             <>
               <strong>Plataforma:</strong> el sitio web y los servicios asociados de gestión de clases virtuales,
-              asistencia, tareas, materiales y constancias.
+              asistencia, tareas, materiales y certificados.
             </>,
             <>
               <strong>Usuaria:</strong> toda persona con una cuenta activa, ya sea estudiante, mentora o administradora.
@@ -39,7 +39,7 @@ export default function TermsPage() {
 
       <LegalSection title="3. Naturaleza del servicio">
         <p>
-          El programa es una actividad de formación complementaria. La participación en él, y la constancia que la
+          El programa es una actividad de formación complementaria. La participación en él, y los certificados que la
           Plataforma genera,{' '}
           <strong>
             no constituyen título académico, ni certificación de educación formal, ni certificación de competencias
@@ -105,12 +105,13 @@ export default function TermsPage() {
         />
       </LegalSection>
 
-      <LegalSection title="9. Asistencia y constancia de participación">
+      <LegalSection title="9. Asistencia y certificados por módulo">
         <p>
-          La asistencia se registra cuando ingresas a la sala desde el botón de la Plataforma. La constancia de
-          participación se habilita cuando tu asistencia registrada alcanza al menos el{' '}
-          {CERTIFICATE_MIN_ATTENDANCE_PERCENT}% de las sesiones en vivo en las que estás inscrita. La Organización puede
-          negar o revocar una constancia si comprueba información falsa o un uso fraudulento de la Plataforma.
+          La asistencia se registra cuando ingresas a la sala desde el botón de la Plataforma. El programa se organiza
+          en cinco módulos mensuales y, al terminar cada uno, puedes descargar el certificado de participación de ese
+          módulo si tu asistencia registrada alcanza al menos el {CERTIFICATE_MIN_ATTENDANCE_PERCENT}% de las clases del
+          módulo. La fecha impresa en cada certificado es la fecha oficial de cierre del módulo. La Organización puede
+          negar o revocar un certificado si comprueba información falsa o un uso fraudulento de la Plataforma.
         </p>
       </LegalSection>
 
@@ -141,9 +142,11 @@ export default function TermsPage() {
 
       <LegalSection title="13. Ley aplicable y reclamaciones">
         <p>
-          Estos términos se rigen por las leyes de la República de Colombia. Ante cualquier inconformidad, te invitamos
-          a escribirnos primero a {CONTROLLER.email} para buscar una solución directa. Lo anterior no limita tu derecho
-          de acudir a las autoridades competentes, como la Superintendencia de Industria y Comercio.
+          {
+            '[Borrador: la Organización debe definir con asesoría legal la ley aplicable y la jurisdicción (Florida, EE. UU.).]'
+          }{' '}
+          Ante cualquier inconformidad, te invitamos a escribirnos primero a {CONTROLLER.email} para buscar una solución
+          directa. Lo anterior no limita tu derecho de acudir a las autoridades competentes de tu país de residencia.
         </p>
       </LegalSection>
     </LegalDocument>

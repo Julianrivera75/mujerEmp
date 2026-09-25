@@ -16,7 +16,12 @@ const LOGOS = [
   { file: 'Impacto360.jpeg', out: 'impacto-360.png', width: 360, circle: true },
   { file: 'CUCUniversity.jpeg', out: 'cuc-university.png', width: 360, background: '#000000' },
   { file: 'LydaCorrea.jpeg', out: 'lyda-correa.png', width: 360, background: '#000c2e' },
-  { file: 'Magos.jpeg', out: 'magos-apple-fix.png', width: 240, crop: { left: 100, top: 565, width: 720, height: 730 } },
+  {
+    file: 'Magos.jpeg',
+    out: 'magos-apple-fix.png',
+    width: 240,
+    crop: { left: 100, top: 565, width: 720, height: 730 },
+  },
   { file: 'Mujeres en break.jpeg', out: 'mujeres-en-break.png', width: 300, background: '#ffffff' },
   { file: 'Museo.jpeg', out: 'museo-empresarial-cultural.png', width: 360, background: '#ffffff' },
 ];
