@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
+import { buildCsp, generateNonce } from '@/lib/csp';
+import { SESSION_COOKIE } from '@/lib/session-cookie';
 
 function getJwtSecretKey(): Uint8Array {
   const secret = process.env.JWT_SECRET;
@@ -12,7 +14,22 @@ function getJwtSecretKey(): Uint8Array {
 }
 
 export async function middleware(request: NextRequest) {
+  const nonce = generateNonce();
+  const csp = buildCsp(nonce, process.env.NODE_ENV === 'production');
+
+  // Next lee el nonce de la CSP de la solicitud y lo aplica a sus scripts.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set('Content-Security-Policy', csp);
+
+  const response = await route(request, requestHeaders);
+  response.headers.set('Content-Security-Policy', csp);
+  return response;
+}
+
+async function route(request: NextRequest, requestHeaders: Headers) {
   const { pathname } = request.nextUrl;
+  const next = () => NextResponse.next({ request: { headers: requestHeaders } });
 
   // Rutas públicas que no requieren autenticación
   if (
@@ -26,10 +43,10 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/favicon.ico') ||
     pathname.startsWith('/public')
   ) {
-    return NextResponse.next();
+    return next();
   }
 
-  const sessionCookie = request.cookies.get('empoderas_session')?.value;
+  const sessionCookie = request.cookies.get(SESSION_COOKIE)?.value;
 
   // Si no hay cookie de sesión y se intenta acceder a una ruta protegida
   if (!sessionCookie) {
@@ -46,7 +63,7 @@ export async function middleware(request: NextRequest) {
     // Validar si el usuario está inactivo
     if (payload.status === 'INACTIVO') {
       const response = NextResponse.redirect(new URL('/login?error=inactive', request.url));
-      response.cookies.delete('empoderas_session');
+      response.cookies.delete(SESSION_COOKIE);
       return response;
     }
 
@@ -71,11 +88,11 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL(defaultPath, request.url));
     }
 
-    return NextResponse.next();
+    return next();
   } catch (err) {
     // Firma inválida, token expirado o cookie corrupta.
     const response = NextResponse.redirect(new URL('/login', request.url));
-    response.cookies.delete('empoderas_session');
+    response.cookies.delete(SESSION_COOKIE);
     return response;
   }
 }

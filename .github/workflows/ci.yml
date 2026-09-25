@@ -43,6 +43,4 @@ jobs:
       - run: npm run knip
       - run: npm run test:coverage
       - run: npm run build
-      # Next 14 tiene avisos abiertos hasta migrar a Next 15 (Fase 6). Entonces este paso pasa a ser bloqueante.
       - run: npm audit --omit=dev --audit-level=high
-        continue-on-error: true

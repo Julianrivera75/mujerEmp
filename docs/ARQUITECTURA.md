@@ -2,7 +2,7 @@
 
 ## Visión general
 
-Aplicación Next.js 14 con App Router. Las páginas y la API viven en el mismo proyecto y comparten la base de datos PostgreSQL a través de Prisma. Los archivos (entregas, materiales y fotos) se guardan en un bucket compatible con S3 y se sirven con URLs firmadas y temporales.
+Aplicación Next.js 15 con App Router. Las páginas y la API viven en el mismo proyecto y comparten la base de datos PostgreSQL a través de Prisma. Los archivos (entregas, materiales y fotos) se guardan en un bucket compatible con S3 y se sirven con URLs firmadas y temporales.
 
 ```
 Navegador ──► middleware (verifica sesión y rol)
@@ -25,9 +25,11 @@ Navegador ──► middleware (verifica sesión y rol)
 ## Autenticación y sesión
 
 - Inicio de sesión con correo y contraseña (hash con bcrypt, costo 12 en las contraseñas nuevas).
-- La sesión es un JWT HS256 (librería `jose`) de 7 días en la cookie `empoderas_session` (`HttpOnly`, `SameSite=Lax`, `Secure` en producción).
+- La sesión es un JWT HS256 (librería `jose`) de 7 días en la cookie `__Host-empoderas_session` en producción (`empoderas_session` en desarrollo): `HttpOnly`, `SameSite=Lax`, `Secure`.
+- Cada cuenta tiene un `tokenVersion`; el token lo lleva en el claim `tv`. Cambiar la contraseña, el rol, desactivar o anonimizar la cuenta lo incrementa y cierra las sesiones abiertas.
 - El middleware verifica la firma y redirige según el rol. Cada llamada a la API vuelve a consultar a la usuaria en la base para confirmar que sigue activa.
-- El inicio de sesión limita los intentos por cuenta y por dirección IP y responde igual si la cuenta no existe.
+- El inicio de sesión limita los intentos fallidos por cuenta y por dirección IP (tabla `LoginAttempt`, persiste entre reinicios y réplicas) y responde igual si la cuenta no existe.
+- La política de contenido (CSP) usa un nonce por solicitud generado en `src/middleware.ts`; por eso las páginas se generan en cada solicitud.
 - Las cuentas tienen periodo de vigencia (`startDate`, `endDate`) y estado (`ACTIVO`, `INACTIVO`).
 
 ## Convenciones de la API

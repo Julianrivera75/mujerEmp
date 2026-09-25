@@ -11,7 +11,7 @@ const store = vi.hoisted(() => ({
 }));
 
 vi.mock('next/headers', () => ({
-  cookies: () => ({
+  cookies: async () => ({
     get: (name: string) => (store.values[name] ? { value: store.values[name] } : undefined),
     set: store.set,
     delete: store.delete,
@@ -67,8 +67,8 @@ describe('signToken', () => {
 });
 
 describe('cookie de sesión', () => {
-  it('se crea HttpOnly, SameSite=Lax, de 7 días y en toda la aplicación', () => {
-    auth.setSessionCookie('token-x');
+  it('se crea HttpOnly, SameSite=Lax, de 7 días y en toda la aplicación', async () => {
+    await auth.setSessionCookie('token-x');
     expect(store.set).toHaveBeenCalledWith(
       COOKIE,
       'token-x',
@@ -76,8 +76,8 @@ describe('cookie de sesión', () => {
     );
   });
 
-  it('se borra al cerrar sesión', () => {
-    auth.clearSessionCookie();
+  it('se borra al cerrar sesión', async () => {
+    await auth.clearSessionCookie();
     expect(store.delete).toHaveBeenCalledWith(COOKIE);
   });
 });

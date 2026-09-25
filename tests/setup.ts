@@ -5,8 +5,8 @@ import type * as S3Module from '@/lib/s3';
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: async () => session.current,
   signToken: () => 'token-de-prueba',
-  setSessionCookie: () => undefined,
-  clearSessionCookie: vi.fn(),
+  setSessionCookie: async () => undefined,
+  clearSessionCookie: vi.fn(async () => undefined),
 }));
 
 vi.mock('@/lib/s3', async (importOriginal) => {

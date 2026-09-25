@@ -80,7 +80,7 @@ export const POST = withErrors('auth/login', async (req) => {
     { id: user.id, email: user.email, name: user.name, role: user.role, status: user.status },
     user.tokenVersion,
   );
-  setSessionCookie(token);
+  await setSessionCookie(token);
 
   const redirectUrl = user.role === 'ADMIN' ? '/admin' : user.role === 'MENTOR' ? '/mentor' : '/estudiante';
 

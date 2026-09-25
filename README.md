@@ -12,7 +12,7 @@ Plataforma web de capacitación y mentoría virtual. Gestiona clases en vivo por
 
 ## Stack
 
-- Next.js 14 (App Router) y React 18
+- Next.js 15 (App Router) y React 19
 - Tailwind CSS, Framer Motion y lucide-react
 - Prisma 5 con PostgreSQL
 - Almacenamiento de archivos compatible con S3 (URLs firmadas)

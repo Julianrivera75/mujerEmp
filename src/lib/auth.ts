@@ -2,6 +2,7 @@ import type { Role, UserStatus } from '@prisma/client';
 import { jwtVerify, SignJWT } from 'jose';
 import { cookies } from 'next/headers';
 import prisma from './prisma';
+import { SESSION_COOKIE } from './session-cookie';
 
 function getJwtSecret(): Uint8Array {
   const secret = process.env.JWT_SECRET;
@@ -13,7 +14,6 @@ function getJwtSecret(): Uint8Array {
 }
 
 const JWT_SECRET = getJwtSecret();
-const TOKEN_NAME = 'empoderas_session';
 const SESSION_SECONDS = 60 * 60 * 24 * 7; // 7 días
 
 export interface TokenPayload {
@@ -46,7 +46,7 @@ async function readClaims(token: string): Promise<{ id: string; tv: number } | n
 
 /** Usuaria de la sesión, con rol y estado tomados de la base de datos (no del token). */
 export async function getCurrentUser(): Promise<TokenPayload | null> {
-  const token = cookies().get(TOKEN_NAME)?.value;
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
 
   const claims = await readClaims(token);
@@ -70,8 +70,8 @@ export async function getCurrentUser(): Promise<TokenPayload | null> {
   };
 }
 
-export function setSessionCookie(token: string) {
-  cookies().set(TOKEN_NAME, token, {
+export async function setSessionCookie(token: string) {
+  (await cookies()).set(SESSION_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
@@ -80,6 +80,6 @@ export function setSessionCookie(token: string) {
   });
 }
 
-export function clearSessionCookie() {
-  cookies().delete(TOKEN_NAME);
+export async function clearSessionCookie() {
+  (await cookies()).delete(SESSION_COOKIE);
 }

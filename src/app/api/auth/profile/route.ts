@@ -61,7 +61,7 @@ export const PUT = withAuth('auth/profile', 'any', async (req, user) => {
   });
 
   if (updateData.passwordHash) {
-    setSessionCookie(await signToken(user, updated.tokenVersion));
+    await setSessionCookie(await signToken(user, updated.tokenVersion));
   }
 
   if (previousAvatar) {
