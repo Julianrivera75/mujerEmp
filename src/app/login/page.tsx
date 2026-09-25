@@ -4,40 +4,20 @@ import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
-import {
-  ArrowRight,
-  Lock,
-  Mail,
-  ShieldAlert,
-  Eye,
-  EyeOff,
-  ShieldCheck,
-  Presentation,
-  GraduationCap,
-  Video,
-  ClipboardList,
-  Award,
-} from 'lucide-react';
+import { ArrowRight, Lock, Mail, ShieldAlert, Eye, EyeOff, Video, ClipboardList, Award } from 'lucide-react';
 import { Logo } from '@/components/Logo';
+import { PartnerLogos } from '@/components/PartnerLogos';
 import { Input } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
 import { ParticleField } from '@/components/fx/ParticleField';
 import { AuroraBackground } from '@/components/fx/AuroraBackground';
 import { fadeUp, stagger } from '@/lib/motion';
 
-const DEMO_ACCOUNTS = [
-  { email: 'admin@empoderas.org', password: '123456', label: 'Admin', icon: ShieldCheck },
-  { email: 'carolina.mentor@empoderas.org', password: '123456', label: 'Mentora', icon: Presentation },
-  { email: 'sofia.estudiante@empoderas.org', password: '123456', label: 'Estudiante', icon: GraduationCap },
-] as const;
-
 const VALUE_POINTS = [
   { icon: Video, text: 'Clases en vivo con tu mentora, sin salir de la plataforma' },
   { icon: ClipboardList, text: 'Tareas, entregas y retroalimentación en un solo lugar' },
   { icon: Award, text: 'Certificado de acreditación al completar tu formación' },
 ];
-
-const SHOW_DEMO_LOGIN = process.env.NEXT_PUBLIC_SHOW_DEMO_LOGIN === 'true';
 
 function LoginFormContent() {
   const router = useRouter();
@@ -80,12 +60,6 @@ function LoginFormContent() {
     }
   };
 
-  const setTestAccount = (testEmail: string, testPass: string) => {
-    setEmail(testEmail);
-    setPassword(testPass);
-    setError('');
-  };
-
   return (
     <m.div variants={stagger} initial="hidden" animate="show" className="w-full max-w-md">
       <m.div variants={fadeUp} className="mb-6 flex justify-center lg:hidden">
@@ -93,7 +67,7 @@ function LoginFormContent() {
       </m.div>
 
       <m.div variants={fadeUp} className="glass-card rounded-3xl border border-white/80 p-7 shadow-lift sm:p-8">
-        <h1 className="mb-1 font-display text-xl font-bold text-slate-800">Bienvenida al portal</h1>
+        <h1 className="mb-1 font-display text-xl font-bold text-slate-800">Bienvenido/a al portal</h1>
         <p className="mb-6 text-xs text-slate-500">
           Ingresa tus credenciales para acceder a tus clases, horarios y tareas.
         </p>
@@ -116,7 +90,7 @@ function LoginFormContent() {
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="ejemplo@empoderas.org"
+            placeholder="tucorreo@ejemplo.com"
             leftIcon={<Mail className="h-4 w-4" />}
           />
 
@@ -150,31 +124,12 @@ function LoginFormContent() {
             Ingresar a la plataforma
           </Button>
         </form>
-
-        {SHOW_DEMO_LOGIN && (
-          <div className="mt-8 border-t border-slate-200/60 pt-6">
-            <p className="mb-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-500">
-              Acceso rápido de demostración
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              {DEMO_ACCOUNTS.map((acc) => (
-                <button
-                  key={acc.email}
-                  type="button"
-                  onClick={() => setTestAccount(acc.email, acc.password)}
-                  className="flex flex-col items-center gap-1 rounded-xl border border-role-accent/20 bg-role-soft px-2 py-2.5 text-center text-xs font-bold text-role-ink transition-colors hover:brightness-95"
-                >
-                  <acc.icon className="h-4 w-4" strokeWidth={1.75} />
-                  <span>{acc.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </m.div>
 
+      <PartnerLogos className="mt-6" />
+
       <p className="mt-6 text-center text-xs font-medium text-slate-500">
-        Empoderas Diversas © {new Date().getFullYear()} · Transformando realidades mediante educación
+        Empoderadas Diversas © {new Date().getFullYear()} · Transformando familias
       </p>
       <nav
         aria-label="Información legal"
@@ -207,7 +162,7 @@ export default function LoginPage() {
           className="relative z-10 flex flex-col justify-center px-12 text-white xl:px-16"
         >
           <m.div variants={fadeUp}>
-            <Logo variant="mark-only" />
+            <Logo variant="mark-only" tone="white" />
           </m.div>
           <m.h2
             variants={fadeUp}

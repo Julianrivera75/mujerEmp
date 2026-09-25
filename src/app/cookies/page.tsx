@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { LegalDocument, LegalSection } from '@/components/legal/LegalDocument';
 import { Table, TCell, THead, TRow } from '@/components/ui/Table';
 
-export const metadata: Metadata = { title: 'Política de cookies | Empoderas Diversas' };
+export const metadata: Metadata = { title: 'Política de cookies | Empoderadas Diversas' };
 
 export default function CookiesPage() {
   return (

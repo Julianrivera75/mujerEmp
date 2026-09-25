@@ -80,7 +80,7 @@ describe('sesión con perfil completo', () => {
     const profile = await getSessionProfile();
     expect(profile).toMatchObject({
       id: w.sofia.id,
-      documentId: 'DOC-Sofia',
+      studentNumber: 'DOC-Sofia',
       phone: '3000000000',
       avatar: `avatares/${w.sofia.id}/f.png`,
       startDate: '2026-01-01T00:00:00.000Z',

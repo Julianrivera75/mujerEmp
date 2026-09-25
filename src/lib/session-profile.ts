@@ -6,7 +6,7 @@ import type { SessionUser } from '@/lib/user-context';
 
 /**
  * getCurrentUser() sólo trae id/name/email/role/status (ver lib/auth.ts).
- * Los layouts necesitan además avatar/documentId/phone/vigencia para Navbar y el certificado,
+ * Los layouts necesitan además avatar/studentNumber/phone/vigencia para Navbar y el certificado,
  * y los datos de aceptación de términos, así que las completamos acá.
  */
 export async function getSessionProfile(): Promise<SessionUser | null> {
@@ -17,7 +17,7 @@ export async function getSessionProfile(): Promise<SessionUser | null> {
     where: { id: user.id },
     select: {
       avatar: true,
-      documentId: true,
+      studentNumber: true,
       phone: true,
       startDate: true,
       endDate: true,
@@ -30,7 +30,7 @@ export async function getSessionProfile(): Promise<SessionUser | null> {
   return {
     ...user,
     avatar: extra?.avatar ?? null,
-    documentId: extra?.documentId ?? null,
+    studentNumber: extra?.studentNumber ?? null,
     phone: extra?.phone ?? null,
     startDate: extra?.startDate ? extra.startDate.toISOString() : null,
     endDate: extra?.endDate ? extra.endDate.toISOString() : null,

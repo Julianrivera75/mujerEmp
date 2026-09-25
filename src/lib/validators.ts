@@ -89,3 +89,8 @@ export function parseHttpsUrl(value: unknown, allowedHosts?: string[]): string |
 export function safeHref(value: string | null | undefined): string | undefined {
   return parseHttpsUrl(value ?? '') ?? undefined;
 }
+
+/** Teléfono internacional flexible: dígitos, espacios, guiones, puntos, paréntesis y un "+" inicial (7 a 25 caracteres). */
+export function isValidPhone(value: string): boolean {
+  return /^\+?[\d\s().-]{7,25}$/.test(value) && (value.match(/\d/g) ?? []).length >= 7;
+}

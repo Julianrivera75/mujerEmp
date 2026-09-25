@@ -9,6 +9,7 @@ import {
   YOUTUBE_HOSTS,
   cleanText,
   isValidEmail,
+  isValidPhone,
   parseDate,
   parseHttpsUrl,
   validatePassword,
@@ -28,6 +29,15 @@ const optionalText = (max: number) =>
     .string()
     .nullish()
     .transform((v) => cleanText(v ?? '', max));
+
+/** Número de contacto opcional; si se escribe debe parecer un teléfono internacional. */
+const optionalPhone = z
+  .string()
+  .nullish()
+  .transform((v) => cleanText(v ?? '', 30))
+  .refine((v) => v === null || isValidPhone(v), {
+    message: 'El número de contacto no es válido. Incluye el indicativo internacional, por ejemplo +1 305 555 0123.',
+  });
 
 const requiredId = (message: string) => z.string({ error: message }).min(1, message);
 
@@ -87,7 +97,7 @@ export const loginSchema = z.object({
 export const acceptTermsSchema = z.object({ version: z.string({ error: 'Versión inválida.' }) });
 
 export const profileSchema = z.object({
-  phone: z.string().nullish().optional(),
+  phone: optionalPhone.optional(),
   avatar: z.string().nullable().optional(),
   currentPassword: z.string().optional(),
   newPassword: z.string().optional(),
@@ -106,8 +116,8 @@ export const createUserSchema = z.object({
   password,
   role: z.enum(ROLES, { error: 'Rol inválido.' }),
   status: z.enum(USER_STATUSES, { error: 'Estado inválido.' }).optional(),
-  documentId: optionalText(40),
-  phone: optionalText(30),
+  studentNumber: optionalText(40),
+  phone: optionalPhone,
   startDate: optionalDateField,
   endDate: optionalDateField,
   ...guardianFields,
@@ -124,8 +134,8 @@ export const updateUserSchema = z.object({
   password: z.string().nullish(),
   role: z.enum(ROLES, { error: 'Rol inválido.' }).optional(),
   status: z.enum(USER_STATUSES, { error: 'Estado inválido.' }).optional(),
-  documentId: optionalText(40),
-  phone: optionalText(30),
+  studentNumber: optionalText(40),
+  phone: optionalPhone,
   startDate: optionalDateField,
   endDate: optionalDateField,
   ...guardianFields,

@@ -18,7 +18,7 @@ import { logClientError } from '@/lib/client-log';
 interface AttendanceLog {
   id: string;
   joinedAt: string;
-  student: { id: string; name: string; email: string; documentId: string | null };
+  student: { id: string; name: string; email: string; studentNumber: string | null };
   classSession: {
     id: string;
     title: string;
@@ -76,12 +76,21 @@ export default function AdminAttendancePage() {
       return;
     }
 
-    const headers = ['Estudiante', 'Documento', 'Correo', 'Clase / Sesión', 'Docente', 'Fecha', 'Hora', 'Estado'];
+    const headers = [
+      'Estudiante',
+      'Número de estudiante',
+      'Correo',
+      'Clase / Sesión',
+      'Docente',
+      'Fecha',
+      'Hora',
+      'Estado',
+    ];
     const rows = filteredLogs.map((log) => {
       const d = new Date(log.joinedAt);
       return [
         `"${log.student.name.replace(/"/g, '""')}"`,
-        `"${(log.student.documentId || 'N/A').replace(/"/g, '""')}"`,
+        `"${(log.student.studentNumber || 'N/A').replace(/"/g, '""')}"`,
         `"${log.student.email.replace(/"/g, '""')}"`,
         `"${log.classSession.title.replace(/"/g, '""')}"`,
         `"${log.classSession.mentor.name.replace(/"/g, '""')}"`,

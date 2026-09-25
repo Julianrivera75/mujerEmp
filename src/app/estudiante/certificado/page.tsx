@@ -54,7 +54,7 @@ export default function StudentCertificatePage() {
             <span>Constancia de participación</span>
           </h1>
           <p className="mt-0.5 text-xs text-slate-500">
-            Constancia de tu participación en el programa formativo de Empoderas Diversas.
+            Constancia de tu participación en el programa formativo de Empoderadas Diversas.
           </p>
         </div>
 
@@ -99,7 +99,7 @@ export default function StudentCertificatePage() {
             <div className="mb-2 flex justify-center">
               <div className="inline-flex items-center gap-2 rounded-full bg-purple-100 px-4 py-1.5 text-xs font-black uppercase tracking-widest text-purple-800">
                 <Sparkles className="h-4 w-4 text-purple-600" />
-                <span>Empoderas Diversas · Red de Formación</span>
+                <span>Empoderadas Diversas · Red de Formación</span>
               </div>
             </div>
 
@@ -108,18 +108,18 @@ export default function StudentCertificatePage() {
             </h2>
 
             <p className="mx-auto max-w-lg text-xs text-slate-500">
-              La corporación y red de capacitación <strong>Empoderas Diversas</strong> hace constar que:
+              La corporación y red de capacitación <strong>Empoderadas Diversas</strong> hace constar que:
             </p>
 
             <div className="py-3">
               <h3 className="font-serif text-3xl font-bold tracking-tight text-purple-950 sm:text-5xl">{user.name}</h3>
               <p className="mt-2 text-xs font-semibold text-slate-600">
-                Documento de identidad: <strong>{user.documentId || 'Registrada en plataforma'}</strong>
+                Documento de identidad: <strong>{user.studentNumber || 'Registrada en plataforma'}</strong>
               </p>
             </div>
 
             <p className="mx-auto max-w-2xl text-xs leading-relaxed text-slate-700 sm:text-sm">
-              Participó en el programa de formación de Empoderas Diversas, con una asistencia registrada del{' '}
+              Participó en el programa de formación de Empoderadas Diversas, con una asistencia registrada del{' '}
               <strong>{percentage}%</strong> a las sesiones virtuales en vivo en las que estuvo inscrita (
               {totalAttended} de {totalClasses}).
             </p>
@@ -133,7 +133,7 @@ export default function StudentCertificatePage() {
               <div className="text-center">
                 <div className="mx-auto mb-2 w-44 border-b-2 border-slate-400" />
                 <p className="text-xs font-bold text-slate-800">Dirección General</p>
-                <p className="text-[10px] text-slate-500">Empoderas Diversas</p>
+                <p className="text-[10px] text-slate-500">Empoderadas Diversas</p>
               </div>
               <div className="text-center">
                 <div className="mx-auto mb-2 w-44 border-b-2 border-slate-400" />

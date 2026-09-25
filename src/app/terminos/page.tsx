@@ -2,13 +2,13 @@ import type { Metadata } from 'next';
 import { LegalDocument, LegalSection, LegalList } from '@/components/legal/LegalDocument';
 import { CONTROLLER, CERTIFICATE_MIN_ATTENDANCE_PERCENT } from '@/lib/legal';
 
-export const metadata: Metadata = { title: 'Términos y condiciones | Empoderas Diversas' };
+export const metadata: Metadata = { title: 'Términos y condiciones | Empoderadas Diversas' };
 
 export default function TermsPage() {
   return (
     <LegalDocument
       title="Términos y condiciones de uso"
-      intro="Estos términos regulan el acceso y el uso de la plataforma de capacitación y mentoría de Empoderas Diversas. Léelos con atención: al aceptarlos te comprometes a cumplirlos."
+      intro="Estos términos regulan el acceso y el uso de la plataforma de capacitación y mentoría de Empoderadas Diversas. Léelos con atención: al aceptarlos te comprometes a cumplirlos."
     >
       <LegalSection title="1. Quiénes somos">
         <p>

@@ -51,7 +51,7 @@ export const POST = withAuth('admin/users anonymize', ['ADMIN'], async (req, cur
         name: 'Usuaria anonimizada',
         email: `anonimizada-${id}@anonimizada.invalid`,
         passwordHash: randomPasswordHash,
-        documentId: null,
+        studentNumber: null,
         phone: null,
         avatar: null,
         status: 'INACTIVO',

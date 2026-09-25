@@ -5,6 +5,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Input, Select } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { PHONE_HINT, PHONE_LABEL, STUDENT_NUMBER_LABEL } from '@/lib/labels';
 import type { UserItem } from '../types';
 
 export type UserFormData = {
@@ -13,7 +14,7 @@ export type UserFormData = {
   password: string;
   role: string;
   status: string;
-  documentId: string;
+  studentNumber: string;
   phone: string;
   startDate: string;
   endDate: string;
@@ -43,6 +44,16 @@ export function UserFormModal({ open, mode, selectedUser, onClose, onSaved }: Us
       setErrorMsg('');
     }
   }, [open, mode, selectedUser]);
+
+  // Al crear una cuenta, la contraseña inicial es el número de estudiante sin guiones ni espacios (editable).
+  const passwordFromNumber = (value: string) => value.replace(/[^A-Za-z0-9]/g, '');
+
+  const handleStudentNumberChange = (value: string) => {
+    setFormData((prev) => {
+      const followsNumber = mode === 'create' && prev.password === passwordFromNumber(prev.studentNumber);
+      return { ...prev, studentNumber: value, password: followsNumber ? passwordFromNumber(value) : prev.password };
+    });
+  };
 
   const roleChanged = mode === 'edit' && selectedUser !== null && formData.role !== selectedUser.role;
 
@@ -129,7 +140,7 @@ export function UserFormModal({ open, mode, selectedUser, onClose, onSaved }: Us
               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
             >
               <option value="STUDENT">Estudiante</option>
-              <option value="MENTOR">Mentor(a)</option>
+              <option value="MENTOR">Mentor / Mentora</option>
               <option value="ADMIN">Administrador</option>
             </Select>
             <Select
@@ -144,14 +155,15 @@ export function UserFormModal({ open, mode, selectedUser, onClose, onSaved }: Us
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Input
-              label="Documento de identidad"
-              placeholder="Ej: CC-12345678"
-              value={formData.documentId}
-              onChange={(e) => setFormData({ ...formData, documentId: e.target.value })}
+              label={STUDENT_NUMBER_LABEL}
+              placeholder="Ej: 044-100526"
+              value={formData.studentNumber}
+              onChange={(e) => handleStudentNumberChange(e.target.value)}
             />
             <Input
-              label="Teléfono de contacto"
-              placeholder="Ej: +57 300 000 0000"
+              label={PHONE_LABEL}
+              hint={PHONE_HINT}
+              placeholder="Ej: +1 305 555 0123"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             />
@@ -257,7 +269,7 @@ function buildInitialForm(mode: 'create' | 'edit', user: UserItem | null): UserF
       password: '',
       role: user.role,
       status: user.status,
-      documentId: user.documentId || '',
+      studentNumber: user.studentNumber || '',
       phone: user.phone || '',
       startDate: user.startDate ? new Date(user.startDate).toISOString().split('T')[0] : '',
       endDate: user.endDate ? new Date(user.endDate).toISOString().split('T')[0] : '',
@@ -273,7 +285,7 @@ function buildInitialForm(mode: 'create' | 'edit', user: UserItem | null): UserF
     password: '',
     role: 'STUDENT',
     status: 'ACTIVO',
-    documentId: '',
+    studentNumber: '',
     phone: '',
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date(new Date().setMonth(new Date().getMonth() + 6)).toISOString().split('T')[0],

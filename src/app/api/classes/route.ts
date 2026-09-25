@@ -25,7 +25,7 @@ export const GET = withAuth('classes GET', 'any', async (req, user) => {
     user.role === 'ADMIN' ? { id: true, name: true, email: true, phone: true } : { id: true, name: true };
   const studentSelect: Prisma.UserSelect =
     user.role === 'ADMIN'
-      ? { id: true, name: true, email: true, documentId: true }
+      ? { id: true, name: true, email: true, studentNumber: true }
       : user.role === 'MENTOR'
         ? { id: true, name: true, email: true }
         : { id: true, name: true };

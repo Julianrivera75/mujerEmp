@@ -17,7 +17,7 @@ async function makeUser(name: string, role: 'ADMIN' | 'MENTOR' | 'STUDENT', extr
       email,
       role,
       passwordHash: await bcrypt.hash(PASSWORD, 4),
-      documentId: `DOC-${name}`,
+      studentNumber: `DOC-${name}`,
       phone: '3000000000',
       ...extra,
     },

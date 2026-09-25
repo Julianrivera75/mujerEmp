@@ -71,8 +71,8 @@ export default function AcceptTermsForm({ userName, version, blockedMinor, homeH
               </h1>
               <p className="mt-2 text-sm leading-6 text-slate-600">
                 Hola, {userName}. Como eres menor de edad, la administración debe registrar la autorización de tu madre,
-                padre o representante legal antes de habilitar tu acceso. Comunícate con la administración de Empoderas
-                Diversas para completar este paso.
+                padre o representante legal antes de habilitar tu acceso. Comunícate con la administración de
+                Empoderadas Diversas para completar este paso.
               </p>
             </>
           ) : (

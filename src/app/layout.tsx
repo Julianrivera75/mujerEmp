@@ -29,7 +29,8 @@ const fontDiploma = Cormorant_Garamond({
 });
 
 export const metadata: Metadata = {
-  title: 'Empoderas Diversas | Plataforma de Capacitación',
+  title: 'Empoderadas Diversas | Plataforma de Capacitación',
+  icons: { icon: '/logos/empoderadas-diversas.png' },
   description:
     'Plataforma integral de formación, mentoría, clases virtuales y seguimiento de impacto para el empoderamiento y la diversidad.',
 };

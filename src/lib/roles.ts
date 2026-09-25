@@ -11,7 +11,7 @@ interface RoleMeta {
 
 export const ROLE_META: Record<Role, RoleMeta> = {
   ADMIN: { label: 'Administradora', variant: 'admin', icon: ShieldCheck },
-  MENTOR: { label: 'Mentora', variant: 'mentor', icon: Presentation },
+  MENTOR: { label: 'Mentor / Mentora', variant: 'mentor', icon: Presentation },
   STUDENT: { label: 'Estudiante', variant: 'student', icon: GraduationCap },
 };
 

@@ -8,7 +8,7 @@ export interface MentorClass {
   youtubeUrl: string | null;
   recordingNotes: string | null;
   status: string;
-  enrollments: { student: { id: string; name: string; email: string; documentId: string | null } }[];
+  enrollments: { student: { id: string; name: string; email: string; studentNumber: string | null } }[];
   attendances: { studentId: string; joinedAt: string; student: { name: string } }[];
   assignments: { id: string; title: string; dueDate: string }[];
   resources: { id: string; title: string; type: string; url: string }[];

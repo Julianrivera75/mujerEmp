@@ -4,7 +4,7 @@ export interface UserItem {
   email: string;
   role: 'ADMIN' | 'MENTOR' | 'STUDENT';
   status: 'ACTIVO' | 'INACTIVO';
-  documentId: string | null;
+  studentNumber: string | null;
   phone: string | null;
   startDate: string | null;
   endDate: string | null;

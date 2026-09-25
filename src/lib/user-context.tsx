@@ -9,7 +9,7 @@ export interface SessionUser {
   role: 'ADMIN' | 'MENTOR' | 'STUDENT';
   status: 'ACTIVO' | 'INACTIVO';
   phone?: string | null;
-  documentId?: string | null;
+  studentNumber?: string | null;
   avatar?: string | null;
   startDate?: string | null;
   endDate?: string | null;

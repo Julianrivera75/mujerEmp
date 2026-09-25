@@ -125,7 +125,7 @@ export default function AdminUsersPage() {
     const matchSearch =
       u.name.toLowerCase().includes(search.toLowerCase()) ||
       u.email.toLowerCase().includes(search.toLowerCase()) ||
-      (u.documentId && u.documentId.toLowerCase().includes(search.toLowerCase()));
+      (u.studentNumber && u.studentNumber.toLowerCase().includes(search.toLowerCase()));
     const matchRole = roleFilter === 'ALL' || u.role === roleFilter;
     const matchStatus = statusFilter === 'ALL' || u.status === statusFilter;
     return matchSearch && matchRole && matchStatus;
@@ -147,7 +147,7 @@ export default function AdminUsersPage() {
       <Card variant="glass" className="flex flex-col items-center gap-4 p-5 md:flex-row">
         <div className="w-full flex-1">
           <Input
-            placeholder="Buscar por nombre, correo o documento..."
+            placeholder="Buscar por nombre, correo o número de estudiante..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             leftIcon={<Search className="h-4 w-4" />}
@@ -195,7 +195,7 @@ export default function AdminUsersPage() {
                   <TRow>
                     <TCell head>Usuario &amp; rol</TCell>
                     <TCell head>Estado</TCell>
-                    <TCell head>Documento &amp; contacto</TCell>
+                    <TCell head>Número de estudiante &amp; contacto</TCell>
                     <TCell head>Vigencia</TCell>
                     <TCell head>Actividad</TCell>
                     <TCell head className="text-right">
@@ -241,7 +241,7 @@ export default function AdminUsersPage() {
                         </div>
                       </TCell>
                       <TCell className="text-xs">
-                        <p className="font-medium text-slate-700">{u.documentId || 'Sin documento'}</p>
+                        <p className="font-medium text-slate-700">{u.studentNumber || 'Sin número'}</p>
                         <p className="text-slate-500">{u.phone || 'Sin teléfono'}</p>
                       </TCell>
                       <TCell className="text-xs">
@@ -333,7 +333,7 @@ export default function AdminUsersPage() {
                           />
                         ),
                       },
-                      { label: 'Documento', value: u.documentId || 'Sin documento' },
+                      { label: 'Número de estudiante', value: u.studentNumber || 'Sin número' },
                       {
                         label: 'Vigencia',
                         value: u.endDate ? formatDate(u.endDate) : 'Indefinido',
@@ -371,7 +371,7 @@ export default function AdminUsersPage() {
         title="¿Anonimizar esta cuenta?"
         description={
           anonTarget
-            ? `Se eliminarán de forma permanente el nombre, correo, documento, teléfono, foto y archivos entregados de ${anonTarget.name}, y su acceso quedará bloqueado. Esta acción no se puede deshacer.`
+            ? `Se eliminarán de forma permanente el nombre, correo, número de estudiante, teléfono, foto y archivos entregados de ${anonTarget.name}, y su acceso quedará bloqueado. Esta acción no se puede deshacer.`
             : undefined
         }
         confirmLabel="Anonimizar cuenta"

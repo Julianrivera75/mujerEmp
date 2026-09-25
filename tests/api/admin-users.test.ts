@@ -190,7 +190,7 @@ describe('POST /api/admin/users/anonymize', () => {
     const saved = await prisma.user.findUniqueOrThrow({ where: { id: w.sofia.id } });
     expect(saved.name).toBe('Usuaria anonimizada');
     expect(saved.email).toBe(`anonimizada-${w.sofia.id}@anonimizada.invalid`);
-    expect(saved.documentId).toBeNull();
+    expect(saved.studentNumber).toBeNull();
     expect(saved.phone).toBeNull();
     expect(saved.avatar).toBeNull();
     expect(saved.status).toBe('INACTIVO');

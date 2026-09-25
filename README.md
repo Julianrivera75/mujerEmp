@@ -1,4 +1,4 @@
-# Empoderas Diversas
+# Empoderadas Diversas
 
 Plataforma web de capacitación y mentoría virtual. Gestiona clases en vivo por Google Meet con registro automático de asistencia, repositorio de grabaciones de YouTube, materiales de clase, tareas con entrega y calificación, y constancias de participación.
 

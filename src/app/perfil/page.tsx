@@ -12,6 +12,7 @@ import FileUpload from '@/components/FileUpload';
 import { useToast } from '@/components/ui/Toast';
 import { ROLE_META, type Role } from '@/lib/roles';
 import { formatDate } from '@/lib/format';
+import { PHONE_HINT, PHONE_LABEL, STUDENT_NUMBER_LABEL } from '@/lib/labels';
 import { logClientError } from '@/lib/client-log';
 
 interface FullProfile {
@@ -21,7 +22,7 @@ interface FullProfile {
   role: Role;
   status: 'ACTIVO' | 'INACTIVO';
   phone: string | null;
-  documentId: string | null;
+  studentNumber: string | null;
   startDate: string | null;
   endDate: string | null;
   avatar: string | null;
@@ -165,8 +166,8 @@ export default function ProfilePage() {
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-500">Documento:</span>
-                <span className="font-semibold text-slate-700">{profile.documentId || 'N/A'}</span>
+                <span className="text-slate-500">{STUDENT_NUMBER_LABEL}:</span>
+                <span className="font-semibold text-slate-700">{profile.studentNumber || 'N/A'}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">Fecha inicio:</span>
@@ -197,8 +198,9 @@ export default function ProfilePage() {
 
             <form onSubmit={handleSave} className="space-y-4">
               <Input
-                label="Teléfono de contacto"
-                placeholder="+57 300 000 0000"
+                label={PHONE_LABEL}
+                hint={PHONE_HINT}
+                placeholder="+1 305 555 0123"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 leftIcon={<Phone className="h-4 w-4" />}

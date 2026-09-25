@@ -54,7 +54,7 @@ export const POST = withErrors('auth/login', async (req) => {
   if (user.status === 'INACTIVO') {
     throw new HttpError(
       403,
-      'Tu cuenta se encuentra inactiva. Comunícate con la administración de Empoderas Diversas para reactivar tu acceso.',
+      'Tu cuenta se encuentra inactiva. Comunícate con la administración de Empoderadas Diversas para reactivar tu acceso.',
       undefined,
       { inactive: true },
     );

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { LegalDocument, LegalSection, LegalList } from '@/components/legal/LegalDocument';
 import { CONTROLLER } from '@/lib/legal';
 
-export const metadata: Metadata = { title: 'Política de tratamiento de datos personales | Empoderas Diversas' };
+export const metadata: Metadata = { title: 'Política de tratamiento de datos personales | Empoderadas Diversas' };
 
 export default function PrivacyPage() {
   return (
@@ -26,7 +26,8 @@ export default function PrivacyPage() {
         <LegalList
           items={[
             <>
-              <strong>Identificación y contacto:</strong> nombre, documento de identidad, correo electrónico y teléfono.
+              <strong>Identificación y contacto:</strong> nombre, número de estudiante, correo electrónico y número de
+              contacto.
             </>,
             <>
               <strong>Cuenta:</strong> rol, estado, fechas de vinculación y contraseña (se guarda cifrada de forma

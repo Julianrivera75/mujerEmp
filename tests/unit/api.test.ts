@@ -94,10 +94,15 @@ describe('esquemas', () => {
       email: ' ANA@Prueba.TEST ',
       password: 'una-clave-larga-1',
       role: 'STUDENT',
-      documentId: '  ',
-      phone: ' 300 ',
+      studentNumber: '  ',
+      phone: ' +1 305 555 0123 ',
     });
-    expect(parsed).toMatchObject({ name: 'Ana', email: 'ana@prueba.test', documentId: null, phone: '300' });
+    expect(parsed).toMatchObject({
+      name: 'Ana',
+      email: 'ana@prueba.test',
+      studentNumber: null,
+      phone: '+1 305 555 0123',
+    });
   });
 
   it('createUserSchema rechaza roles, estados y contraseñas inválidos', () => {
@@ -111,5 +116,18 @@ describe('esquemas', () => {
   it('updateClassSchema acepta campos ausentes para conservar los actuales', () => {
     expect(updateClassSchema.parse({ id: 'c1' })).toEqual({ id: 'c1' });
     expect(updateClassSchema.safeParse({}).success).toBe(false);
+  });
+});
+
+describe('número de contacto', () => {
+  const base = { name: 'Ana', email: 'a@b.co', password: 'una-clave-larga-1', role: 'STUDENT' };
+
+  it('acepta formatos internacionales y rechaza texto que no es un teléfono', () => {
+    for (const phone of ['+57 300 000 0000', '3001234567', '+1 (305) 555-0123', '']) {
+      expect(createUserSchema.safeParse({ ...base, phone }).success).toBe(true);
+    }
+    for (const phone of ['abc', '123', 'llamar mañana', '+++123']) {
+      expect(createUserSchema.safeParse({ ...base, phone }).success).toBe(false);
+    }
   });
 });

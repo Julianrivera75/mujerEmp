@@ -38,17 +38,17 @@ enum FileType {
 }
 
 model User {
-  id           String     @id @default(cuid())
-  name         String
-  email        String     @unique
-  passwordHash String
-  role         Role       @default(STUDENT)
-  status       UserStatus @default(ACTIVO)
-  documentId   String?
-  phone        String?
-  avatar       String?
-  startDate    DateTime? // Fecha de inicio en la plataforma
-  endDate      DateTime? // Fecha de finalización
+  id            String     @id @default(cuid())
+  name          String
+  email         String     @unique
+  passwordHash  String
+  role          Role       @default(STUDENT)
+  status        UserStatus @default(ACTIVO)
+  studentNumber String?    @map("documentId")
+  phone         String?
+  avatar        String?
+  startDate     DateTime? // Fecha de inicio en la plataforma
+  endDate       DateTime? // Fecha de finalización
 
   // Autorización de tratamiento de datos y términos (Ley 1581 de 2012)
   termsAcceptedAt   DateTime?

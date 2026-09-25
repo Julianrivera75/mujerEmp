@@ -14,7 +14,7 @@ export const GET = withAuth('auth/me', 'any', async (_req, user) => {
       role: true,
       status: true,
       phone: true,
-      documentId: true,
+      studentNumber: true,
       startDate: true,
       endDate: true,
       avatar: true,

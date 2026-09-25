@@ -20,7 +20,7 @@ export const GET = withAuth('auth/export', 'any', async (_req, user) => {
       email: true,
       role: true,
       status: true,
-      documentId: true,
+      studentNumber: true,
       phone: true,
       avatar: true,
       startDate: true,
@@ -53,7 +53,7 @@ export const GET = withAuth('auth/export', 'any', async (_req, user) => {
   return new NextResponse(body, {
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
-      'Content-Disposition': 'attachment; filename="mis-datos-empoderas-diversas.json"',
+      'Content-Disposition': 'attachment; filename="mis-datos-empoderadas-diversas.json"',
       'Cache-Control': 'no-store',
     },
   });
