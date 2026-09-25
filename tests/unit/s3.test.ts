@@ -86,18 +86,23 @@ describe('keyBelongsTo', () => {
 });
 
 describe('verifyUploadedObject', () => {
+  const PDF = [0x25, 0x50, 0x44, 0x46, 0x2d];
+  const PNG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
   const head = (size: number, type: string) =>
     aws.send.mockResolvedValueOnce({ ContentLength: size, ContentType: type });
+  const body = (bytes: number[]) =>
+    aws.send.mockResolvedValueOnce({ Body: { transformToByteArray: async () => Uint8Array.from(bytes) } });
   const deleted = () =>
     aws.send.mock.calls.filter(([command]) => 'Key' in command.input && !('Range' in command.input));
 
-  it('acepta un archivo con tamaño y tipo permitidos', async () => {
+  it('acepta un archivo con tamaño, tipo y contenido permitidos', async () => {
     head(1000, 'application/pdf');
+    body(PDF);
     expect(await s3.verifyUploadedObject('entregas/u1/a.pdf', 'submission')).toBe(true);
-    expect(aws.send).toHaveBeenCalledTimes(1);
+    expect(aws.send).toHaveBeenCalledTimes(2);
   });
 
-  it('rechaza y elimina un archivo demasiado grande', async () => {
+  it('rechaza y elimina un archivo demasiado grande sin leerlo', async () => {
     head(16 * 1024 * 1024, 'application/pdf');
     aws.send.mockResolvedValueOnce({});
     expect(await s3.verifyUploadedObject('entregas/u1/a.pdf', 'submission')).toBe(false);
@@ -112,12 +117,21 @@ describe('verifyUploadedObject', () => {
     expect(aws.send).toHaveBeenCalledTimes(2);
   });
 
+  it('rechaza y elimina un archivo cuyo contenido no es del tipo declarado', async () => {
+    head(1000, 'application/pdf');
+    body([0x4d, 0x5a, 0x90, 0x00]); // cabecera de un ejecutable
+    aws.send.mockResolvedValueOnce({});
+    expect(await s3.verifyUploadedObject('entregas/u1/a.pdf', 'submission')).toBe(false);
+    expect(aws.send).toHaveBeenCalledTimes(3);
+  });
+
   it('cada categoría aplica su propio límite', async () => {
     head(4 * 1024 * 1024, 'image/png');
     aws.send.mockResolvedValueOnce({});
     expect(await s3.verifyUploadedObject('avatares/u1/a.png', 'avatar')).toBe(false);
 
     head(4 * 1024 * 1024, 'image/png');
+    body(PNG);
     expect(await s3.verifyUploadedObject('recursos/u1/a.png', 'resource')).toBe(true);
   });
 
@@ -134,5 +148,16 @@ describe('verifyUploadedObject', () => {
     head(99 * 1024 * 1024, 'application/pdf');
     aws.send.mockRejectedValueOnce(new Error('sin permiso'));
     expect(await s3.verifyUploadedObject('entregas/u1/a.pdf', 'submission')).toBe(false);
+  });
+});
+
+describe('matchesSignature', () => {
+  it('reconoce los formatos permitidos por su cabecera', () => {
+    expect(s3.matchesSignature('image/jpeg', Uint8Array.from([0xff, 0xd8, 0xff, 0xe0]))).toBe(true);
+    expect(
+      s3.matchesSignature('image/webp', Uint8Array.from([0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x45, 0x42, 0x50])),
+    ).toBe(true);
+    expect(s3.matchesSignature('image/png', Uint8Array.from([0xff, 0xd8, 0xff]))).toBe(false);
+    expect(s3.matchesSignature('text/html', Uint8Array.from([0x3c, 0x68]))).toBe(false);
   });
 });

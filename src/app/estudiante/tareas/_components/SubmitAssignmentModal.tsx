@@ -15,11 +15,14 @@ interface SubmitAssignmentModalProps {
   onSubmitted: () => void;
 }
 
+const fileTypeOf = (key: string) => (/\.(png|jpe?g|webp)$/i.test(key) ? 'IMAGE' : 'PDF');
+
 export function SubmitAssignmentModal({ assignment, onClose, onSubmitted }: SubmitAssignmentModalProps) {
   const [notes, setNotes] = useState('');
   const [url, setUrl] = useState('');
   const [uploadedKey, setUploadedKey] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (!assignment) return;
@@ -28,11 +31,17 @@ export function SubmitAssignmentModal({ assignment, onClose, onSubmitted }: Subm
     setNotes(existing?.notes || '');
     setUrl(isUploadedFile ? '' : existing?.fileUrl || '');
     setUploadedKey(isUploadedFile ? existing?.fileUrl || null : null);
+    setError('');
   }, [assignment]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!assignment) return;
+    if (!uploadedKey && !url.trim()) {
+      setError('Sube una foto (JPG o PNG) o un PDF de tu trabajo, o pega un enlace.');
+      return;
+    }
+    setError('');
     setSending(true);
     try {
       const res = await fetch('/api/submissions', {
@@ -40,34 +49,34 @@ export function SubmitAssignmentModal({ assignment, onClose, onSubmitted }: Subm
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(
           uploadedKey
-            ? {
-                assignmentId: assignment.id,
-                notes,
-                fileUrl: uploadedKey,
-                fileType: uploadedKey.match(/\.(png|jpe?g|webp)$/i) ? 'IMAGE' : 'PDF',
-              }
+            ? { assignmentId: assignment.id, notes, fileUrl: uploadedKey, fileType: fileTypeOf(uploadedKey) }
             : { assignmentId: assignment.id, notes, fileUrl: url, fileType: 'LINK' },
         ),
       });
 
-      if (res.ok) {
-        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if (!reduceMotion) {
-          try {
-            confetti({
-              particleCount: 60,
-              spread: 50,
-              origin: { y: 0.6 },
-              colors: ['#D946EF', '#9333EA', '#6366F1', '#14B8A6'],
-            });
-          } catch {
-            // la animación es opcional
-          }
-        }
-        onSubmitted();
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || 'No se pudo enviar la entrega. Inténtalo de nuevo.');
+        return;
       }
+
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (!reduceMotion) {
+        try {
+          confetti({
+            particleCount: 60,
+            spread: 50,
+            origin: { y: 0.6 },
+            colors: ['#D946EF', '#9333EA', '#6366F1', '#14B8A6'],
+          });
+        } catch {
+          // la animación es opcional
+        }
+      }
+      onSubmitted();
     } catch (err) {
       logClientError('Error al enviar entrega:', err);
+      setError('Error de conexión. Revisa tu internet e inténtalo de nuevo.');
     } finally {
       setSending(false);
     }
@@ -81,36 +90,53 @@ export function SubmitAssignmentModal({ assignment, onClose, onSubmitted }: Subm
       description={assignment ? `Tarea: ${assignment.title}` : undefined}
     >
       <form id="submission-form" onSubmit={handleSubmit} className="space-y-4">
-        <Input
-          label="Enlace de tu trabajo (Google Drive, Docs, Canva, GitHub)"
-          type="url"
-          placeholder="https://docs.google.com/... o https://drive.google.com/..."
-          value={url}
-          disabled={Boolean(uploadedKey)}
-          onChange={(e) => {
-            setUrl(e.target.value);
-            if (e.target.value) setUploadedKey(null);
-          }}
-        />
+        {error && (
+          <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+            {error}
+          </div>
+        )}
 
-        <div className="flex items-center">
-          <div className="h-px flex-1 bg-slate-200" />
-          <span className="px-2 text-[10px] font-bold uppercase text-slate-500">o subí un archivo</span>
-          <div className="h-px flex-1 bg-slate-200" />
+        <div className="space-y-2">
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-700">Tu trabajo</p>
+          <p className="text-xs text-slate-500">
+            Sube una foto de tu taller hecho a mano (JPG o PNG) o un archivo PDF. Máximo 15 MB.
+          </p>
+          <FileUpload
+            category="submission"
+            accept=".pdf,.jpg,.jpeg,.png,image/jpeg,image/png,application/pdf"
+            label="Subir foto o PDF"
+            onUploaded={(key) => {
+              setUploadedKey(key);
+              setUrl('');
+              setError('');
+            }}
+          />
+          {uploadedKey && (
+            <p className="text-xs font-semibold text-emerald-700">
+              Archivo listo para enviar. Puedes subir otro para reemplazarlo.
+            </p>
+          )}
         </div>
 
-        <FileUpload
-          category="submission"
-          accept=".pdf,image/png,image/jpeg,image/webp"
-          label="Subir PDF o imagen (máx. 15 MB)"
-          onUploaded={(key) => {
-            setUploadedKey(key);
-            setUrl('');
-          }}
-        />
+        <details className="rounded-xl border border-slate-200 p-3 text-xs" open={Boolean(url)}>
+          <summary className="cursor-pointer font-semibold text-slate-600">
+            ¿Prefieres enviar un enlace (Google Drive, Docs, Canva)?
+          </summary>
+          <div className="mt-3">
+            <Input
+              label="Enlace de tu trabajo"
+              type="url"
+              placeholder="https://docs.google.com/..."
+              value={url}
+              disabled={Boolean(uploadedKey)}
+              onChange={(e) => setUrl(e.target.value)}
+              hint={uploadedKey ? 'Ya subiste un archivo; el enlace queda desactivado.' : undefined}
+            />
+          </div>
+        </details>
 
         <Textarea
-          label="Notas, reflexión o mensaje para tu mentora"
+          label="Notas, reflexión o mensaje para tu mentor/a"
           rows={4}
           required
           placeholder="Escribe tu reflexión, comentarios o resumen del trabajo realizado..."
@@ -124,7 +150,7 @@ export function SubmitAssignmentModal({ assignment, onClose, onSubmitted }: Subm
           Cancelar
         </Button>
         <Button type="submit" form="submission-form" loading={sending}>
-          Subir entrega
+          Enviar entrega
         </Button>
       </div>
     </Modal>

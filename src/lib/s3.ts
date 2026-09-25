@@ -96,9 +96,28 @@ export function keyBelongsTo(key: unknown, category: UploadCategory, ownerId: st
   return key.startsWith(`${UPLOAD_CATEGORIES[category].prefix}/${ownerId}/`);
 }
 
+const startsWith = (bytes: Uint8Array, signature: number[], offset = 0) =>
+  signature.every((value, i) => bytes[offset + i] === value);
+
+/** Comprueba que los primeros bytes del archivo correspondan al tipo declarado (no basta con confiar en el nombre ni en el tipo). */
+export function matchesSignature(contentType: string, bytes: Uint8Array): boolean {
+  switch (contentType) {
+    case 'application/pdf':
+      return startsWith(bytes, [0x25, 0x50, 0x44, 0x46]); // %PDF
+    case 'image/jpeg':
+      return startsWith(bytes, [0xff, 0xd8, 0xff]);
+    case 'image/png':
+      return startsWith(bytes, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    case 'image/webp':
+      return startsWith(bytes, [0x52, 0x49, 0x46, 0x46]) && startsWith(bytes, [0x57, 0x45, 0x42, 0x50], 8); // RIFF....WEBP
+    default:
+      return false;
+  }
+}
+
 /**
  * Comprueba en el almacenamiento que el archivo subido exista, no supere el tamaño máximo
- * y tenga un tipo permitido. Si no cumple, lo elimina. El cliente declara tamaño y tipo al
+ * y tenga un tipo permitido, y que su contenido real corresponda a ese tipo. Si no cumple, lo elimina. El cliente declara tamaño y tipo al
  * pedir la URL firmada, así que esta es la verificación que realmente se puede confiar.
  */
 export async function verifyUploadedObject(key: string, category: UploadCategory): Promise<boolean> {
@@ -108,7 +127,14 @@ export async function verifyUploadedObject(key: string, category: UploadCategory
     const head = await client.send(new HeadObjectCommand({ Bucket: getBucketName(), Key: key }));
     const size = head.ContentLength ?? 0;
     const type = (head.ContentType ?? '').toLowerCase();
-    const valid = size > 0 && size <= config.maxSizeBytes && (config.allowedTypes as readonly string[]).includes(type);
+    let valid = size > 0 && size <= config.maxSizeBytes && (config.allowedTypes as readonly string[]).includes(type);
+    if (valid) {
+      const object = await client.send(
+        new GetObjectCommand({ Bucket: getBucketName(), Key: key, Range: 'bytes=0-15' }),
+      );
+      const bytes = (await object.Body?.transformToByteArray()) ?? new Uint8Array();
+      valid = matchesSignature(type, bytes);
+    }
     if (!valid) {
       await deleteObject(key).catch(() => undefined);
     }

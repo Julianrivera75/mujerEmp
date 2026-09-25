@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Upload, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { logClientError } from '@/lib/client-log';
 
@@ -19,6 +19,14 @@ export default function FileUpload({ category, accept, onUploaded, label }: File
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadedName, setUploadedName] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  // Libera la vista previa al cambiar de archivo o al cerrar el componente.
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -56,6 +64,7 @@ export default function FileUpload({ category, accept, onUploaded, label }: File
       }
 
       setUploadedName(file.name);
+      setPreviewUrl(file.type.startsWith('image/') ? URL.createObjectURL(file) : null);
       onUploaded(presignData.key, file.name);
     } catch (err) {
       logClientError('Error al subir archivo:', err);
@@ -97,6 +106,14 @@ export default function FileUpload({ category, accept, onUploaded, label }: File
           </>
         )}
       </label>
+      {previewUrl && (
+        // Vista previa local (blob) de la foto que la estudiante acaba de subir.
+        <img
+          src={previewUrl}
+          alt="Vista previa de tu archivo"
+          className="mt-2 max-h-40 rounded-xl border border-slate-200"
+        />
+      )}
       {error && (
         <p className="mt-1.5 flex items-center space-x-1 text-xs text-rose-600">
           <AlertCircle className="h-3.5 w-3.5" />
