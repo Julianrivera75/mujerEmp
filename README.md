@@ -49,13 +49,32 @@ La aplicación queda en http://localhost:3000. El script `prisma/seed.js` se blo
 
 ## Scripts
 
-| Comando                         | Uso                                                    |
-| ------------------------------- | ------------------------------------------------------ |
-| `npm run dev`                   | Servidor de desarrollo.                                |
-| `npm run build`                 | Genera el cliente de Prisma y compila para producción. |
-| `npm run start`                 | Sirve la compilación.                                  |
-| `npm run prisma:migrate:deploy` | Aplica las migraciones pendientes.                     |
-| `npm run prisma:generate`       | Regenera el cliente de Prisma.                         |
+| Comando                         | Uso                                                             |
+| ------------------------------- | --------------------------------------------------------------- |
+| `npm run dev`                   | Servidor de desarrollo.                                         |
+| `npm run build`                 | Genera el cliente de Prisma y compila para producción.          |
+| `npm run start`                 | Sirve la compilación.                                           |
+| `npm run prisma:migrate:deploy` | Aplica las migraciones pendientes.                              |
+| `npm run prisma:generate`       | Regenera el cliente de Prisma.                                  |
+| `npm run typecheck`             | Comprueba los tipos de TypeScript.                              |
+| `npm run lint`                  | ESLint sin advertencias.                                        |
+| `npm run format:check`          | Comprueba el formato con Prettier (`npm run format` lo aplica). |
+| `npm run knip`                  | Detecta código y dependencias sin uso.                          |
+| `npm run test`                  | Pruebas unitarias y de integración.                             |
+| `npm run test:coverage`         | Pruebas con informe y umbral de cobertura.                      |
+| `npm run check`                 | Todo lo anterior y la compilación, igual que el CI.             |
+
+## Pruebas
+
+Las pruebas de integración usan una base PostgreSQL propia, distinta de la de desarrollo. Se niegan a correr si el nombre de la base no contiene "test".
+
+```bash
+docker compose -f docker-compose.test.yml up -d
+export TEST_DATABASE_URL="postgresql://test:test@localhost:5433/empoderas_test?schema=public"
+npm run test:coverage
+```
+
+En GitHub Actions el mismo conjunto corre en cada push con un servicio de PostgreSQL.
 
 ## Estructura
 
@@ -67,6 +86,8 @@ src/app/              Páginas y rutas de la API (App Router)
   terminos/ privacidad/ cookies/       Documentos legales públicos
 src/components/       Componentes de interfaz (ui/, fx/, legal/)
 src/lib/              Autenticación, validación, almacenamiento, utilidades
+tests/                Pruebas unitarias (unit/) y de integración de la API (api/)
+scripts/              Scripts de operación (auditoría de cuentas, importación de usuarias)
 ```
 
 ## Documentación

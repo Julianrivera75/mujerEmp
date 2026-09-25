@@ -6,7 +6,7 @@ vi.mock('@/lib/auth', () => ({
   getCurrentUser: async () => session.current,
   signToken: () => 'token-de-prueba',
   setSessionCookie: () => undefined,
-  clearSessionCookie: () => undefined,
+  clearSessionCookie: vi.fn(),
 }));
 
 vi.mock('@/lib/s3', async (importOriginal) => {

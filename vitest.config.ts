@@ -19,8 +19,10 @@ export default defineConfig({
     testTimeout: 20000,
     coverage: {
       provider: 'v8',
-      include: ['src/lib/**', 'src/app/api/**'],
+      include: ['src/lib/**/*.ts', 'src/app/api/**/*.ts'],
+      exclude: ['src/lib/cn.ts', 'src/lib/motion.ts', 'src/lib/roles.ts'],
       reporter: ['text', 'lcov'],
+      thresholds: { lines: 85, statements: 85, functions: 85, branches: 80 },
     },
   },
 });
