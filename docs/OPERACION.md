@@ -116,3 +116,16 @@ El mes de una clase (`monthKey`) se calcula en la zona horaria de la organizaci�
 ## Afiche de la clase
 
 Cada clase puede tener una imagen (JPG, PNG o WebP de hasta 5 MB) que sube la administración o la mentora al programarla o editarla. Se guarda en el almacenamiento bajo `clases/<id de quien la sube>/` y se entrega con una URL firmada de 1 hora.
+
+## Pasar el almacenamiento a Cloudflare R2
+
+La plataforma usa cualquier almacenamiento compatible con S3; solo cambian las variables de entorno. Pasos:
+
+1. En Cloudflare: R2 > crear bucket (por ejemplo `empoderadas-storage`) y un token de API con permiso de lectura y escritura solo sobre ese bucket. Anotar el ID de cuenta, la llave de acceso y la llave secreta.
+2. En el servicio `app` de Railway, agregar las variables del destino: `DEST_S3_ENDPOINT` (`https://<ID_DE_CUENTA>.r2.cloudflarestorage.com`), `DEST_S3_BUCKET_NAME`, `DEST_S3_ACCESS_KEY_ID` y `DEST_S3_SECRET_ACCESS_KEY`.
+3. Configurar el CORS del bucket nuevo, con las variables `S3_*` apuntando temporalmente al destino, o pegando la regla en el panel de R2 (Ajustes > CORS): orígenes `https://plataforma.empoderadasdiversas.com`, métodos `PUT, GET, HEAD`, encabezados `content-type`. También se puede aplicar con `node scripts/storage-cors.js https://plataforma.empoderadasdiversas.com --apply`.
+4. Copiar los archivos existentes: `railway ssh --service app -- node scripts/copy-storage.js` (simulación) y luego con `--apply`. Se puede repetir; omite lo ya copiado.
+5. Cambiar las variables `S3_ENDPOINT`, `S3_BUCKET_NAME`, `S3_ACCESS_KEY_ID` y `S3_SECRET_ACCESS_KEY` a los valores de R2 (`S3_REGION=auto`) y borrar las `DEST_S3_*`. Railway redespliega solo.
+6. Probar una subida real (foto en una entrega y afiche de una clase) y una descarga. Conservar el bucket anterior unos días antes de eliminarlo.
+
+Las URLs firmadas usan estilo ruta (`forcePathStyle`), compatible con R2. Los archivos se sirven siempre con URLs firmadas de corta duración: los buckets deben quedar privados.
