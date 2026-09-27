@@ -7,6 +7,7 @@ import { Input, Select, Textarea } from '@/components/ui/Field';
 import { DateField } from '@/components/ui/DateField';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import FileUpload from '@/components/FileUpload';
+import { ClassPoster, POSTER_RECOMMENDATION } from '@/components/ClassPoster';
 import { Button } from '@/components/ui/Button';
 import { Tip } from '@/components/ui/Tip';
 import { localInputValue } from '@/lib/months';
@@ -259,8 +260,12 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
         <div className="space-y-2">
           <p className="text-xs font-bold uppercase tracking-wider text-slate-700">Afiche de la clase (JPG o PNG)</p>
           {editingClass?.imageUrl && formData.imageKey === editingClass.imageKey && !removedImage && (
-            <div className="flex items-start gap-3 rounded-xl border border-slate-200 p-2">
-              <img src={editingClass.imageUrl} alt="Afiche actual de la clase" className="max-h-28 rounded-lg" />
+            <div className="space-y-1.5">
+              <ClassPoster
+                url={editingClass.imageUrl}
+                title={formData.title || editingClass.title}
+                className="max-w-sm"
+              />
               <button
                 type="button"
                 onClick={() => {
@@ -273,8 +278,12 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
               </button>
             </div>
           )}
+          <p className="text-xs text-slate-500">
+            {POSTER_RECOMMENDATION} Si es de otra forma, se muestra completa sobre un fondo difuminado.
+          </p>
           <FileUpload
             category="classImage"
+            previewFrame
             accept=".jpg,.jpeg,.png,image/jpeg,image/png"
             label={formData.imageKey ? 'Cambiar afiche' : 'Subir afiche de la clase'}
             onBusyChange={setUploading}

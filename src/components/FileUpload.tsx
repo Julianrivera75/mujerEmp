@@ -16,11 +16,20 @@ interface FileUploadProps {
   label?: string;
   /** Avisa si hay una subida en curso (para bloquear el envío del formulario mientras tanto). */
   onBusyChange?: (busy: boolean) => void;
+  /** Muestra la vista previa en un marco 16:9 (para afiches), sin recortar la imagen. */
+  previewFrame?: boolean;
 }
 
 type Phase = 'idle' | 'preparing' | 'uploading' | 'done';
 
-export default function FileUpload({ category, accept, onUploaded, label, onBusyChange }: FileUploadProps) {
+export default function FileUpload({
+  category,
+  accept,
+  onUploaded,
+  label,
+  onBusyChange,
+  previewFrame,
+}: FileUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const handleRef = useRef<UploadHandle | null>(null);
   const [phase, setPhase] = useState<Phase>('idle');
@@ -160,7 +169,11 @@ export default function FileUpload({ category, accept, onUploaded, label, onBusy
         <img
           src={previewUrl}
           alt="Vista previa de tu archivo"
-          className="mt-2 max-h-40 rounded-xl border border-slate-200"
+          className={
+            previewFrame
+              ? 'mt-2 aspect-video w-full max-w-sm rounded-xl border border-slate-200 bg-slate-100 object-contain'
+              : 'mt-2 max-h-40 rounded-xl border border-slate-200'
+          }
         />
       )}
 
