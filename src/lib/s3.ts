@@ -42,6 +42,11 @@ export const UPLOAD_CATEGORIES = {
     maxSizeBytes: 25 * 1024 * 1024, // 25 MB
     allowedTypes: ['application/pdf', 'image/png', 'image/jpeg', 'image/webp'],
   },
+  classImage: {
+    prefix: 'clases',
+    maxSizeBytes: 5 * 1024 * 1024, // 5 MB
+    allowedTypes: ['image/png', 'image/jpeg', 'image/webp'],
+  },
   avatar: {
     prefix: 'avatares',
     maxSizeBytes: 3 * 1024 * 1024, // 3 MB

@@ -6,6 +6,7 @@ vi.mock('@/lib/auth', () => ({
   getCurrentUser: async () => session.current,
   signToken: () => 'token-de-prueba',
   setSessionCookie: async () => undefined,
+  setViewCookie: vi.fn(async () => undefined),
   clearSessionCookie: vi.fn(async () => undefined),
 }));
 

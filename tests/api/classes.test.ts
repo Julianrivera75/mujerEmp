@@ -206,3 +206,64 @@ describe('DELETE /api/classes', () => {
     expect(await prisma.classSession.count({ where: { id: w.claseCarolina.id } })).toBe(0);
   });
 });
+
+describe('afiche de la clase', () => {
+  const body = (extra: Record<string, unknown> = {}) => ({
+    title: 'Con afiche',
+    dateStart: new Date(2026, 9, 6, 15).toISOString(),
+    dateEnd: new Date(2026, 9, 6, 17).toISOString(),
+    mentorId: w.carolina.id,
+    ...extra,
+  });
+
+  it('la administradora crea la clase con un afiche propio y la lista devuelve una URL firmada', async () => {
+    actAs(w.admin);
+    const key = `clases/${w.admin.id}/afiche.png`;
+    const created = await read(await POST(request('/api/classes', { method: 'POST', body: body({ imageKey: key }) })));
+    expect(created.status).toBe(200);
+    expect(
+      (await prisma.classSession.findUniqueOrThrow({ where: { id: created.body.classSession.id } })).imageKey,
+    ).toBe(key);
+
+    const list = await read(await GET(request('/api/classes')));
+    const cls = list.body.classes.find((c: { id: string }) => c.id === created.body.classSession.id);
+    expect(cls.imageUrl).toBe(`https://firmada.test/${key}`);
+  });
+
+  it('rechaza un afiche que no está en la carpeta de quien lo sube', async () => {
+    actAs(w.admin);
+    const res = await read(
+      await POST(
+        request('/api/classes', { method: 'POST', body: body({ imageKey: `clases/${w.lucia.id}/ajeno.png` }) }),
+      ),
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('la mentora de la clase puede cambiar y quitar el afiche; el anterior se elimina', async () => {
+    const { deleteObject } = await import('@/lib/s3');
+    const old = `clases/${w.admin.id}/viejo.png`;
+    await prisma.classSession.update({ where: { id: w.claseCarolina.id }, data: { imageKey: old } });
+
+    actAs(w.carolina);
+    const fresh = `clases/${w.carolina.id}/nuevo.png`;
+    const put = (extra: Record<string, unknown>) =>
+      PUT(request('/api/classes', { method: 'PUT', body: { id: w.claseCarolina.id, ...extra } }));
+
+    expect((await read(await put({ imageKey: fresh }))).status).toBe(200);
+    expect((await prisma.classSession.findUniqueOrThrow({ where: { id: w.claseCarolina.id } })).imageKey).toBe(fresh);
+    expect(deleteObject).toHaveBeenCalledWith(old);
+
+    expect((await read(await put({ imageKey: null }))).status).toBe(200);
+    expect((await prisma.classSession.findUniqueOrThrow({ where: { id: w.claseCarolina.id } })).imageKey).toBeNull();
+    expect(deleteObject).toHaveBeenCalledWith(fresh);
+  });
+
+  it('otra mentora no toca el afiche de una clase ajena', async () => {
+    actAs(w.valeria);
+    const res = await read(
+      await PUT(request('/api/classes', { method: 'PUT', body: { id: w.claseCarolina.id, imageKey: null } })),
+    );
+    expect(res.status).toBe(403);
+  });
+});

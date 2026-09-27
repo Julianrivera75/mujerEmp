@@ -58,6 +58,10 @@ const config: Config = {
         toast: '60',
       },
       keyframes: {
+        'progress-slide': {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(250%)' },
+        },
         blob: {
           '0%': { transform: 'translate(0px, 0px) scale(1)' },
           '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
@@ -73,6 +77,7 @@ const config: Config = {
         },
       },
       animation: {
+        'progress-slide': 'progress-slide 1.2s ease-in-out infinite',
         blob: 'blob 7s infinite',
         shimmer: 'shimmer 1.6s infinite',
         'fx-in': 'fx-in 1.2s ease-out both',

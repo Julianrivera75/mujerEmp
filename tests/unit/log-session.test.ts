@@ -94,6 +94,7 @@ describe('sesión con perfil completo', () => {
     name: 'N',
     email: 'n@n.co',
     role: 'STUDENT',
+    roles: ['STUDENT'],
     status: 'ACTIVO',
     termsVersion: null,
     isMinor: false,

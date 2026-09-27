@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 import { buildCsp, generateNonce } from '@/lib/csp';
-import { SESSION_COOKIE } from '@/lib/session-cookie';
+import { SESSION_COOKIE, VIEW_COOKIE } from '@/lib/session-cookie';
 
 function getJwtSecretKey(): Uint8Array {
   const secret = process.env.JWT_SECRET;
@@ -68,24 +68,30 @@ async function route(request: NextRequest, requestHeaders: Headers) {
       return response;
     }
 
+    // Rol de la vista activa. La cookie de vista solo orienta la redirección: la validación real
+    // (que la cuenta tenga ese rol) la hace getCurrentUser en los layouts y en la API.
+    const viewCookie = request.cookies.get(VIEW_COOKIE)?.value;
+    const role =
+      viewCookie === 'ADMIN' || viewCookie === 'MENTOR' || viewCookie === 'STUDENT' ? viewCookie : payload.role;
+
     // Proteger rutas según el rol
-    if (pathname.startsWith('/admin') && payload.role !== 'ADMIN') {
-      const redirectPath = payload.role === 'MENTOR' ? '/mentor' : '/estudiante';
+    if (pathname.startsWith('/admin') && role !== 'ADMIN') {
+      const redirectPath = role === 'MENTOR' ? '/mentor' : '/estudiante';
       return NextResponse.redirect(new URL(redirectPath, request.url));
     }
 
-    if (pathname.startsWith('/mentor') && payload.role !== 'MENTOR' && payload.role !== 'ADMIN') {
+    if (pathname.startsWith('/mentor') && role !== 'MENTOR' && role !== 'ADMIN') {
       return NextResponse.redirect(new URL('/estudiante', request.url));
     }
 
-    if (pathname.startsWith('/estudiante') && payload.role !== 'STUDENT' && payload.role !== 'ADMIN') {
+    if (pathname.startsWith('/estudiante') && role !== 'STUDENT' && role !== 'ADMIN') {
       return NextResponse.redirect(new URL('/mentor', request.url));
     }
 
     if (pathname === '/') {
       let defaultPath = '/estudiante';
-      if (payload.role === 'ADMIN') defaultPath = '/admin';
-      if (payload.role === 'MENTOR') defaultPath = '/mentor';
+      if (role === 'ADMIN') defaultPath = '/admin';
+      if (role === 'MENTOR') defaultPath = '/mentor';
       return NextResponse.redirect(new URL(defaultPath, request.url));
     }
 

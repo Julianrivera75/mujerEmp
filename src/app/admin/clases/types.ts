@@ -9,6 +9,9 @@ export interface ClassItem {
   recordingNotes: string | null;
   status: string;
   monthKey: string;
+  imageKey?: string | null;
+  /** URL firmada de lectura del afiche (vence en 1 hora). */
+  imageUrl?: string | null;
   mentor: { id: string; name: string; email: string };
   enrollments: { student: { id: string; name: string; email: string } }[];
   attendances: { student: { id: string; name: string } }[];
@@ -23,5 +26,6 @@ export interface SimpleUser {
 /** Usuaria tal como la devuelve /api/admin/users (solo los campos que usa esta pantalla). */
 export interface ManagedUser extends SimpleUser {
   role: string;
+  extraRoles?: string[];
   status: string;
 }

@@ -2,7 +2,8 @@ import type { Role, UserStatus } from '@prisma/client';
 import { jwtVerify, SignJWT } from 'jose';
 import { cookies } from 'next/headers';
 import prisma from './prisma';
-import { SESSION_COOKIE } from './session-cookie';
+import { rolesOf } from './roles';
+import { SESSION_COOKIE, VIEW_COOKIE } from './session-cookie';
 
 function getJwtSecret(): Uint8Array {
   const secret = process.env.JWT_SECRET;
@@ -19,13 +20,16 @@ const SESSION_SECONDS = 60 * 60 * 24 * 7; // 7 días
 export interface TokenPayload {
   id: string;
   email: string;
+  /** Rol de la vista activa. */
   role: Role;
+  /** Todos los roles de la cuenta. */
+  roles: Role[];
   name: string;
   status: UserStatus;
 }
 
 /** `tokenVersion` (claim `tv`) permite revocar de golpe todas las sesiones de una cuenta. */
-export async function signToken(payload: TokenPayload, tokenVersion: number): Promise<string> {
+export async function signToken(payload: Omit<TokenPayload, 'roles'>, tokenVersion: number): Promise<string> {
   return new SignJWT({ ...payload, tv: tokenVersion })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
@@ -54,20 +58,19 @@ export async function getCurrentUser(): Promise<TokenPayload | null> {
 
   const user = await prisma.user.findUnique({
     where: { id: claims.id },
-    select: { id: true, email: true, role: true, name: true, status: true, tokenVersion: true },
+    select: { id: true, email: true, role: true, extraRoles: true, name: true, status: true, tokenVersion: true },
   });
 
   if (!user || user.status === 'INACTIVO' || user.tokenVersion !== claims.tv) {
     return null;
   }
 
-  return {
-    id: user.id,
-    email: user.email,
-    role: user.role,
-    name: user.name,
-    status: user.status,
-  };
+  // La vista activa solo se acepta si la cuenta realmente tiene ese rol.
+  const roles = rolesOf(user);
+  const requested = (await cookies()).get(VIEW_COOKIE)?.value;
+  const role = roles.find((r) => r === requested) ?? user.role;
+
+  return { id: user.id, email: user.email, role, roles, name: user.name, status: user.status };
 }
 
 export async function setSessionCookie(token: string) {
@@ -80,6 +83,19 @@ export async function setSessionCookie(token: string) {
   });
 }
 
+/** Fija la vista activa (rol con el que se usa la plataforma). */
+export async function setViewCookie(role: Role) {
+  (await cookies()).set(VIEW_COOKIE, role, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: SESSION_SECONDS,
+    path: '/',
+  });
+}
+
 export async function clearSessionCookie() {
-  (await cookies()).delete(SESSION_COOKIE);
+  const store = await cookies();
+  store.delete(SESSION_COOKIE);
+  store.delete(VIEW_COOKIE);
 }

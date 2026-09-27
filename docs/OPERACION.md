@@ -94,3 +94,25 @@ Los originales se guardan fuera del repositorio (`docs/imagenes/`, ignorada por 
 ## Número de estudiante y contraseñas iniciales
 
 El campo `studentNumber` guarda el número de estudiante (la columna de la base de datos sigue llamándose `documentId`). Al crear una cuenta desde el panel, la contraseña inicial se propone como ese número sin guiones ni espacios. Cada persona debe cambiarla en su primer ingreso desde su perfil.
+
+## Contraseñas iniciales y descarga de credenciales
+
+Las contraseñas se guardan cifradas y no se pueden leer. El botón **Descargar usuarios con contraseña** (Usuarios) las restablece a su valor inicial y entrega un CSV una sola vez:
+
+- Estudiantes: el número de estudiante sin guiones ni espacios (por ejemplo `044100526`).
+- Mentores y quien no tenga número de estudiante: un número de 9 dígitos aleatorio.
+- No incluye administradoras ni cuentas inactivas o anonimizadas; cierra las sesiones abiertas de las cuentas alcanzadas.
+
+Reemplaza las contraseñas actuales: úsalo para la entrega inicial y comparte el archivo solo por un canal privado. Cada persona debe cambiar su contraseña desde su perfil en el primer ingreso.
+
+## Cuentas con más de un rol
+
+En Usuarios, además del rol principal se pueden marcar roles adicionales (por ejemplo, un mentor que también es estudiante). La persona ve en su menú "Cambiar a vista de ..." y trabaja con un rol a la vez; la vista activa se guarda en la cookie `__Host-empoderas_view` y se valida siempre contra los roles de la cuenta.
+
+## Mes de las clases y zona horaria
+
+El mes de una clase (`monthKey`) se calcula en la zona horaria de la organización, `America/New_York` (`src/lib/months.ts`), tanto en el servidor como en el navegador. Así una clase del 30 de septiembre a las 8 p. m. en Miami sigue perteneciendo a septiembre y a su módulo aunque en UTC ya sea octubre.
+
+## Afiche de la clase
+
+Cada clase puede tener una imagen (JPG, PNG o WebP de hasta 5 MB) que sube la administración o la mentora al programarla o editarla. Se guarda en el almacenamiento bajo `clases/<id de quien la sube>/` y se entrega con una URL firmada de 1 hora.

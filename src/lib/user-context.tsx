@@ -7,6 +7,7 @@ export interface SessionUser {
   name: string;
   email: string;
   role: 'ADMIN' | 'MENTOR' | 'STUDENT';
+  roles: ('ADMIN' | 'MENTOR' | 'STUDENT')[];
   status: 'ACTIVO' | 'INACTIVO';
   phone?: string | null;
   studentNumber?: string | null;

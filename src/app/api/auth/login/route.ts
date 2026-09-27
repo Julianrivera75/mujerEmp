@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { NextResponse } from 'next/server';
 import { HttpError, parseBody, withErrors } from '@/lib/api';
-import { setSessionCookie, signToken } from '@/lib/auth';
+import { setSessionCookie, setViewCookie, signToken } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { checkAttempts, clearAttempts, purgeAttempts, recordAttempt } from '@/lib/login-attempts';
 import { formatDate } from '@/lib/format';
@@ -81,6 +81,7 @@ export const POST = withErrors('auth/login', async (req) => {
     user.tokenVersion,
   );
   await setSessionCookie(token);
+  await setViewCookie(user.role);
 
   const redirectUrl = user.role === 'ADMIN' ? '/admin' : user.role === 'MENTOR' ? '/mentor' : '/estudiante';
 

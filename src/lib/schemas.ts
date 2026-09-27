@@ -110,11 +110,24 @@ const guardianFields = {
   guardianConsent: z.boolean().optional(),
 };
 
+const extraRoles = z
+  .array(z.enum(ROLES, { error: 'Rol inválido.' }))
+  .max(2)
+  .optional();
+
+export const switchRoleSchema = z.object({ role: z.enum(ROLES, { error: 'Rol inválido.' }) });
+
+/** Un lote de cuentas cuya contraseña se restablece para entregar las credenciales. */
+export const credentialsSchema = z.object({
+  ids: z.array(z.string().min(1)).min(1, 'Selecciona al menos una cuenta.').max(15, 'Máximo 15 cuentas por lote.'),
+});
+
 export const createUserSchema = z.object({
   name: requiredText('Nombre, email, contraseña y rol son obligatorios.', 120),
   email,
   password,
   role: z.enum(ROLES, { error: 'Rol inválido.' }),
+  extraRoles,
   status: z.enum(USER_STATUSES, { error: 'Estado inválido.' }).optional(),
   studentNumber: optionalText(40),
   phone: optionalPhone,
@@ -133,6 +146,7 @@ export const updateUserSchema = z.object({
     .optional(),
   password: z.string().nullish(),
   role: z.enum(ROLES, { error: 'Rol inválido.' }).optional(),
+  extraRoles,
   status: z.enum(USER_STATUSES, { error: 'Estado inválido.' }).optional(),
   studentNumber: optionalText(40),
   phone: optionalPhone,
@@ -154,6 +168,7 @@ const classBase = {
   status: z.enum(CLASS_STATUSES, { error: 'Estado de clase inválido.' }).optional(),
   meetLink: meetLink,
   youtubeUrl: youtubeLink,
+  imageKey: z.string().max(300).nullish(),
 };
 
 export const createClassSchema = z.object({
@@ -178,6 +193,7 @@ export const updateClassSchema = z.object({
   status: z.enum(CLASS_STATUSES, { error: 'Estado de clase inválido.' }).optional(),
   meetLink: z.string().nullish(),
   youtubeUrl: z.string().nullish(),
+  imageKey: z.string().max(300).nullish(),
 });
 
 export const createAssignmentSchema = z.object({

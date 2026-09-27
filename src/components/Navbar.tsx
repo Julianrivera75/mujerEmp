@@ -18,10 +18,12 @@ import {
   Menu,
   X,
   ChevronDown,
+  Repeat,
 } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { Avatar } from '@/components/ui/Avatar';
 import { RoleBadge } from '@/components/ui/RoleBadge';
+import { ROLE_META, type Role } from '@/lib/roles';
 import { cn } from '@/lib/cn';
 import { logClientError } from '@/lib/client-log';
 
@@ -30,7 +32,9 @@ interface NavbarProps {
     id: string;
     name: string;
     email: string;
-    role: 'ADMIN' | 'MENTOR' | 'STUDENT';
+    role: Role;
+    /** Todos los roles de la cuenta; con más de uno se muestra el selector de vista. */
+    roles?: Role[];
     status: 'ACTIVO' | 'INACTIVO';
     avatar?: string | null;
   };
@@ -91,6 +95,25 @@ export default function Navbar({ user }: NavbarProps) {
       document.removeEventListener('keydown', onKey);
     };
   }, [menuOpen]);
+
+  const otherRoles = (user.roles ?? []).filter((r) => r !== user.role);
+
+  const handleSwitchRole = async (role: Role) => {
+    try {
+      const res = await fetch('/api/auth/switch-role', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        // Recarga completa para que el panel, el menú y los permisos se calculen con la vista nueva.
+        window.location.assign(data.redirectUrl || '/');
+      }
+    } catch (err) {
+      logClientError('Error cambiando de vista:', err);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -174,6 +197,17 @@ export default function Navbar({ user }: NavbarProps) {
                     <UserIcon className="h-4 w-4" />
                     <span>Mi perfil</span>
                   </Link>
+                  {otherRoles.map((role) => (
+                    <button
+                      key={role}
+                      role="menuitem"
+                      onClick={() => handleSwitchRole(role)}
+                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-role-soft hover:text-role-ink"
+                    >
+                      <Repeat className="h-4 w-4" />
+                      <span>Cambiar a vista de {ROLE_META[role].label}</span>
+                    </button>
+                  ))}
                   <button
                     role="menuitem"
                     onClick={handleLogout}
@@ -205,6 +239,8 @@ export default function Navbar({ user }: NavbarProps) {
             pathname={pathname ?? ''}
             onClose={() => setDrawerOpen(false)}
             onLogout={handleLogout}
+            otherRoles={otherRoles}
+            onSwitchRole={handleSwitchRole}
           />
         )}
       </AnimatePresence>
@@ -218,7 +254,11 @@ function MobileDrawer({
   pathname,
   onClose,
   onLogout,
+  otherRoles,
+  onSwitchRole,
 }: {
+  otherRoles: Role[];
+  onSwitchRole: (role: Role) => void;
   user: NavbarProps['user'];
   navLinks: { href: string; label: string; icon: React.ElementType }[];
   pathname: string;
@@ -308,6 +348,16 @@ function MobileDrawer({
           <UserIcon className="h-4 w-4" />
           <span>Mi perfil</span>
         </Link>
+        {otherRoles.map((role) => (
+          <button
+            key={role}
+            onClick={() => onSwitchRole(role)}
+            className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-role-soft"
+          >
+            <Repeat className="h-4 w-4" />
+            <span>Cambiar a vista de {ROLE_META[role].label}</span>
+          </button>
+        ))}
         <button
           onClick={onLogout}
           className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50"

@@ -1,4 +1,4 @@
-import type { Prisma } from '@prisma/client';
+import type { Prisma, Role } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { NextResponse } from 'next/server';
 import { HttpError, MAX_ROWS, parseBody, withAuth } from '@/lib/api';
@@ -10,11 +10,16 @@ export const dynamic = 'force-dynamic';
 
 const BCRYPT_COST = 12;
 
+/** Roles adicionales sin repetir el principal. */
+const cleanExtraRoles = (main: Role, extra: readonly Role[] | undefined): Role[] =>
+  Array.from(new Set(extra ?? [])).filter((r) => r !== main);
+
 const SAFE_USER_SELECT = {
   id: true,
   name: true,
   email: true,
   role: true,
+  extraRoles: true,
   status: true,
   studentNumber: true,
   phone: true,
@@ -35,7 +40,9 @@ export const GET = withAuth('admin/users GET', ['ADMIN'], async (req) => {
   const statusFilter = searchParams.get('status');
 
   const where: Prisma.UserWhereInput = {};
-  if (roleFilter && isOneOf(ROLES, roleFilter)) where.role = roleFilter;
+  if (roleFilter && isOneOf(ROLES, roleFilter)) {
+    where.OR = [{ role: roleFilter }, { extraRoles: { has: roleFilter } }];
+  }
   if (statusFilter && isOneOf(USER_STATUSES, statusFilter)) where.status = statusFilter;
 
   const users = await prisma.user.findMany({
@@ -66,6 +73,7 @@ export const POST = withAuth('admin/users POST', ['ADMIN'], async (req) => {
       email: body.email,
       passwordHash,
       role: body.role,
+      extraRoles: cleanExtraRoles(body.role, body.extraRoles),
       status: body.status ?? 'ACTIVO',
       studentNumber: body.studentNumber,
       phone: body.phone,
@@ -108,6 +116,7 @@ export const PUT = withAuth('admin/users PUT', ['ADMIN'], async (req, currentUse
     name: cleanText(body.name ?? '', 120) ?? undefined,
     email: body.email,
     role: body.role,
+    extraRoles: body.extraRoles === undefined ? undefined : cleanExtraRoles(body.role ?? target.role, body.extraRoles),
     status: body.status,
     studentNumber: body.studentNumber,
     phone: body.phone,
@@ -134,7 +143,12 @@ export const PUT = withAuth('admin/users PUT', ['ADMIN'], async (req, currentUse
   }
 
   // Cambiar la contraseña, el rol o desactivar la cuenta cierra las sesiones abiertas.
-  if (newPassword || (body.role !== undefined && body.role !== target.role) || body.status === 'INACTIVO') {
+  if (
+    newPassword ||
+    (body.role !== undefined && body.role !== target.role) ||
+    body.extraRoles !== undefined ||
+    body.status === 'INACTIVO'
+  ) {
     data.tokenVersion = { increment: 1 };
   }
 

@@ -16,6 +16,7 @@ import { SkeletonRow } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Badge } from '@/components/ui/Badge';
+import { CredentialsExport } from './_components/CredentialsExport';
 import { UserFormModal } from './_components/UserFormModal';
 import type { UserItem } from './types';
 import { formatDate } from '@/lib/format';
@@ -126,7 +127,8 @@ export default function AdminUsersPage() {
       u.name.toLowerCase().includes(search.toLowerCase()) ||
       u.email.toLowerCase().includes(search.toLowerCase()) ||
       (u.studentNumber && u.studentNumber.toLowerCase().includes(search.toLowerCase()));
-    const matchRole = roleFilter === 'ALL' || u.role === roleFilter;
+    const matchRole =
+      roleFilter === 'ALL' || u.role === roleFilter || u.extraRoles?.includes(roleFilter as UserItem['role']);
     const matchStatus = statusFilter === 'ALL' || u.status === statusFilter;
     return matchSearch && matchRole && matchStatus;
   });
@@ -138,9 +140,12 @@ export default function AdminUsersPage() {
         title="Gestión de usuarios"
         description="Crea estudiantes y mentoras, controla su estado y define sus fechas de vigencia."
         actions={
-          <Button leftIcon={<UserPlus className="h-4 w-4" />} onClick={handleOpenCreate}>
-            Crear usuario
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <CredentialsExport users={users} />
+            <Button leftIcon={<UserPlus className="h-4 w-4" />} onClick={handleOpenCreate}>
+              Crear usuario
+            </Button>
+          </div>
         }
       />
 
@@ -213,7 +218,7 @@ export default function AdminUsersPage() {
                             <p className="font-bold leading-tight text-slate-800">{u.name}</p>
                             <p className="text-xs text-slate-500">{u.email}</p>
                             <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                              <RoleBadge role={u.role} />
+                              <UserRoles user={u} />
                               {u.anonymizedAt && <Badge tone="neutral">Anonimizada</Badge>}
                               {u.isMinor && (
                                 <Badge tone={u.guardianConsentAt ? 'info' : 'warning'}>
@@ -246,12 +251,12 @@ export default function AdminUsersPage() {
                       </TCell>
                       <TCell className="text-xs">
                         <p>
-                          <span className="font-semibold text-slate-700">Inicio: </span>
+                          <span className="font-semibold text-slate-700">Inicio del acceso: </span>
                           {u.startDate ? formatDate(u.startDate) : 'Indefinido'}
                         </p>
                         <p>
-                          <span className="font-semibold text-slate-700">Fin: </span>
-                          {u.endDate ? formatDate(u.endDate) : 'Indefinido'}
+                          <span className="font-semibold text-slate-700">Fin del acceso: </span>
+                          {u.endDate ? formatDate(u.endDate) : 'Sin límite'}
                         </p>
                       </TCell>
                       <TCell className="text-xs">
@@ -303,7 +308,7 @@ export default function AdminUsersPage() {
                     <Avatar fallbackInitial={u.name.charAt(0)} size="sm" />
                     <div className="flex-1">
                       <p className="font-bold leading-tight text-slate-800">{u.name}</p>
-                      <RoleBadge role={u.role} className="mt-1" />
+                      <UserRoles user={u} className="mt-1" />
                     </div>
                     <button
                       onClick={() => handleOpenEdit(u)}
@@ -336,7 +341,7 @@ export default function AdminUsersPage() {
                       { label: 'Número de estudiante', value: u.studentNumber || 'Sin número' },
                       {
                         label: 'Vigencia',
-                        value: u.endDate ? formatDate(u.endDate) : 'Indefinido',
+                        value: u.endDate ? formatDate(u.endDate) : 'Sin límite',
                       },
                     ]}
                   />
@@ -386,5 +391,17 @@ export default function AdminUsersPage() {
         onSaved={handleSaved}
       />
     </div>
+  );
+}
+
+/** Rol principal y roles adicionales de una cuenta. */
+function UserRoles({ user, className }: { user: UserItem; className?: string }) {
+  return (
+    <span className={`inline-flex flex-wrap gap-1 ${className ?? ''}`}>
+      <RoleBadge role={user.role} />
+      {(user.extraRoles ?? []).map((role) => (
+        <RoleBadge key={role} role={role} />
+      ))}
+    </span>
   );
 }

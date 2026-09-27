@@ -24,10 +24,12 @@ import { CERTIFICATE_MIN_ATTENDANCE_PERCENT } from '@/lib/legal';
 import JoinMeetButton from '@/components/JoinMeetButton';
 import { formatDateLong, formatTimeRange, formatWeekdayDate } from '@/lib/format';
 import { logClientError } from '@/lib/client-log';
+import { ClassPoster } from '@/components/ClassPoster';
 
 interface StudentClass {
   id: string;
   title: string;
+  imageUrl?: string | null;
   description: string | null;
   dateStart: string;
   dateEnd: string;
@@ -202,6 +204,7 @@ export default function StudentDashboardPage() {
                   variant="glass"
                   className={i === 0 ? 'border-role-accent/20 p-6 shadow-lift sm:p-8' : 'p-6 sm:p-8'}
                 >
+                  <ClassPoster url={cls.imageUrl} title={cls.title} className="mb-5" />
                   <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
                     <div className="flex-1 space-y-2">
                       <div className="flex flex-wrap items-center gap-2">

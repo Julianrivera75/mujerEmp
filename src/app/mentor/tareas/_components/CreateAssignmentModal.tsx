@@ -5,6 +5,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Input, Select, Textarea } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
 import { logClientError } from '@/lib/client-log';
+import { DateField } from '@/components/ui/DateField';
 
 interface ClassOption {
   id: string;
@@ -36,7 +37,8 @@ export function CreateAssignmentModal({ open, classes, onClose, onCreated }: Cre
       const res = await fetch('/api/assignments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ classId, title, description, dueDate }),
+        // El campo no lleva zona horaria: se envía como instante absoluto.
+        body: JSON.stringify({ classId, title, description, dueDate: new Date(dueDate).toISOString() }),
       });
       if (res.ok) {
         setTitle('');
@@ -76,12 +78,12 @@ export function CreateAssignmentModal({ open, classes, onClose, onCreated }: Cre
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
-        <Input
+        <DateField
           label="Fecha y hora límite de entrega"
-          type="datetime-local"
+          kind="datetime"
           required
           value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
+          onChange={setDueDate}
         />
       </form>
 

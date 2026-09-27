@@ -43,6 +43,8 @@ model User {
   email         String     @unique
   passwordHash  String
   role          Role       @default(STUDENT)
+  // Roles adicionales de la misma cuenta (por ejemplo, una mentora que también es estudiante)
+  extraRoles    Role[]     @default([])
   status        UserStatus @default(ACTIVO)
   studentNumber String?    @map("documentId")
   phone         String?
@@ -91,6 +93,8 @@ model ClassSession {
   meetLink       String? // Link de Google Meet
   youtubeUrl     String? // Link de YouTube para la grabación
   recordingNotes String?
+  // Afiche o imagen de la clase (clave del archivo en el almacenamiento)
+  imageKey       String?
   status         ClassStatus @default(PROGRAMADA)
   monthKey       String // Formato YYYY-MM para agrupamiento mensual
 

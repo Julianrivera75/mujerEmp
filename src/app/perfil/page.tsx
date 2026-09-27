@@ -170,15 +170,15 @@ export default function ProfilePage() {
                 <span className="font-semibold text-slate-700">{profile.studentNumber || 'N/A'}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-500">Fecha inicio:</span>
+                <span className="text-slate-500">Inicio del acceso:</span>
                 <span className="font-semibold text-slate-700">
                   {profile.startDate ? formatDate(profile.startDate) : 'Indefinido'}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-500">Fecha fin:</span>
+                <span className="text-slate-500">Fin del acceso:</span>
                 <span className="font-semibold text-slate-700">
-                  {profile.endDate ? formatDate(profile.endDate) : 'Indefinido'}
+                  {profile.endDate ? formatDate(profile.endDate) : 'Sin límite'}
                 </span>
               </div>
             </div>

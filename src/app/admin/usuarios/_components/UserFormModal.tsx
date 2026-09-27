@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Input, Select } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
+import { DateField } from '@/components/ui/DateField';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { PHONE_HINT, PHONE_LABEL, STUDENT_NUMBER_LABEL } from '@/lib/labels';
 import type { UserItem } from '../types';
@@ -13,6 +14,7 @@ export type UserFormData = {
   email: string;
   password: string;
   role: string;
+  extraRoles: string[];
   status: string;
   studentNumber: string;
   phone: string;
@@ -169,18 +171,48 @@ export function UserFormModal({ open, mode, selectedUser, onClose, onSaved }: Us
             />
           </div>
 
+          <fieldset className="space-y-2 rounded-2xl border border-slate-200 p-4">
+            <legend className="px-1 text-xs font-bold uppercase tracking-wider text-slate-700">
+              También puede ingresar como
+            </legend>
+            <p className="text-xs text-slate-500">
+              Marca un segundo rol si esta persona, por ejemplo, dicta clases y además toma clases. Podrá cambiar de
+              vista desde su menú.
+            </p>
+            <div className="flex flex-wrap gap-x-5 gap-y-2">
+              {EXTRA_ROLE_OPTIONS.filter((option) => option.value !== formData.role).map((option) => (
+                <label key={option.value} className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={formData.extraRoles.includes(option.value)}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        extraRoles: e.target.checked
+                          ? [...formData.extraRoles, option.value]
+                          : formData.extraRoles.filter((r) => r !== option.value),
+                      })
+                    }
+                    className="h-4 w-4 rounded"
+                  />
+                  <span>{option.label}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
           <div className="grid grid-cols-1 gap-3 rounded-2xl border border-role-accent/15 bg-role-soft p-4 sm:grid-cols-2">
-            <Input
-              label="Fecha de inicio"
-              type="date"
+            <DateField
+              label="Inicio del acceso"
               value={formData.startDate}
-              onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+              onChange={(value) => setFormData({ ...formData, startDate: value })}
+              help="Desde este día la persona puede iniciar sesión. Antes no podrá ingresar."
             />
-            <Input
-              label="Fecha de finalización"
-              type="date"
+            <DateField
+              label="Fin del acceso (opcional)"
               value={formData.endDate}
-              onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+              onChange={(value) => setFormData({ ...formData, endDate: value })}
+              help="Después de este día ya no podrá ingresar. Déjalo vacío para no limitarlo."
             />
           </div>
           <div className="space-y-3 rounded-2xl border border-slate-200 p-4">
@@ -261,6 +293,12 @@ export function UserFormModal({ open, mode, selectedUser, onClose, onSaved }: Us
   );
 }
 
+const EXTRA_ROLE_OPTIONS = [
+  { value: 'STUDENT', label: 'Estudiante' },
+  { value: 'MENTOR', label: 'Mentor / Mentora' },
+  { value: 'ADMIN', label: 'Administrador' },
+];
+
 function buildInitialForm(mode: 'create' | 'edit', user: UserItem | null): UserFormData {
   if (mode === 'edit' && user) {
     return {
@@ -268,6 +306,7 @@ function buildInitialForm(mode: 'create' | 'edit', user: UserItem | null): UserF
       email: user.email,
       password: '',
       role: user.role,
+      extraRoles: user.extraRoles ?? [],
       status: user.status,
       studentNumber: user.studentNumber || '',
       phone: user.phone || '',
@@ -284,11 +323,12 @@ function buildInitialForm(mode: 'create' | 'edit', user: UserItem | null): UserF
     email: '',
     password: '',
     role: 'STUDENT',
+    extraRoles: [],
     status: 'ACTIVO',
     studentNumber: '',
     phone: '',
     startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date(new Date().setMonth(new Date().getMonth() + 6)).toISOString().split('T')[0],
+    endDate: '',
     isMinor: false,
     guardianName: '',
     guardianContact: '',

@@ -7,6 +7,8 @@ export interface MentorClass {
   meetLink: string | null;
   youtubeUrl: string | null;
   recordingNotes: string | null;
+  imageKey?: string | null;
+  imageUrl?: string | null;
   status: string;
   enrollments: { student: { id: string; name: string; email: string; studentNumber: string | null } }[];
   attendances: { studentId: string; joinedAt: string; student: { name: string } }[];

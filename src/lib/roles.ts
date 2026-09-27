@@ -15,6 +15,14 @@ export const ROLE_META: Record<Role, RoleMeta> = {
   STUDENT: { label: 'Estudiante', variant: 'student', icon: GraduationCap },
 };
 
+/** Todos los roles de una cuenta: el principal y los adicionales, sin repetir. */
+export function rolesOf(user: { role: Role; extraRoles?: readonly Role[] | null }): Role[] {
+  return Array.from(new Set<Role>([user.role, ...(user.extraRoles ?? [])]));
+}
+
+/** Panel de inicio de cada rol. */
+export const HOME_BY_ROLE: Record<Role, string> = { ADMIN: '/admin', MENTOR: '/mentor', STUDENT: '/estudiante' };
+
 export function roleFromPathname(pathname: string): RoleVariant {
   if (pathname.startsWith('/admin')) return 'admin';
   if (pathname.startsWith('/mentor')) return 'mentor';

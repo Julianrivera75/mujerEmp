@@ -14,6 +14,8 @@ interface ConfirmDialogProps {
   cancelLabel?: string;
   danger?: boolean;
   loading?: boolean;
+  /** Contenido adicional bajo la descripción (por ejemplo, opciones o una barra de progreso). */
+  children?: React.ReactNode;
 }
 
 export function ConfirmDialog({
@@ -26,6 +28,7 @@ export function ConfirmDialog({
   cancelLabel = 'Cancelar',
   danger = true,
   loading,
+  children,
 }: ConfirmDialogProps) {
   return (
     <Modal
@@ -45,7 +48,7 @@ export function ConfirmDialog({
         </>
       }
     >
-      <div />
+      {children ?? <div />}
     </Modal>
   );
 }

@@ -4,6 +4,9 @@ import React, { useEffect, useState } from 'react';
 import { Video, Youtube } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Input, Select, Textarea } from '@/components/ui/Field';
+import { DateField } from '@/components/ui/DateField';
+import { ProgressBar } from '@/components/ui/ProgressBar';
+import FileUpload from '@/components/FileUpload';
 import { Button } from '@/components/ui/Button';
 import { Tip } from '@/components/ui/Tip';
 import { localInputValue } from '@/lib/months';
@@ -19,6 +22,7 @@ export interface ClassFormData {
   youtubeUrl: string;
   recordingNotes: string;
   status: string;
+  imageKey: string | null;
   studentIds: string[];
 }
 
@@ -29,7 +33,8 @@ interface ClassFormModalProps {
   mentors: SimpleUser[];
   students: SimpleUser[];
   onClose: () => void;
-  onSaved: () => void;
+  /** Recibe la clase guardada para que la página muestre su mes de inmediato. */
+  onSaved: (saved?: { id: string; monthKey: string; dateStart: string }) => void;
 }
 
 function buildInitialForm(
@@ -49,6 +54,7 @@ function buildInitialForm(
       youtubeUrl: cls.youtubeUrl || '',
       recordingNotes: cls.recordingNotes || '',
       status: cls.status,
+      imageKey: cls.imageKey ?? null,
       studentIds: cls.enrollments.map((e) => e.student.id),
     };
   }
@@ -64,6 +70,7 @@ function buildInitialForm(
     youtubeUrl: '',
     recordingNotes: '',
     status: 'PROGRAMADA',
+    imageKey: null,
     studentIds: students.map((s) => s.id),
   };
 }
@@ -73,12 +80,15 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
     buildInitialForm(mode, editingClass, mentors, students),
   );
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [removedImage, setRemovedImage] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
     if (open) {
       setFormData(buildInitialForm(mode, editingClass, mentors, students));
       setErrorMsg('');
+      setRemovedImage(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, mode, editingClass]);
@@ -96,6 +106,10 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
     setErrorMsg('');
     if (new Date(formData.dateEnd) <= new Date(formData.dateStart)) {
       setErrorMsg('La fecha de fin debe ser posterior a la de inicio.');
+      return;
+    }
+    if (uploading) {
+      setErrorMsg('Espera a que termine la subida del afiche.');
       return;
     }
     setSubmitting(true);
@@ -123,9 +137,10 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
         return;
       }
 
-      onSaved();
+      setSubmitting(false);
+      onSaved(data.classSession);
     } catch (err) {
-      setErrorMsg('Error al conectar con el servidor.');
+      setErrorMsg('Error al conectar con el servidor. Tus datos siguen aquí: inténtalo de nuevo.');
       setSubmitting(false);
     }
   };
@@ -133,7 +148,7 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={() => !submitting && onClose()}
       title={mode === 'create' ? 'Programar clase virtual' : 'Editar datos de clase'}
       size="lg"
     >
@@ -159,19 +174,19 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
         />
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input
-            label="Fecha y hora inicio"
-            type="datetime-local"
+          <DateField
+            label="Inicio"
+            kind="datetime"
             required
             value={formData.dateStart}
-            onChange={(e) => setFormData({ ...formData, dateStart: e.target.value })}
+            onChange={(value) => setFormData({ ...formData, dateStart: value })}
           />
-          <Input
-            label="Fecha y hora fin"
-            type="datetime-local"
+          <DateField
+            label="Fin"
+            kind="datetime"
             required
             value={formData.dateEnd}
-            onChange={(e) => setFormData({ ...formData, dateEnd: e.target.value })}
+            onChange={(value) => setFormData({ ...formData, dateEnd: value })}
           />
         </div>
 
@@ -240,6 +255,32 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
           />
         </div>
 
+        <div className="space-y-2">
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-700">Afiche de la clase (JPG o PNG)</p>
+          {editingClass?.imageUrl && formData.imageKey === editingClass.imageKey && !removedImage && (
+            <div className="flex items-start gap-3 rounded-xl border border-slate-200 p-2">
+              <img src={editingClass.imageUrl} alt="Afiche actual de la clase" className="max-h-28 rounded-lg" />
+              <button
+                type="button"
+                onClick={() => {
+                  setRemovedImage(true);
+                  setFormData({ ...formData, imageKey: null });
+                }}
+                className="text-xs font-bold text-red-600 hover:underline"
+              >
+                Quitar afiche
+              </button>
+            </div>
+          )}
+          <FileUpload
+            category="classImage"
+            accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+            label={formData.imageKey ? 'Cambiar afiche' : 'Subir afiche de la clase'}
+            onBusyChange={setUploading}
+            onUploaded={(key) => setFormData((prev) => ({ ...prev, imageKey: key }))}
+          />
+        </div>
+
         <div>
           <div className="mb-2 flex items-center justify-between">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
@@ -289,11 +330,20 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
         </div>
       </form>
 
+      {submitting && (
+        <div className="mt-4 space-y-1.5" role="status" aria-live="polite">
+          <p className="text-xs font-semibold text-role-ink">
+            {mode === 'create' ? 'Creando la clase e inscribiendo a las estudiantes...' : 'Guardando los cambios...'}
+          </p>
+          <ProgressBar indeterminate label="Guardando la clase" />
+        </div>
+      )}
+
       <div className="mt-5 flex items-center justify-end gap-3 border-t border-slate-100 pt-5">
         <Button variant="ghost" onClick={onClose} disabled={submitting}>
           Cancelar
         </Button>
-        <Button type="submit" form="class-form" loading={submitting}>
+        <Button type="submit" form="class-form" loading={submitting} disabled={uploading}>
           {mode === 'create' ? 'Crear clase' : 'Actualizar clase'}
         </Button>
       </div>

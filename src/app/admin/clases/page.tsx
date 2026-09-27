@@ -11,17 +11,19 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
-import { formatTimeRange, formatWeekdayDate } from '@/lib/format';
+import { formatDateLong, formatTimeRange, formatWeekdayDate } from '@/lib/format';
 import { monthKeyOf, monthOptions } from '@/lib/months';
 import { safeHref } from '@/lib/validators';
 import { ClassFormModal } from './_components/ClassFormModal';
 import type { ClassItem, ManagedUser, SimpleUser } from './types';
 import { logClientError } from '@/lib/client-log';
+import { ClassPoster } from '@/components/ClassPoster';
 
 export default function AdminClassesPage() {
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [mentors, setMentors] = useState<SimpleUser[]>([]);
   const [students, setStudents] = useState<SimpleUser[]>([]);
+  const [usersReady, setUsersReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(() => monthKeyOf(new Date()));
   const months = useMemo(() => monthOptions(), []);
@@ -33,31 +35,44 @@ export default function AdminClassesPage() {
   const [deleteTarget, setDeleteTarget] = useState<ClassItem | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const loadData = async () => {
+  // Las personas se cargan una sola vez; solo las clases cambian con el mes.
+  const loadUsers = async () => {
+    try {
+      const usersRes = await fetch('/api/admin/users');
+      const usersData = await usersRes.json();
+      const allUsers: ManagedUser[] = usersData.users || [];
+      setMentors(
+        allUsers.filter((u) => (u.role === 'MENTOR' || u.extraRoles?.includes('MENTOR')) && u.status === 'ACTIVO'),
+      );
+      setStudents(
+        allUsers.filter((u) => (u.role === 'STUDENT' || u.extraRoles?.includes('STUDENT')) && u.status === 'ACTIVO'),
+      );
+    } catch (err) {
+      logClientError('Error al cargar las personas:', err);
+    } finally {
+      setUsersReady(true);
+    }
+  };
+
+  const loadClasses = async (monthKey: string) => {
     try {
       setLoading(true);
-      const [classesRes, usersRes] = await Promise.all([
-        fetch(`/api/classes?monthKey=${selectedMonth}`),
-        fetch('/api/admin/users'),
-      ]);
-
+      const classesRes = await fetch(`/api/classes?monthKey=${monthKey}`);
       const classesData = await classesRes.json();
       setClasses(classesData.classes || []);
-
-      const usersData = await usersRes.json();
-      const allUsers = usersData.users || [];
-      setMentors(allUsers.filter((u: ManagedUser) => u.role === 'MENTOR' && u.status === 'ACTIVO'));
-      setStudents(allUsers.filter((u: ManagedUser) => u.role === 'STUDENT' && u.status === 'ACTIVO'));
     } catch (err) {
-      logClientError('Error al cargar datos:', err);
+      logClientError('Error al cargar las clases:', err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    loadUsers();
+  }, []);
+
+  useEffect(() => {
+    loadClasses(selectedMonth);
   }, [selectedMonth]);
 
   const handleOpenCreate = () => {
@@ -72,10 +87,13 @@ export default function AdminClassesPage() {
     setIsModalOpen(true);
   };
 
-  const handleSaved = () => {
+  const handleSaved = (saved?: { monthKey: string; dateStart: string }) => {
     setIsModalOpen(false);
-    show('success', modalMode === 'create' ? 'Clase creada.' : 'Cambios guardados.');
-    loadData();
+    const when = saved ? ` para el ${formatDateLong(saved.dateStart)}` : '';
+    show('success', modalMode === 'create' ? `Clase creada${when}.` : 'Cambios guardados.');
+    // Se muestra el mes de la clase guardada para que no parezca que desapareció.
+    if (saved && saved.monthKey !== selectedMonth) setSelectedMonth(saved.monthKey);
+    else loadClasses(selectedMonth);
   };
 
   const handleConfirmDelete = async () => {
@@ -104,7 +122,7 @@ export default function AdminClassesPage() {
         title="Programación mensual de clases"
         description="Programa las clases virtuales, vincula Google Meet y carga las grabaciones de YouTube para las estudiantes."
         actions={
-          <Button leftIcon={<PlusCircle className="h-4 w-4" />} onClick={handleOpenCreate}>
+          <Button leftIcon={<PlusCircle className="h-4 w-4" />} onClick={handleOpenCreate} disabled={!usersReady}>
             Programar nueva clase
           </Button>
         }
@@ -152,13 +170,16 @@ export default function AdminClassesPage() {
             return (
               <Card key={cls.id} variant="interactive" className="flex cursor-default flex-col justify-between p-6">
                 <div>
+                  <ClassPoster url={cls.imageUrl} title={cls.title} className="mb-4" />
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <StatusPill
                       label={cls.status}
                       tone={cls.status === 'FINALIZADA' ? 'neutral' : 'success'}
                       pulse={cls.status !== 'FINALIZADA'}
                     />
-                    <span className="text-xs font-semibold capitalize text-role-ink">{formattedDate}</span>
+                    <span className="inline-block text-xs font-semibold text-role-ink first-letter:uppercase">
+                      {formattedDate}
+                    </span>
                   </div>
 
                   <h2 className="mb-1 text-lg font-bold text-slate-800">{cls.title}</h2>

@@ -3,6 +3,7 @@ export interface UserItem {
   name: string;
   email: string;
   role: 'ADMIN' | 'MENTOR' | 'STUDENT';
+  extraRoles: ('ADMIN' | 'MENTOR' | 'STUDENT')[];
   status: 'ACTIVO' | 'INACTIVO';
   studentNumber: string | null;
   phone: string | null;
