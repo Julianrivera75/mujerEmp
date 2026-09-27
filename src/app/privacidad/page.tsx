@@ -205,6 +205,23 @@ export default function PrivacyPage() {
         </p>
       </LegalSection>
 
+      <LegalSection title="Chat, presencia y notificaciones">
+        <LegalList
+          items={[
+            'El chat guarda los mensajes entre las dos personas de cada conversación. Solo ellas los ven; la Organización no los lee, salvo por orden de autoridad competente o ante un reporte formal de conducta indebida.',
+            'La plataforma registra tu última actividad para mostrar si estás en línea. Puedes ocultar ese estado desde tu perfil.',
+            'Las personas menores de edad solo pueden conversar con mentores y con la administración.',
+            'Los mensajes y avisos de una cuenta se eliminan cuando se anonimiza.',
+            'Las notificaciones (tareas nuevas, entregas, calificaciones y tareas por vencer) se muestran dentro de la Plataforma.',
+          ]}
+        />
+        <p>
+          {
+            '[Borrador: la Organización debe confirmar con asesoría legal el plazo de conservación de los mensajes y el procedimiento de reportes.]'
+          }
+        </p>
+      </LegalSection>
+
       <LegalSection title="13. Cambios en esta política">
         <p>
           Si modificamos esta política de forma sustancial, te lo informaremos en la Plataforma y te pediremos aceptar

@@ -94,13 +94,13 @@ describe('esquemas', () => {
       email: ' ANA@Prueba.TEST ',
       password: 'una-clave-larga-1',
       role: 'STUDENT',
-      studentNumber: '  ',
+      memberNumber: '  ',
       phone: ' +1 305 555 0123 ',
     });
     expect(parsed).toMatchObject({
       name: 'Ana',
       email: 'ana@prueba.test',
-      studentNumber: null,
+      memberNumber: null,
       phone: '+1 305 555 0123',
     });
   });

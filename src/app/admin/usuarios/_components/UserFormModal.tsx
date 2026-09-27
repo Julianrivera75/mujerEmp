@@ -10,7 +10,7 @@ import { PasswordInput } from '@/components/ui/PasswordInput';
 import { PasswordReveal } from '@/components/PasswordReveal';
 import { ACCOUNT_TYPES, accountTypeOf, isStudentAccount } from '@/lib/account-types';
 import { generatePassword } from '@/lib/password-generator';
-import { PHONE_HINT, PHONE_LABEL, STUDENT_NUMBER_LABEL } from '@/lib/labels';
+import { PHONE_HINT, PHONE_LABEL, numberLabel } from '@/lib/labels';
 import type { UserItem } from '../types';
 
 export type UserFormData = {
@@ -20,7 +20,7 @@ export type UserFormData = {
   role: string;
   extraRoles: string[];
   status: string;
-  studentNumber: string;
+  memberNumber: string;
   phone: string;
   startDate: string;
   endDate: string;
@@ -60,8 +60,8 @@ export function UserFormModal({ open, mode, selectedUser, onClose, onSaved }: Us
 
   const handleStudentNumberChange = (value: string) => {
     setFormData((prev) => {
-      const followsNumber = mode === 'create' && prev.password === passwordFromNumber(prev.studentNumber);
-      return { ...prev, studentNumber: value, password: followsNumber ? passwordFromNumber(value) : prev.password };
+      const followsNumber = mode === 'create' && isStudent && prev.password === passwordFromNumber(prev.memberNumber);
+      return { ...prev, memberNumber: value, password: followsNumber ? passwordFromNumber(value) : prev.password };
     });
   };
 
@@ -217,16 +217,18 @@ export function UserFormModal({ open, mode, selectedUser, onClose, onSaved }: Us
             </Select>
           </div>
 
-          <div className={`grid grid-cols-1 gap-3 ${isStudent ? 'sm:grid-cols-2' : ''}`}>
-            {isStudent && (
-              <Input
-                label={STUDENT_NUMBER_LABEL}
-                placeholder="Ej: 044-100526"
-                hint="Sale en los certificados. Al crear la cuenta se propone como contraseña inicial."
-                value={formData.studentNumber}
-                onChange={(e) => handleStudentNumberChange(e.target.value)}
-              />
-            )}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Input
+              label={numberLabel(formData.role as 'STUDENT' | 'MENTOR' | 'ADMIN')}
+              placeholder="Ej: 044-100526"
+              hint={
+                isStudent
+                  ? 'Sale en los certificados. Al crear la cuenta se propone como contraseña inicial.'
+                  : 'Número de identificación en la plataforma (opcional).'
+              }
+              value={formData.memberNumber}
+              onChange={(e) => handleStudentNumberChange(e.target.value)}
+            />
             <Input
               label={PHONE_LABEL}
               hint={PHONE_HINT}
@@ -339,7 +341,7 @@ function buildInitialForm(mode: 'create' | 'edit', user: UserItem | null): UserF
       role: user.role,
       extraRoles: user.extraRoles ?? [],
       status: user.status,
-      studentNumber: user.studentNumber || '',
+      memberNumber: user.memberNumber || '',
       phone: user.phone || '',
       startDate: user.startDate ? new Date(user.startDate).toISOString().split('T')[0] : '',
       endDate: user.endDate ? new Date(user.endDate).toISOString().split('T')[0] : '',
@@ -356,7 +358,7 @@ function buildInitialForm(mode: 'create' | 'edit', user: UserItem | null): UserF
     role: 'STUDENT',
     extraRoles: [],
     status: 'ACTIVO',
-    studentNumber: '',
+    memberNumber: '',
     phone: '',
     startDate: new Date().toISOString().split('T')[0],
     endDate: '',

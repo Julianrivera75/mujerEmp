@@ -55,7 +55,7 @@ export const GET = withAuth('upload GET', 'any', async (req, user) => {
   const isOwner = ownerId === user.id;
   const isAdmin = user.role === 'ADMIN';
   // Los materiales de clase los puede abrir cualquier usuaria con sesión; el resto es privado.
-  const isSharedMaterial = category === 'resource' || category === 'classImage';
+  const isSharedMaterial = category === 'resource' || category === 'classImage' || category === 'avatar';
 
   let allowed = isOwner || isAdmin || isSharedMaterial;
 

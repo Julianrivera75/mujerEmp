@@ -5,7 +5,7 @@ export interface UserItem {
   role: 'ADMIN' | 'MENTOR' | 'STUDENT';
   extraRoles: ('ADMIN' | 'MENTOR' | 'STUDENT')[];
   status: 'ACTIVO' | 'INACTIVO';
-  studentNumber: string | null;
+  memberNumber: string | null;
   phone: string | null;
   startDate: string | null;
   endDate: string | null;

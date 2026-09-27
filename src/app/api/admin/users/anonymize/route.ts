@@ -45,13 +45,16 @@ export const POST = withAuth('admin/users anonymize', ['ADMIN'], async (req, cur
 
   await prisma.$transaction([
     prisma.submission.updateMany({ where: { studentId: id }, data: { notes: null, fileUrl: null } }),
+    // Los mensajes y avisos de la cuenta se eliminan junto con sus datos personales.
+    prisma.conversation.deleteMany({ where: { OR: [{ userAId: id }, { userBId: id }] } }),
+    prisma.notification.deleteMany({ where: { userId: id } }),
     prisma.user.update({
       where: { id },
       data: {
         name: 'Usuaria anonimizada',
         email: `anonimizada-${id}@anonimizada.invalid`,
         passwordHash: randomPasswordHash,
-        studentNumber: null,
+        memberNumber: null,
         phone: null,
         avatar: null,
         status: 'INACTIVO',

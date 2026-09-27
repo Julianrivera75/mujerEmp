@@ -1,5 +1,5 @@
 /** Versión vigente de los Términos y la Política de Tratamiento de Datos. Al cambiar los textos, subir la fecha: todas las usuarias deberán aceptarlos de nuevo. */
-export const CURRENT_TERMS_VERSION = '2026-09-25';
+export const CURRENT_TERMS_VERSION = '2026-09-28';
 
 /** Porcentaje mínimo de asistencia a las clases de un módulo para descargar su certificado. */
 export const CERTIFICATE_MIN_ATTENDANCE_PERCENT = 80;

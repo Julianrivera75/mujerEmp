@@ -2,6 +2,7 @@ import type { Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { HttpError, MAX_ROWS, parseBody, withAuth } from '@/lib/api';
 import prisma from '@/lib/prisma';
+import { notifyMany } from '@/lib/notifications';
 import { deleteObject } from '@/lib/s3';
 import { createAssignmentSchema, updateAssignmentSchema } from '@/lib/schemas';
 
@@ -50,6 +51,19 @@ export const POST = withAuth('assignments POST', ['MENTOR', 'ADMIN'], async (req
     data: { classId, creatorId: user.id, title, description, dueDate },
     include: { classSession: { select: { id: true, title: true } } },
   });
+
+  // Aviso a las estudiantes inscritas en la clase.
+  const enrolled = await prisma.classEnrollment.findMany({ where: { classId }, select: { studentId: true } });
+  await notifyMany(
+    enrolled.map((e) => e.studentId),
+    {
+      type: 'NEW_ASSIGNMENT',
+      title: 'Nueva tarea',
+      body: `${assignment.title} — ${assignment.classSession.title}`,
+      href: `/estudiante/tareas?tarea=${assignment.id}`,
+      dedupeKey: `new:${assignment.id}`,
+    },
+  ).catch(() => undefined);
 
   return NextResponse.json({ success: true, assignment });
 });

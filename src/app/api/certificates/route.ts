@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 export const GET = withAuth('certificates GET', ['STUDENT'], async (_req, user) => {
   const student = await prisma.user.findUnique({
     where: { id: user.id },
-    select: { name: true, studentNumber: true },
+    select: { name: true, memberNumber: true },
   });
   if (!student) throw new HttpError(404, 'Usuario no encontrado.');
 
@@ -45,5 +45,5 @@ export const GET = withAuth('certificates GET', ['STUDENT'], async (_req, user) 
     };
   });
 
-  return NextResponse.json({ student, modules });
+  return NextResponse.json({ student: { name: student.name, studentNumber: student.memberNumber }, modules });
 });

@@ -11,6 +11,13 @@ const SIZE_CLS: Record<Size, string> = {
   xl: 'w-28 h-28 text-3xl rounded-3xl',
 };
 
+const RING_ROUNDED: Record<Size, string> = {
+  sm: 'rounded-[14px]',
+  md: 'rounded-[18px]',
+  lg: 'rounded-[26px]',
+  xl: 'rounded-[26px]',
+};
+
 interface AvatarProps {
   avatarKey?: string | null;
   fallbackInitial: string;
@@ -23,7 +30,7 @@ export function Avatar({ avatarKey, fallbackInitial, size = 'md', ring, classNam
   return (
     <div
       className={cn(
-        ring && 'inline-block rounded-[inherit] bg-gradient-to-tr from-role-from to-role-to p-0.5 shadow-glow',
+        ring && `inline-block bg-gradient-to-tr from-role-from to-role-to p-0.5 shadow-glow ${RING_ROUNDED[size]}`,
       )}
     >
       <AvatarImage

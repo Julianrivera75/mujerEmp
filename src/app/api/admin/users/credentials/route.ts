@@ -24,7 +24,7 @@ export const POST = withAuth('admin/users credentials', ['ADMIN'], async (req, c
       status: 'ACTIVO',
       anonymizedAt: null,
     },
-    select: { id: true, name: true, email: true, role: true, studentNumber: true },
+    select: { id: true, name: true, email: true, role: true, memberNumber: true },
   });
 
   const credentials: {
@@ -32,11 +32,11 @@ export const POST = withAuth('admin/users credentials', ['ADMIN'], async (req, c
     name: string;
     email: string;
     role: string;
-    studentNumber: string | null;
+    memberNumber: string | null;
     password: string;
   }[] = [];
   for (const user of users) {
-    const password = initialPassword(user.studentNumber, user.role);
+    const password = initialPassword(user.memberNumber, user.role);
     await prisma.user.update({
       where: { id: user.id },
       data: {

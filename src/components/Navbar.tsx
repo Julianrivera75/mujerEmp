@@ -19,8 +19,11 @@ import {
   X,
   ChevronDown,
   Repeat,
+  MessageCircle,
 } from 'lucide-react';
 import { Logo } from '@/components/Logo';
+import { useActivity } from '@/components/ActivityProvider';
+import { NotificationBell } from '@/components/NotificationBell';
 import { Avatar } from '@/components/ui/Avatar';
 import { RoleBadge } from '@/components/ui/RoleBadge';
 import { ROLE_META, type Role } from '@/lib/roles';
@@ -45,12 +48,14 @@ const adminLinks = [
   { href: '/admin/usuarios', label: 'Usuarios', icon: Users },
   { href: '/admin/clases', label: 'Programación', icon: Calendar },
   { href: '/admin/asistencias', label: 'Asistencias', icon: CheckCircle2 },
+  { href: '/chat', label: 'Chat', icon: MessageCircle },
 ];
 
 const mentorLinks = [
   { href: '/mentor', label: 'Mis clases', icon: Calendar },
   { href: '/mentor/asistencias', label: 'Asistencias', icon: CheckCircle2 },
   { href: '/mentor/tareas', label: 'Tareas', icon: ClipboardList },
+  { href: '/chat', label: 'Chat', icon: MessageCircle },
 ];
 
 const studentLinks = [
@@ -59,6 +64,7 @@ const studentLinks = [
   { href: '/estudiante/tareas', label: 'Mis tareas', icon: ClipboardList },
   { href: '/estudiante/asistencias', label: 'Mi asistencia', icon: CheckCircle2 },
   { href: '/estudiante/certificado', label: 'Certificados', icon: Award },
+  { href: '/chat', label: 'Chat', icon: MessageCircle },
 ];
 
 export default function Navbar({ user }: NavbarProps) {
@@ -70,6 +76,7 @@ export default function Navbar({ user }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  const { unreadMessages } = useActivity();
   const navLinks = user.role === 'ADMIN' ? adminLinks : user.role === 'MENTOR' ? mentorLinks : studentLinks;
   const homeHref = user.role === 'ADMIN' ? '/admin' : user.role === 'MENTOR' ? '/mentor' : '/estudiante';
 
@@ -160,12 +167,21 @@ export default function Navbar({ user }: NavbarProps) {
                   )}
                   <Icon className="h-4 w-4" strokeWidth={1.75} />
                   <span>{item.label}</span>
+                  {item.href === '/chat' && unreadMessages > 0 && (
+                    <span
+                      aria-label={`${unreadMessages} mensajes sin leer`}
+                      className="flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold text-white"
+                    >
+                      {unreadMessages > 9 ? '9+' : unreadMessages}
+                    </span>
+                  )}
                 </Link>
               );
             })}
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <NotificationBell />
             <div ref={menuRef} className="relative hidden sm:block">
               <button
                 onClick={() => setMenuOpen((v) => !v)}
@@ -241,6 +257,7 @@ export default function Navbar({ user }: NavbarProps) {
             onLogout={handleLogout}
             otherRoles={otherRoles}
             onSwitchRole={handleSwitchRole}
+            unreadMessages={unreadMessages}
           />
         )}
       </AnimatePresence>
@@ -256,7 +273,9 @@ function MobileDrawer({
   onLogout,
   otherRoles,
   onSwitchRole,
+  unreadMessages,
 }: {
+  unreadMessages: number;
   otherRoles: Role[];
   onSwitchRole: (role: Role) => void;
   user: NavbarProps['user'];
@@ -335,6 +354,11 @@ function MobileDrawer({
               >
                 <Icon className="h-4 w-4" strokeWidth={1.75} />
                 <span>{item.label}</span>
+                {item.href === '/chat' && unreadMessages > 0 && (
+                  <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 text-[11px] font-bold text-white">
+                    {unreadMessages}
+                  </span>
+                )}
               </Link>
             );
           })}

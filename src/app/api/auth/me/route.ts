@@ -17,11 +17,13 @@ export const GET = withAuth(
         role: true,
         status: true,
         phone: true,
-        studentNumber: true,
+        memberNumber: true,
         startDate: true,
         endDate: true,
         avatar: true,
         extraRoles: true,
+        showOnlineStatus: true,
+        emailNotifications: true,
       },
     });
 

@@ -20,7 +20,7 @@ export const GET = withAuth('auth/export', 'any', async (_req, user) => {
       email: true,
       role: true,
       status: true,
-      studentNumber: true,
+      memberNumber: true,
       phone: true,
       avatar: true,
       startDate: true,

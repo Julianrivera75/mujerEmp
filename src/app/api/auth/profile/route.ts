@@ -16,7 +16,17 @@ export const PUT = withAuth(
   'auth/profile',
   'any',
   async (req, user) => {
-    const { name, email, phone, currentPassword, newPassword, avatar } = await parseBody(req, profileSchema);
+    const {
+      name,
+      email,
+      phone,
+      memberNumber,
+      showOnlineStatus,
+      emailNotifications,
+      currentPassword,
+      newPassword,
+      avatar,
+    } = await parseBody(req, profileSchema);
 
     const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
     if (!dbUser) throw new HttpError(404, 'Usuario no encontrado.');
@@ -25,6 +35,9 @@ export const PUT = withAuth(
     let previousAvatar: string | null = null;
 
     if (name !== undefined) updateData.name = name;
+    if (memberNumber !== undefined) updateData.memberNumber = memberNumber;
+    if (showOnlineStatus !== undefined) updateData.showOnlineStatus = showOnlineStatus;
+    if (emailNotifications !== undefined) updateData.emailNotifications = emailNotifications;
 
     if (email !== undefined && email !== dbUser.email) {
       // Cambiar el correo (que es el usuario para ingresar) exige confirmar la contraseña actual.
@@ -76,7 +89,17 @@ export const PUT = withAuth(
     const updated = await prisma.user.update({
       where: { id: user.id },
       data: updateData,
-      select: { id: true, name: true, email: true, phone: true, avatar: true, tokenVersion: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        avatar: true,
+        memberNumber: true,
+        showOnlineStatus: true,
+        emailNotifications: true,
+        tokenVersion: true,
+      },
     });
 
     if (updateData.passwordHash || updateData.email) {
@@ -92,7 +115,16 @@ export const PUT = withAuth(
     return NextResponse.json({
       success: true,
       message: 'Perfil actualizado exitosamente.',
-      user: { id: updated.id, name: updated.name, email: updated.email, phone: updated.phone, avatar: updated.avatar },
+      user: {
+        id: updated.id,
+        name: updated.name,
+        email: updated.email,
+        phone: updated.phone,
+        avatar: updated.avatar,
+        memberNumber: updated.memberNumber,
+        showOnlineStatus: updated.showOnlineStatus,
+        emailNotifications: updated.emailNotifications,
+      },
     });
   },
   { allowPendingPasswordChange: true },

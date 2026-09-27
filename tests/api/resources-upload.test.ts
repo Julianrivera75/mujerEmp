@@ -168,7 +168,7 @@ describe('GET /api/upload (lectura de archivos)', () => {
     expect((await read(await get(`recursos/${w.carolina.id}/guia.pdf`))).status).toBe(200);
   });
 
-  it('una foto la abren su dueña, la administradora y las mentoras de sus clases', async () => {
+  it('las fotos de perfil las abre cualquier persona con sesión, y una persona anónima no', async () => {
     const key = `avatares/${w.sofia.id}/foto.png`;
     const status = async (actor: Parameters<typeof actAs>[0]) => {
       actAs(actor);
@@ -177,7 +177,8 @@ describe('GET /api/upload (lectura de archivos)', () => {
     expect(await status(w.sofia)).toBe(200);
     expect(await status(w.admin)).toBe(200);
     expect(await status(w.carolina)).toBe(200);
-    expect(await status(w.valeria)).toBe(403);
-    expect(await status(w.lucia)).toBe(403);
+    expect(await status(w.valeria)).toBe(200);
+    expect(await status(w.lucia)).toBe(200);
+    expect(await status(null)).toBe(401);
   });
 });

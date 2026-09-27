@@ -123,11 +123,11 @@ describe('editar el perfil', () => {
     expect((await prisma.user.findUniqueOrThrow({ where: { id: w.sofia.id } })).email).toBe('nuevo@prueba.test');
   });
 
-  it('no permite tocar el número de estudiante, el rol ni el estado', async () => {
+  it('permite cambiar el número propio pero no el rol ni el estado', async () => {
     actAs(w.sofia);
-    await send(profile, 'PUT', '/api/auth/profile', { studentNumber: '999', role: 'ADMIN', status: 'INACTIVO' });
+    await send(profile, 'PUT', '/api/auth/profile', { memberNumber: '999', role: 'ADMIN', status: 'INACTIVO' });
     const saved = await prisma.user.findUniqueOrThrow({ where: { id: w.sofia.id } });
-    expect(saved.studentNumber).toBe('DOC-Sofia');
+    expect(saved.memberNumber).toBe('999');
     expect(saved.role).toBe('STUDENT');
     expect(saved.status).toBe('ACTIVO');
   });

@@ -8,14 +8,14 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
 import { PasswordInput } from '@/components/ui/PasswordInput';
-import { isStudentAccount } from '@/lib/account-types';
+import { useSessionUser } from '@/lib/user-context';
 import { Avatar } from '@/components/ui/Avatar';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import FileUpload from '@/components/FileUpload';
 import { useToast } from '@/components/ui/Toast';
 import { ROLE_META, type Role } from '@/lib/roles';
 import { formatDate } from '@/lib/format';
-import { PHONE_HINT, PHONE_LABEL, STUDENT_NUMBER_LABEL } from '@/lib/labels';
+import { PHONE_HINT, PHONE_LABEL, numberLabel } from '@/lib/labels';
 import { logClientError } from '@/lib/client-log';
 
 interface FullProfile {
@@ -25,8 +25,10 @@ interface FullProfile {
   role: Role;
   extraRoles?: Role[];
   status: 'ACTIVO' | 'INACTIVO';
+  showOnlineStatus?: boolean;
+  emailNotifications?: boolean;
   phone: string | null;
-  studentNumber: string | null;
+  memberNumber: string | null;
   startDate: string | null;
   endDate: string | null;
   avatar: string | null;
@@ -35,12 +37,16 @@ interface FullProfile {
 export default function ProfilePage() {
   const { show } = useToast();
   const router = useRouter();
+  const session = useSessionUser();
   const [profile, setProfile] = useState<FullProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [memberNumber, setMemberNumber] = useState('');
+  const [showOnline, setShowOnline] = useState(true);
+  const [emailNotifications, setEmailNotifications] = useState(true);
   const [avatarKey, setAvatarKey] = useState<string | null>(null);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -60,6 +66,9 @@ export default function ProfilePage() {
           setName(data.user.name || '');
           setEmail(data.user.email || '');
           setPhone(data.user.phone || '');
+          setMemberNumber(data.user.memberNumber || '');
+          setShowOnline(data.user.showOnlineStatus ?? true);
+          setEmailNotifications(data.user.emailNotifications ?? true);
           setAvatarKey(data.user.avatar || null);
         }
       } catch (err) {
@@ -115,6 +124,9 @@ export default function ProfilePage() {
           name,
           email: profile && email.trim().toLowerCase() !== profile.email ? email : undefined,
           phone,
+          memberNumber,
+          showOnlineStatus: showOnline,
+          emailNotifications,
           currentPassword: currentPassword || undefined,
           newPassword: newPassword || undefined,
         }),
@@ -133,6 +145,7 @@ export default function ProfilePage() {
         );
         setName(data.user.name);
         setEmail(data.user.email);
+        setMemberNumber(data.user.memberNumber || '');
       }
       // Recarga los datos del servidor para que la barra superior muestre el nombre nuevo.
       router.refresh();
@@ -190,12 +203,10 @@ export default function ProfilePage() {
                   {profile.status}
                 </span>
               </div>
-              {isStudentAccount(profile.role, profile.extraRoles ?? []) && (
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-500">{STUDENT_NUMBER_LABEL}:</span>
-                  <span className="font-semibold text-slate-700">{profile.studentNumber || 'N/A'}</span>
-                </div>
-              )}
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">{numberLabel(session.role)}:</span>
+                <span className="font-semibold text-slate-700">{memberNumber || 'N/A'}</span>
+              </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">Inicio del acceso:</span>
                 <span className="font-semibold text-slate-700">
@@ -242,6 +253,13 @@ export default function ProfilePage() {
                 hint="Es tu usuario para ingresar. Si lo cambias, escribe tu contraseña actual más abajo."
               />
               <Input
+                label={numberLabel(session.role)}
+                value={memberNumber}
+                onChange={(e) => setMemberNumber(e.target.value)}
+                maxLength={40}
+                hint="Tu número de identificación en la plataforma. Aparece en tus certificados."
+              />
+              <Input
                 label={PHONE_LABEL}
                 hint={PHONE_HINT}
                 placeholder="+1 305 555 0123"
@@ -249,6 +267,40 @@ export default function ProfilePage() {
                 onChange={(e) => setPhone(e.target.value)}
                 leftIcon={<Phone className="h-4 w-4" />}
               />
+
+              <fieldset className="space-y-2 border-t border-slate-100 pt-4">
+                <legend className="text-xs font-black uppercase tracking-wider text-slate-500">
+                  Privacidad y avisos
+                </legend>
+                <label className="flex cursor-pointer items-start gap-3 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={showOnline}
+                    onChange={(e) => setShowOnline(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded"
+                  />
+                  <span>
+                    Mostrar cuando estoy en línea
+                    <span className="block text-xs text-slate-500">
+                      Si lo desactivas, las demás personas no verán tu estado y tú tampoco verás el suyo.
+                    </span>
+                  </span>
+                </label>
+                <label className="flex cursor-pointer items-start gap-3 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={emailNotifications}
+                    onChange={(e) => setEmailNotifications(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded"
+                  />
+                  <span>
+                    Recibir avisos por correo
+                    <span className="block text-xs text-slate-500">
+                      Guardamos tu preferencia; los correos se activarán cuando el servicio esté disponible.
+                    </span>
+                  </span>
+                </label>
+              </fieldset>
 
               <div className="space-y-3 border-t border-slate-100 pt-4">
                 <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">

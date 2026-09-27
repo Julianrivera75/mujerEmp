@@ -78,6 +78,7 @@ export default function TermsPage() {
             'No suplantar a otra persona ni entregar trabajos que no sean tuyos sin indicar su fuente.',
             'No subir contenido ilícito, con virus, que vulnere derechos de terceros o que contenga datos personales de otras personas sin su autorización.',
             'No intentar acceder sin autorización a cuentas, datos o sistemas, ni interferir con el funcionamiento de la Plataforma.',
+            'Usar el chat solo para fines del programa, con respeto y sin enviar mensajes masivos, ofensivos o de contenido inapropiado.',
           ]}
         />
       </LegalSection>

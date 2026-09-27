@@ -2,6 +2,7 @@ import React from 'react';
 import { redirect } from 'next/navigation';
 import { getSessionProfile, requireAcceptedTerms, requirePasswordChange } from '@/lib/session-profile';
 import LegalFooter from '@/components/LegalFooter';
+import { ActivityProvider } from '@/components/ActivityProvider';
 import { UserProvider } from '@/lib/user-context';
 import Navbar from '@/components/Navbar';
 
@@ -16,15 +17,17 @@ export default async function MentorLayout({ children }: { children: React.React
   return (
     <div data-role="mentor" className="flex min-h-dvh flex-col">
       <UserProvider user={user}>
-        <div className="no-print">
-          <Navbar user={user} />
-        </div>
-        <main id="contenido" className="flex-1">
-          {children}
-        </main>
-        <div className="no-print">
-          <LegalFooter />
-        </div>
+        <ActivityProvider>
+          <div className="no-print">
+            <Navbar user={user} />
+          </div>
+          <main id="contenido" className="flex-1">
+            {children}
+          </main>
+          <div className="no-print">
+            <LegalFooter />
+          </div>
+        </ActivityProvider>
       </UserProvider>
     </div>
   );

@@ -104,6 +104,9 @@ export const profileSchema = z.object({
     .refine(isValidEmail, { message: 'El correo electrónico no es válido.' })
     .optional(),
   phone: optionalPhone.optional(),
+  memberNumber: optionalText(40).optional(),
+  showOnlineStatus: z.boolean().optional(),
+  emailNotifications: z.boolean().optional(),
   avatar: z.string().nullable().optional(),
   currentPassword: z.string().optional(),
   newPassword: z.string().optional(),
@@ -135,7 +138,7 @@ export const createUserSchema = z.object({
   role: z.enum(ROLES, { error: 'Rol inválido.' }),
   extraRoles,
   status: z.enum(USER_STATUSES, { error: 'Estado inválido.' }).optional(),
-  studentNumber: optionalText(40),
+  memberNumber: optionalText(40),
   phone: optionalPhone,
   startDate: optionalDateField,
   endDate: optionalDateField,
@@ -154,7 +157,7 @@ export const updateUserSchema = z.object({
   role: z.enum(ROLES, { error: 'Rol inválido.' }).optional(),
   extraRoles,
   status: z.enum(USER_STATUSES, { error: 'Estado inválido.' }).optional(),
-  studentNumber: optionalText(40),
+  memberNumber: optionalText(40),
   phone: optionalPhone,
   startDate: optionalDateField,
   endDate: optionalDateField,
@@ -253,3 +256,19 @@ export const uploadRequestSchema = z.object({
     .finite('Falta el tamaño del archivo.')
     .positive('Falta el tamaño del archivo.'),
 });
+
+export const startConversationSchema = z.object({ userId: requiredId('Falta la persona.') });
+
+export const sendMessageSchema = z.object({
+  conversationId: requiredId('Falta la conversación.'),
+  body: z
+    .string({ error: 'Escribe un mensaje.' })
+    .min(1, 'Escribe un mensaje.')
+    .max(4000, 'El mensaje es demasiado largo.'),
+});
+
+export const markConversationReadSchema = z.object({ conversationId: requiredId('Falta la conversación.') });
+
+export const markNotificationsReadSchema = z
+  .object({ id: z.string().min(1).optional(), all: z.boolean().optional() })
+  .refine((v) => v.all === true || Boolean(v.id), { message: 'Indica qué notificación marcar.' });

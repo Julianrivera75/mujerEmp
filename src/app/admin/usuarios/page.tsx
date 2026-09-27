@@ -18,7 +18,7 @@ import { useToast } from '@/components/ui/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Badge } from '@/components/ui/Badge';
 import { PasswordReveal } from '@/components/PasswordReveal';
-import { isStudentAccount } from '@/lib/account-types';
+import { numberLabel } from '@/lib/labels';
 import { CredentialsExport } from './_components/CredentialsExport';
 import { UserFormModal } from './_components/UserFormModal';
 import type { UserItem } from './types';
@@ -158,7 +158,7 @@ export default function AdminUsersPage() {
     const matchSearch =
       u.name.toLowerCase().includes(search.toLowerCase()) ||
       u.email.toLowerCase().includes(search.toLowerCase()) ||
-      (u.studentNumber && u.studentNumber.toLowerCase().includes(search.toLowerCase()));
+      (u.memberNumber && u.memberNumber.toLowerCase().includes(search.toLowerCase()));
     const matchRole =
       roleFilter === 'ALL' || u.role === roleFilter || u.extraRoles?.includes(roleFilter as UserItem['role']);
     const matchStatus = statusFilter === 'ALL' || u.status === statusFilter;
@@ -184,7 +184,7 @@ export default function AdminUsersPage() {
       <Card variant="glass" className="flex flex-col items-center gap-4 p-5 md:flex-row">
         <div className="w-full flex-1">
           <Input
-            placeholder="Buscar por nombre, correo o número de estudiante..."
+            placeholder="Buscar por nombre, correo o número..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             leftIcon={<Search className="h-4 w-4" />}
@@ -232,7 +232,7 @@ export default function AdminUsersPage() {
                   <TRow>
                     <TCell head>Usuario &amp; rol</TCell>
                     <TCell head>Estado</TCell>
-                    <TCell head>Número de estudiante y contacto</TCell>
+                    <TCell head>Número y contacto</TCell>
                     <TCell head>Vigencia</TCell>
                     <TCell head>Actividad</TCell>
                     <TCell head className="text-right">
@@ -278,9 +278,9 @@ export default function AdminUsersPage() {
                         </div>
                       </TCell>
                       <TCell className="text-xs">
-                        {isStudentAccount(u.role, u.extraRoles ?? []) && (
-                          <p className="font-medium text-slate-700">{u.studentNumber || 'Sin número'}</p>
-                        )}
+                        <p className="font-medium text-slate-700">
+                          {numberLabel(u.role)}: {u.memberNumber || 'sin número'}
+                        </p>
                         <p className="text-slate-500">{u.phone || 'Sin teléfono'}</p>
                       </TCell>
                       <TCell className="text-xs">
@@ -389,9 +389,7 @@ export default function AdminUsersPage() {
                           />
                         ),
                       },
-                      ...(isStudentAccount(u.role, u.extraRoles ?? [])
-                        ? [{ label: 'Número de estudiante', value: u.studentNumber || 'Sin número' }]
-                        : []),
+                      { label: numberLabel(u.role), value: u.memberNumber || 'Sin número' },
                       {
                         label: 'Vigencia',
                         value: u.endDate ? formatDate(u.endDate) : 'Sin límite',

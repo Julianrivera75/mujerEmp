@@ -25,6 +25,8 @@ import { GradeModal } from './_components/GradeModal';
 import type { Assignment, Submission } from './types';
 import { formatDate, formatDue, formatTime } from '@/lib/format';
 import { logClientError } from '@/lib/client-log';
+import { cn } from '@/lib/cn';
+import { useHighlight } from '@/lib/use-highlight';
 
 export default function MentorTasksPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -36,6 +38,7 @@ export default function MentorTasksPage() {
   const [deleting, setDeleting] = useState(false);
   const [gradingSubmission, setGradingSubmission] = useState<Submission | null>(null);
   const { show } = useToast();
+  const highlighted = useHighlight('tarea', 'tarea', !loading);
 
   const loadData = async () => {
     try {
@@ -110,7 +113,15 @@ export default function MentorTasksPage() {
             const formattedDue = formatDue(dueDate);
 
             return (
-              <Card key={ass.id} variant="glass" className="p-6 sm:p-8">
+              <Card
+                key={ass.id}
+                id={`tarea-${ass.id}`}
+                variant="glass"
+                className={cn(
+                  'scroll-mt-24 p-6 transition-shadow sm:p-8',
+                  highlighted === ass.id && 'shadow-lift ring-2 ring-role-accent',
+                )}
+              >
                 <div className="mb-4 flex flex-col justify-between gap-4 border-b border-slate-100 pb-4 sm:flex-row sm:items-start">
                   <div>
                     <span className="mb-1 block text-xs font-bold uppercase tracking-wider text-role-ink">

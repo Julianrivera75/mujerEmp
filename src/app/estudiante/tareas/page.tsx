@@ -14,6 +14,8 @@ import { SubmitAssignmentModal } from './_components/SubmitAssignmentModal';
 import type { StudentAssignment } from './types';
 import { formatDate, formatDue } from '@/lib/format';
 import { logClientError } from '@/lib/client-log';
+import { cn } from '@/lib/cn';
+import { useHighlight } from '@/lib/use-highlight';
 
 export default function StudentTasksPage() {
   const [assignments, setAssignments] = useState<StudentAssignment[]>([]);
@@ -22,6 +24,7 @@ export default function StudentTasksPage() {
   const [removeTarget, setRemoveTarget] = useState<StudentAssignment | null>(null);
   const [removing, setRemoving] = useState(false);
   const { show } = useToast();
+  const highlighted = useHighlight('tarea', 'tarea', !loading);
 
   const loadData = async () => {
     try {
@@ -93,7 +96,15 @@ export default function StudentTasksPage() {
             const formattedDue = formatDue(dueDate);
 
             return (
-              <Card key={ass.id} variant="glass" className="p-6 sm:p-8">
+              <Card
+                key={ass.id}
+                id={`tarea-${ass.id}`}
+                variant="glass"
+                className={cn(
+                  'scroll-mt-24 p-6 transition-shadow sm:p-8',
+                  highlighted === ass.id && 'shadow-lift ring-2 ring-role-accent',
+                )}
+              >
                 <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-start">
                   <div className="flex-1 space-y-3">
                     <div className="flex flex-wrap items-center gap-2">

@@ -18,7 +18,7 @@ import { logClientError } from '@/lib/client-log';
 interface AttendanceLog {
   id: string;
   joinedAt: string;
-  student: { id: string; name: string; email: string; studentNumber: string | null };
+  student: { id: string; name: string; email: string; memberNumber: string | null };
   classSession: {
     id: string;
     title: string;
@@ -90,7 +90,7 @@ export default function AdminAttendancePage() {
       const d = new Date(log.joinedAt);
       return [
         `"${log.student.name.replace(/"/g, '""')}"`,
-        `"${(log.student.studentNumber || 'N/A').replace(/"/g, '""')}"`,
+        `"${(log.student.memberNumber || 'N/A').replace(/"/g, '""')}"`,
         `"${log.student.email.replace(/"/g, '""')}"`,
         `"${log.classSession.title.replace(/"/g, '""')}"`,
         `"${log.classSession.mentor.name.replace(/"/g, '""')}"`,

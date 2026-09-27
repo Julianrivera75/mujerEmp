@@ -34,7 +34,7 @@ describe('POST /api/admin/users/credentials', () => {
   it('una estudiante recibe su número de estudiante sin guiones y la contraseña queda cifrada', async () => {
     await prisma.user.update({
       where: { id: w.sofia.id },
-      data: { studentNumber: 'CODEP 044-100526'.replace('CODEP ', '') },
+      data: { memberNumber: 'CODEP 044-100526'.replace('CODEP ', '') },
     });
     actAs(w.admin);
     const res = await read(await run([w.sofia.id]));
@@ -53,7 +53,7 @@ describe('POST /api/admin/users/credentials', () => {
   });
 
   it('una persona sin número de estudiante recibe 9 dígitos al azar, distintos entre cuentas', async () => {
-    await prisma.user.updateMany({ data: { studentNumber: null } });
+    await prisma.user.updateMany({ data: { memberNumber: null } });
     actAs(w.admin);
     const res = await read(await run([w.carolina.id, w.valeria.id]));
     const [a, b] = res.body.credentials.map((c: { password: string }) => c.password);

@@ -11,7 +11,7 @@ export interface SessionUser {
   mustChangePassword?: boolean;
   status: 'ACTIVO' | 'INACTIVO';
   phone?: string | null;
-  studentNumber?: string | null;
+  memberNumber?: string | null;
   avatar?: string | null;
   startDate?: string | null;
   endDate?: string | null;

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { HttpError, parseBody, withAuth } from '@/lib/api';
 import prisma from '@/lib/prisma';
+import { notifyMany } from '@/lib/notifications';
 import { deleteObject, keyBelongsTo, verifyUploadedObject } from '@/lib/s3';
 import { createSubmissionSchema, gradeSubmissionSchema } from '@/lib/schemas';
 import { cleanText, parseHttpsUrl } from '@/lib/validators';
@@ -8,7 +9,10 @@ import { cleanText, parseHttpsUrl } from '@/lib/validators';
 export const POST = withAuth('submissions POST', ['STUDENT'], async (req, user) => {
   const { assignmentId, notes, fileUrl, fileType } = await parseBody(req, createSubmissionSchema);
 
-  const assignment = await prisma.assignment.findUnique({ where: { id: assignmentId }, select: { classId: true } });
+  const assignment = await prisma.assignment.findUnique({
+    where: { id: assignmentId },
+    select: { classId: true, title: true, classSession: { select: { mentorId: true } } },
+  });
   if (!assignment) throw new HttpError(404, 'Tarea no encontrada.');
 
   // Solo puede entregar quien está inscrita en la clase de la tarea.
@@ -65,6 +69,16 @@ export const POST = withAuth('submissions POST', ['STUDENT'], async (req, user) 
     await deleteObject(previous.fileUrl).catch(() => undefined);
   }
 
+  // Aviso a la mentora de la clase.
+  const mentorId = assignment.classSession.mentorId;
+  await notifyMany([mentorId], {
+    type: 'SUBMISSION_RECEIVED',
+    title: 'Nueva entrega',
+    body: `${user.name} entregó "${assignment.title}".`,
+    href: `/mentor/tareas?tarea=${assignmentId}`,
+    dedupeKey: `sub:${submission.id}:${submission.submittedAt.getTime()}`,
+  }).catch(() => undefined);
+
   return NextResponse.json({ success: true, submission });
 });
 
@@ -117,6 +131,16 @@ export const PUT = withAuth('submissions PUT', ['MENTOR', 'ADMIN'], async (req, 
       assignment: { select: { id: true, title: true } },
     },
   });
+
+  if (parsedGrade !== null) {
+    await notifyMany([updated.student.id], {
+      type: 'SUBMISSION_GRADED',
+      title: 'Tarea calificada',
+      body: `"${updated.assignment.title}": ${parsedGrade} / 5.0`,
+      href: `/estudiante/tareas?tarea=${updated.assignment.id}`,
+      dedupeKey: `graded:${updated.id}:${updated.gradedAt?.getTime() ?? Date.now()}`,
+    }).catch(() => undefined);
+  }
 
   return NextResponse.json({ success: true, submission: updated });
 });

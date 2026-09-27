@@ -38,19 +38,19 @@ enum FileType {
 }
 
 model User {
-  id            String     @id @default(cuid())
-  name          String
-  email         String     @unique
-  passwordHash  String
-  role          Role       @default(STUDENT)
+  id           String     @id @default(cuid())
+  name         String
+  email        String     @unique
+  passwordHash String
+  role         Role       @default(STUDENT)
   // Roles adicionales de la misma cuenta (por ejemplo, una mentora que también es estudiante)
-  extraRoles    Role[]     @default([])
-  status        UserStatus @default(ACTIVO)
-  studentNumber String?    @map("documentId")
-  phone         String?
-  avatar        String?
-  startDate     DateTime? // Fecha de inicio en la plataforma
-  endDate       DateTime? // Fecha de finalización
+  extraRoles   Role[]     @default([])
+  status       UserStatus @default(ACTIVO)
+  memberNumber String?    @map("documentId")
+  phone        String?
+  avatar       String?
+  startDate    DateTime? // Fecha de inicio en la plataforma
+  endDate      DateTime? // Fecha de finalización
 
   // Autorización de tratamiento de datos y términos (Ley 1581 de 2012)
   termsAcceptedAt    DateTime?
@@ -66,6 +66,10 @@ model User {
   tokenVersion       Int       @default(0)
   // La persona debe cambiar su contraseña en el próximo ingreso (contraseña inicial o restablecida por la administración)
   mustChangePassword Boolean   @default(false)
+  // Presencia y preferencias de avisos
+  lastSeenAt         DateTime?
+  showOnlineStatus   Boolean   @default(true)
+  emailNotifications Boolean   @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -75,6 +79,10 @@ model User {
   attendances        Attendance[]
   submissions        Submission[]
   createdAssignments Assignment[]      @relation("MentorAssignments")
+  conversationsA     Conversation[]    @relation("ConversationA")
+  conversationsB     Conversation[]    @relation("ConversationB")
+  messagesSent       Message[]
+  notifications      Notification[]
 }
 
 // Intentos de inicio de sesión fallidos: limitan la fuerza bruta entre reinicios y réplicas
@@ -186,4 +194,59 @@ model ClassResource {
   createdAt    DateTime     @default(now())
 
   @@index([classId])
+}
+
+// Conversación 1 a 1: userAId siempre es el id menor, para que cada pareja tenga una sola conversación
+model Conversation {
+  id            String    @id @default(cuid())
+  userAId       String
+  userBId       String
+  userA         User      @relation("ConversationA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB         User      @relation("ConversationB", fields: [userBId], references: [id], onDelete: Cascade)
+  lastMessageAt DateTime?
+  lastReadAtA   DateTime?
+  lastReadAtB   DateTime?
+  createdAt     DateTime  @default(now())
+  messages      Message[]
+
+  @@unique([userAId, userBId])
+  @@index([userAId])
+  @@index([userBId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  senderId       String
+  body           String
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
+
+enum NotificationType {
+  NEW_ASSIGNMENT
+  ASSIGNMENT_DUE_SOON
+  SUBMISSION_RECEIVED
+  SUBMISSION_GRADED
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  // Ruta a la que lleva la notificación al pulsarla
+  href      String
+  // Evita duplicar el mismo aviso (por ejemplo "por vencer" de la misma tarea)
+  dedupeKey String
+  createdAt DateTime         @default(now())
+  readAt    DateTime?
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, readAt, createdAt])
 }

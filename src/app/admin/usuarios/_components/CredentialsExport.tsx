@@ -26,7 +26,7 @@ interface Credential {
   name: string;
   email: string;
   role: string;
-  studentNumber: string | null;
+  memberNumber: string | null;
   password: string;
 }
 
@@ -73,7 +73,7 @@ export function CredentialsExport({ users }: CredentialsExportProps) {
         c.name,
         c.email,
         ROLE_LABEL[c.role] ?? c.role,
-        c.studentNumber,
+        c.memberNumber,
         c.password,
         origin,
       ]);
@@ -92,7 +92,7 @@ export function CredentialsExport({ users }: CredentialsExportProps) {
               c.name,
               c.email,
               ROLE_LABEL[c.role] ?? c.role,
-              c.studentNumber,
+              c.memberNumber,
               c.password,
               window.location.origin,
             ]),

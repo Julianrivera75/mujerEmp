@@ -151,3 +151,23 @@ El formulario de usuarios ofrece: Estudiante, Mentor / Mentora, Mentor / Mentora
 ## Perfil
 
 Cada persona edita su nombre, correo, número de contacto, foto y contraseña. Cambiar el correo exige la contraseña actual. El nombre aparece en los certificados. El número de estudiante, el rol, el estado y las fechas de acceso solo los cambia la administración.
+
+## Número de identificación por rol
+
+Cada cuenta tiene un solo número editable (columna `documentId`, campo `memberNumber`). La etiqueta cambia con el rol: "Número de estudiante", "Número de mentor/a" o "Número de administrador/a" (`numberLabel` en `src/lib/labels.ts`). En una cuenta con dos roles se usa la etiqueta del rol activo. Cada persona lo edita en su perfil, también la administración.
+
+## Presencia
+
+Mientras la plataforma está abierta y visible, cada navegador envía un latido a `POST /api/activity` cada 30 segundos. Ese latido guarda `lastSeenAt`, genera los avisos de tareas por vencer de la estudiante y devuelve los contadores de la barra. Se muestra "En línea" si la última actividad fue hace menos de 2 minutos; después, "Activa hace N min", "Activa ayer" o la fecha. Quien oculta su estado (perfil) no lo muestra ni ve el de las demás; la administración siempre lo ve.
+
+## Chat
+
+Conversaciones uno a uno entre cualquier par de cuentas activas (`Conversation`, `Message`). Solo las dos personas leen la conversación (ni la administración). Reglas: mensajes de texto de hasta 2000 caracteres, límite de 30 por minuto por persona, no se escribe a cuentas inactivas o anonimizadas, y las cuentas de menores de edad solo conversan con mentores y con la administración. Al anonimizar una cuenta se eliminan sus conversaciones y avisos. La actualización es por consulta periódica (5 segundos con una conversación abierta, 30 segundos en general).
+
+## Notificaciones
+
+Se generan al ocurrir el evento: tarea nueva (a las estudiantes inscritas), entrega recibida (a la mentora), tarea calificada (a la estudiante) y tarea por vencer en las próximas 48 horas (con el latido, una vez por tarea). Cada una guarda una ruta de destino; al pulsarla se marca como leída y se navega, cambiando de vista si la ruta pertenece a otro rol de la cuenta. Los mensajes sin leer del chat se muestran agrupados en la campana y como contador en la pestaña Chat.
+
+## Avisos por correo (pendiente)
+
+La preferencia "Recibir avisos por correo" ya se guarda por persona (`emailNotifications`), pero no se envía ningún correo. Para activarlos hace falta un servicio de envío (por ejemplo Resend o un SMTP), añadir su llave como variable de entorno y llamar al envío desde `notifyMany` (`src/lib/notifications.ts`) para quienes tengan la preferencia activa.

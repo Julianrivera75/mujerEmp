@@ -25,7 +25,7 @@ export const GET = withAuth('admin/attendances', 'any', async (req, user) => {
   const attendances = await prisma.attendance.findMany({
     where,
     include: {
-      student: { select: { id: true, name: true, email: true, studentNumber: true } },
+      student: { select: { id: true, name: true, email: true, memberNumber: true } },
       classSession: {
         select: {
           id: true,
