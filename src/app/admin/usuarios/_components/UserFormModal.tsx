@@ -6,6 +6,10 @@ import { Input, Select } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
 import { DateField } from '@/components/ui/DateField';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { PasswordInput } from '@/components/ui/PasswordInput';
+import { PasswordReveal } from '@/components/PasswordReveal';
+import { ACCOUNT_TYPES, accountTypeOf, isStudentAccount } from '@/lib/account-types';
+import { generatePassword } from '@/lib/password-generator';
 import { PHONE_HINT, PHONE_LABEL, STUDENT_NUMBER_LABEL } from '@/lib/labels';
 import type { UserItem } from '../types';
 
@@ -39,6 +43,7 @@ export function UserFormModal({ open, mode, selectedUser, onClose, onSaved }: Us
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [confirmRole, setConfirmRole] = useState(false);
+  const [revealed, setRevealed] = useState<{ name: string; email: string; password: string } | null>(null);
 
   React.useEffect(() => {
     if (open) {
@@ -46,6 +51,7 @@ export function UserFormModal({ open, mode, selectedUser, onClose, onSaved }: Us
       setErrorMsg('');
       setSubmitting(false);
       setConfirmRole(false);
+      setRevealed(null);
     }
   }, [open, mode, selectedUser]);
 
@@ -57,6 +63,15 @@ export function UserFormModal({ open, mode, selectedUser, onClose, onSaved }: Us
       const followsNumber = mode === 'create' && prev.password === passwordFromNumber(prev.studentNumber);
       return { ...prev, studentNumber: value, password: followsNumber ? passwordFromNumber(value) : prev.password };
     });
+  };
+
+  const isStudent = isStudentAccount(formData.role, formData.extraRoles);
+  const accountType = accountTypeOf(formData.role, formData.extraRoles);
+
+  const handleAccountTypeChange = (value: string) => {
+    const type = ACCOUNT_TYPES.find((t) => t.value === value);
+    if (!type) return;
+    setFormData((prev) => ({ ...prev, role: type.role, extraRoles: [...type.extraRoles] }));
   };
 
   const roleChanged = mode === 'edit' && selectedUser !== null && formData.role !== selectedUser.role;
@@ -94,6 +109,11 @@ export function UserFormModal({ open, mode, selectedUser, onClose, onSaved }: Us
 
       // El componente sigue montado tras guardar: sin esto el botón quedaba cargando la próxima vez que se abre.
       setSubmitting(false);
+      if (formData.password.trim()) {
+        // La contraseña solo se puede ver ahora: se muestra antes de cerrar.
+        setRevealed({ name: formData.name, email: formData.email, password: formData.password.trim() });
+        return;
+      }
       onSaved();
     } catch (err) {
       setErrorMsg('Error al conectar con el servidor.');
@@ -113,7 +133,26 @@ export function UserFormModal({ open, mode, selectedUser, onClose, onSaved }: Us
           <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">{errorMsg}</div>
         )}
 
-        <form id="user-form" onSubmit={handleSubmit} className="space-y-4 text-left">
+        {revealed && (
+          <div className="space-y-4">
+            <p className="text-sm text-slate-700">
+              {mode === 'create' ? 'La cuenta se creó correctamente.' : 'Los cambios se guardaron.'}
+            </p>
+            <PasswordReveal {...revealed} />
+            <div className="flex justify-end">
+              <Button
+                onClick={() => {
+                  setRevealed(null);
+                  onSaved();
+                }}
+              >
+                Listo, ya la copié
+              </Button>
+            </div>
+          </div>
+        )}
+
+        <form id="user-form" hidden={Boolean(revealed)} onSubmit={handleSubmit} className="space-y-4 text-left">
           <Input
             label="Nombre completo"
             required
@@ -129,25 +168,44 @@ export function UserFormModal({ open, mode, selectedUser, onClose, onSaved }: Us
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             />
-            <Input
-              label={mode === 'create' ? 'Contraseña' : 'Nueva contraseña (opcional)'}
-              type="password"
-              required={mode === 'create'}
-              placeholder={mode === 'edit' ? 'Dejar en blanco para no cambiar' : '••••••'}
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            />
+            <div className="space-y-1.5">
+              <PasswordInput
+                label={mode === 'create' ? 'Contraseña' : 'Nueva contraseña (opcional)'}
+                required={mode === 'create'}
+                placeholder={mode === 'edit' ? 'Dejar en blanco para no cambiar' : ''}
+                autoComplete="new-password"
+                hint={
+                  formData.password
+                    ? 'La persona deberá cambiarla en su primer ingreso.'
+                    : mode === 'edit'
+                      ? 'Escribe una nueva o genera una para cambiarla.'
+                      : undefined
+                }
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              />
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, password: generatePassword() })}
+                className="text-xs font-bold text-role-ink hover:underline"
+              >
+                Generar contraseña
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Select
-              label="Rol en la plataforma"
-              value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              label="Tipo de cuenta"
+              value={accountType}
+              onChange={(e) => handleAccountTypeChange(e.target.value)}
             >
-              <option value="STUDENT">Estudiante</option>
-              <option value="MENTOR">Mentor / Mentora</option>
-              <option value="ADMIN">Administrador</option>
+              {ACCOUNT_TYPES.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
+              {accountType === 'CUSTOM' && <option value="CUSTOM">Personalizado (actual)</option>}
             </Select>
             <Select
               label="Estado de acceso"
@@ -159,13 +217,16 @@ export function UserFormModal({ open, mode, selectedUser, onClose, onSaved }: Us
             </Select>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Input
-              label={STUDENT_NUMBER_LABEL}
-              placeholder="Ej: 044-100526"
-              value={formData.studentNumber}
-              onChange={(e) => handleStudentNumberChange(e.target.value)}
-            />
+          <div className={`grid grid-cols-1 gap-3 ${isStudent ? 'sm:grid-cols-2' : ''}`}>
+            {isStudent && (
+              <Input
+                label={STUDENT_NUMBER_LABEL}
+                placeholder="Ej: 044-100526"
+                hint="Sale en los certificados. Al crear la cuenta se propone como contraseña inicial."
+                value={formData.studentNumber}
+                onChange={(e) => handleStudentNumberChange(e.target.value)}
+              />
+            )}
             <Input
               label={PHONE_LABEL}
               hint={PHONE_HINT}
@@ -175,37 +236,7 @@ export function UserFormModal({ open, mode, selectedUser, onClose, onSaved }: Us
             />
           </div>
 
-          <fieldset className="space-y-2 rounded-2xl border border-slate-200 p-4">
-            <legend className="px-1 text-xs font-bold uppercase tracking-wider text-slate-700">
-              También puede ingresar como
-            </legend>
-            <p className="text-xs text-slate-500">
-              Marca un segundo rol si esta persona, por ejemplo, dicta clases y además toma clases. Podrá cambiar de
-              vista desde su menú.
-            </p>
-            <div className="flex flex-wrap gap-x-5 gap-y-2">
-              {EXTRA_ROLE_OPTIONS.filter((option) => option.value !== formData.role).map((option) => (
-                <label key={option.value} className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={formData.extraRoles.includes(option.value)}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        extraRoles: e.target.checked
-                          ? [...formData.extraRoles, option.value]
-                          : formData.extraRoles.filter((r) => r !== option.value),
-                      })
-                    }
-                    className="h-4 w-4 rounded"
-                  />
-                  <span>{option.label}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
-          <div className="grid grid-cols-1 gap-3 rounded-2xl border border-role-accent/15 bg-role-soft p-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 rounded-2xl border border-role-accent/15 bg-role-soft p-4">
             <DateField
               label="Inicio del acceso"
               value={formData.startDate}
@@ -272,14 +303,16 @@ export function UserFormModal({ open, mode, selectedUser, onClose, onSaved }: Us
           </div>
         </form>
 
-        <div className="mt-5 flex items-center justify-end gap-3 border-t border-slate-100 pt-5">
-          <Button variant="ghost" onClick={onClose} disabled={submitting}>
-            Cancelar
-          </Button>
-          <Button type="submit" form="user-form" loading={submitting}>
-            {mode === 'create' ? 'Guardar usuario' : 'Actualizar usuario'}
-          </Button>
-        </div>
+        {!revealed && (
+          <div className="mt-5 flex items-center justify-end gap-3 border-t border-slate-100 pt-5">
+            <Button variant="ghost" onClick={onClose} disabled={submitting}>
+              Cancelar
+            </Button>
+            <Button type="submit" form="user-form" loading={submitting}>
+              {mode === 'create' ? 'Guardar usuario' : 'Actualizar usuario'}
+            </Button>
+          </div>
+        )}
       </Modal>
       <ConfirmDialog
         open={confirmRole}
@@ -296,12 +329,6 @@ export function UserFormModal({ open, mode, selectedUser, onClose, onSaved }: Us
     </>
   );
 }
-
-const EXTRA_ROLE_OPTIONS = [
-  { value: 'STUDENT', label: 'Estudiante' },
-  { value: 'MENTOR', label: 'Mentor / Mentora' },
-  { value: 'ADMIN', label: 'Administrador' },
-];
 
 function buildInitialForm(mode: 'create' | 'edit', user: UserItem | null): UserFormData {
   if (mode === 'edit' && user) {

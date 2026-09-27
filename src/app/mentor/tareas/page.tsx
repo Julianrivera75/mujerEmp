@@ -1,13 +1,24 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { ClipboardList, PlusCircle, Calendar, FileText, Star, MessageSquare, ExternalLink } from 'lucide-react';
+import {
+  ClipboardList,
+  PlusCircle,
+  Calendar,
+  FileText,
+  Star,
+  MessageSquare,
+  ExternalLink,
+  Edit3,
+  Trash2,
+} from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import FileLink from '@/components/FileLink';
 import { CreateAssignmentModal } from './_components/CreateAssignmentModal';
 import { GradeModal } from './_components/GradeModal';
@@ -20,6 +31,9 @@ export default function MentorTasksPage() {
   const [classes, setClasses] = useState<{ id: string; title: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Assignment | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [gradingSubmission, setGradingSubmission] = useState<Submission | null>(null);
   const { show } = useToast();
 
@@ -41,6 +55,27 @@ export default function MentorTasksPage() {
   useEffect(() => {
     loadData();
   }, []);
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/assignments?id=${deleteTarget.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setAssignments((prev) => prev.filter((a) => a.id !== deleteTarget.id));
+        show('success', 'Tarea eliminada.');
+      } else {
+        const data = await res.json().catch(() => ({}));
+        show('error', data.error || 'No se pudo eliminar la tarea.');
+      }
+    } catch (err) {
+      logClientError('Error eliminando la tarea:', err);
+      show('error', 'Error de conexión al eliminar la tarea.');
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
+  };
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
@@ -90,6 +125,25 @@ export default function MentorTasksPage() {
                       Vence: {formattedDue}
                     </span>
                     <p className="mt-1 text-xs text-slate-500">{ass.submissions.length} entregas recibidas</p>
+                    <div className="mt-2 flex justify-start gap-2 sm:justify-end">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        leftIcon={<Edit3 className="h-3.5 w-3.5" />}
+                        onClick={() => setEditingAssignment(ass)}
+                      >
+                        Editar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        leftIcon={<Trash2 className="h-3.5 w-3.5" />}
+                        onClick={() => setDeleteTarget(ass)}
+                        className="text-red-600 hover:bg-red-50"
+                      >
+                        Eliminar
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
@@ -174,14 +228,33 @@ export default function MentorTasksPage() {
       )}
 
       <CreateAssignmentModal
-        open={isCreateOpen}
+        editing={editingAssignment}
+        open={isCreateOpen || Boolean(editingAssignment)}
         classes={classes}
-        onClose={() => setIsCreateOpen(false)}
-        onCreated={() => {
+        onClose={() => {
           setIsCreateOpen(false);
-          show('success', 'Tarea creada.');
+          setEditingAssignment(null);
+        }}
+        onCreated={() => {
+          show('success', editingAssignment ? 'Tarea actualizada.' : 'Tarea creada.');
+          setIsCreateOpen(false);
+          setEditingAssignment(null);
           loadData();
         }}
+      />
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        title="¿Eliminar esta tarea?"
+        description={
+          deleteTarget
+            ? `Se eliminará "${deleteTarget.title}" junto con ${deleteTarget.submissions.length} entrega${deleteTarget.submissions.length === 1 ? '' : 's'} y los archivos que las estudiantes subieron. Esta acción no se puede deshacer.`
+            : undefined
+        }
+        confirmLabel="Eliminar tarea"
+        loading={deleting}
       />
 
       <GradeModal

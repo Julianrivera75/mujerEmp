@@ -39,7 +39,11 @@ export const POST = withAuth('admin/users credentials', ['ADMIN'], async (req, c
     const password = initialPassword(user.studentNumber, user.role);
     await prisma.user.update({
       where: { id: user.id },
-      data: { passwordHash: await bcrypt.hash(password, BCRYPT_COST), tokenVersion: { increment: 1 } },
+      data: {
+        passwordHash: await bcrypt.hash(password, BCRYPT_COST),
+        tokenVersion: { increment: 1 },
+        mustChangePassword: true,
+      },
     });
     credentials.push({ ...user, password });
   }

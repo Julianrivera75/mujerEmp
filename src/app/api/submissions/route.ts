@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { HttpError, parseBody, withAuth } from '@/lib/api';
 import prisma from '@/lib/prisma';
-import { keyBelongsTo, verifyUploadedObject } from '@/lib/s3';
+import { deleteObject, keyBelongsTo, verifyUploadedObject } from '@/lib/s3';
 import { createSubmissionSchema, gradeSubmissionSchema } from '@/lib/schemas';
 import { cleanText, parseHttpsUrl } from '@/lib/validators';
 
@@ -34,6 +34,15 @@ export const POST = withAuth('submissions POST', ['STUDENT'], async (req, user) 
 
   const cleanNotes = cleanText(notes ?? '', 5000) ?? '';
 
+  // Una entrega calificada queda cerrada: la mentora debe reabrirla quitando la nota.
+  const previous = await prisma.submission.findUnique({
+    where: { assignmentId_studentId: { assignmentId, studentId: user.id } },
+    select: { grade: true, fileUrl: true, fileType: true },
+  });
+  if (previous && previous.grade !== null) {
+    throw new HttpError(409, 'Esta entrega ya fue calificada y no se puede modificar.');
+  }
+
   const submission = await prisma.submission.upsert({
     where: { assignmentId_studentId: { assignmentId, studentId: user.id } },
     update: { notes: cleanNotes, fileUrl: storedFile, fileType: type, submittedAt: new Date() },
@@ -47,7 +56,37 @@ export const POST = withAuth('submissions POST', ['STUDENT'], async (req, user) 
     },
   });
 
+  // Si se reemplazó el archivo subido, el anterior se elimina del almacenamiento.
+  if (
+    previous?.fileUrl &&
+    previous.fileUrl !== storedFile &&
+    (previous.fileType === 'PDF' || previous.fileType === 'IMAGE')
+  ) {
+    await deleteObject(previous.fileUrl).catch(() => undefined);
+  }
+
   return NextResponse.json({ success: true, submission });
+});
+
+/** La estudiante quita su entrega: la tarea vuelve a quedar sin entregar. */
+export const DELETE = withAuth('submissions DELETE', ['STUDENT'], async (req, user) => {
+  const assignmentId = new URL(req.url).searchParams.get('assignmentId');
+  if (!assignmentId) throw new HttpError(400, 'ID de tarea requerido.');
+
+  const submission = await prisma.submission.findUnique({
+    where: { assignmentId_studentId: { assignmentId, studentId: user.id } },
+    select: { id: true, grade: true, fileUrl: true, fileType: true },
+  });
+  if (!submission) throw new HttpError(404, 'No has entregado esta tarea.');
+  if (submission.grade !== null) {
+    throw new HttpError(409, 'Esta entrega ya fue calificada y no se puede quitar.');
+  }
+
+  await prisma.submission.delete({ where: { id: submission.id } });
+  if (submission.fileUrl && (submission.fileType === 'PDF' || submission.fileType === 'IMAGE')) {
+    await deleteObject(submission.fileUrl).catch(() => undefined);
+  }
+  return NextResponse.json({ success: true });
 });
 
 export const PUT = withAuth('submissions PUT', ['MENTOR', 'ADMIN'], async (req, user) => {

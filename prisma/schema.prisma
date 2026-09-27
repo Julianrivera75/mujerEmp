@@ -53,17 +53,19 @@ model User {
   endDate       DateTime? // Fecha de finalización
 
   // Autorización de tratamiento de datos y términos (Ley 1581 de 2012)
-  termsAcceptedAt   DateTime?
-  termsVersion      String?
+  termsAcceptedAt    DateTime?
+  termsVersion       String?
   // Menores de edad: requiere autorización del representante legal
-  isMinor           Boolean   @default(false)
-  guardianName      String?
-  guardianContact   String?
-  guardianConsentAt DateTime?
+  isMinor            Boolean   @default(false)
+  guardianName       String?
+  guardianContact    String?
+  guardianConsentAt  DateTime?
   // Supresión de datos: la cuenta se anonimiza en lugar de borrarse
-  anonymizedAt      DateTime?
+  anonymizedAt       DateTime?
   // Se incrementa al cambiar la contraseña, desactivar o anonimizar: invalida las sesiones abiertas
-  tokenVersion      Int       @default(0)
+  tokenVersion       Int       @default(0)
+  // La persona debe cambiar su contraseña en el próximo ingreso (contraseña inicial o restablecida por la administración)
+  mustChangePassword Boolean   @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

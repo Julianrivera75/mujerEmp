@@ -1,6 +1,6 @@
 import React from 'react';
 import { redirect } from 'next/navigation';
-import { getSessionProfile, requireAcceptedTerms } from '@/lib/session-profile';
+import { getSessionProfile, requireAcceptedTerms, requirePasswordChange } from '@/lib/session-profile';
 import LegalFooter from '@/components/LegalFooter';
 import { UserProvider } from '@/lib/user-context';
 import Navbar from '@/components/Navbar';
@@ -10,6 +10,7 @@ export default async function MentorLayout({ children }: { children: React.React
   if (!user || (user.role !== 'MENTOR' && user.role !== 'ADMIN')) {
     redirect('/login');
   }
+  requirePasswordChange(user);
   requireAcceptedTerms(user);
 
   return (

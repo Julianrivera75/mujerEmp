@@ -1,6 +1,6 @@
 import React from 'react';
 import { redirect } from 'next/navigation';
-import { getSessionProfile, requireAcceptedTerms } from '@/lib/session-profile';
+import { getSessionProfile, requireAcceptedTerms, requirePasswordChange } from '@/lib/session-profile';
 import LegalFooter from '@/components/LegalFooter';
 import { UserProvider } from '@/lib/user-context';
 import { ROLE_META } from '@/lib/roles';
@@ -11,6 +11,7 @@ export default async function PerfilLayout({ children }: { children: React.React
   if (!user) {
     redirect('/login');
   }
+  requirePasswordChange(user);
   requireAcceptedTerms(user);
 
   const variant = ROLE_META[user.role].variant;

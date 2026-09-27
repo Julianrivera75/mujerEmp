@@ -97,6 +97,12 @@ export const loginSchema = z.object({
 export const acceptTermsSchema = z.object({ version: z.string({ error: 'Versión inválida.' }) });
 
 export const profileSchema = z.object({
+  name: requiredText('El nombre no puede estar vacío.', 120).optional(),
+  email: z
+    .string()
+    .transform((v) => v.trim().toLowerCase())
+    .refine(isValidEmail, { message: 'El correo electrónico no es válido.' })
+    .optional(),
   phone: optionalPhone.optional(),
   avatar: z.string().nullable().optional(),
   currentPassword: z.string().optional(),
@@ -194,6 +200,13 @@ export const updateClassSchema = z.object({
   meetLink: z.string().nullish(),
   youtubeUrl: z.string().nullish(),
   imageKey: z.string().max(300).nullish(),
+});
+
+export const updateAssignmentSchema = z.object({
+  id: requiredId('ID de tarea requerido.'),
+  title: requiredText('Todos los campos son obligatorios y deben ser válidos.', 200),
+  description: requiredText('Todos los campos son obligatorios y deben ser válidos.', 4000),
+  dueDate: dateField('Todos los campos son obligatorios y deben ser válidos.'),
 });
 
 export const createAssignmentSchema = z.object({

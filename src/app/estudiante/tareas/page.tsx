@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { ClipboardList, Upload, CheckCircle, Clock, MessageSquare, Star } from 'lucide-react';
+import { ClipboardList, Upload, CheckCircle, Clock, MessageSquare, Star, Trash2, Lock } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -9,6 +9,7 @@ import { StatusPill } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { SubmitAssignmentModal } from './_components/SubmitAssignmentModal';
 import type { StudentAssignment } from './types';
 import { formatDate, formatDue } from '@/lib/format';
@@ -18,6 +19,8 @@ export default function StudentTasksPage() {
   const [assignments, setAssignments] = useState<StudentAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [submittingAssignment, setSubmittingAssignment] = useState<StudentAssignment | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<StudentAssignment | null>(null);
+  const [removing, setRemoving] = useState(false);
   const { show } = useToast();
 
   const loadData = async () => {
@@ -36,6 +39,28 @@ export default function StudentTasksPage() {
   useEffect(() => {
     loadData();
   }, []);
+
+  /** Quita la entrega: la tarea vuelve a quedar como si no se hubiera entregado nada. */
+  const handleConfirmRemove = async () => {
+    if (!removeTarget) return;
+    setRemoving(true);
+    try {
+      const res = await fetch(`/api/submissions?assignmentId=${removeTarget.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        show('success', 'Entrega eliminada. Puedes volver a entregar cuando quieras.');
+        loadData();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        show('error', data.error || 'No se pudo quitar la entrega.');
+      }
+    } catch (err) {
+      logClientError('Error quitando la entrega:', err);
+      show('error', 'Error de conexión al quitar la entrega.');
+    } finally {
+      setRemoving(false);
+      setRemoveTarget(null);
+    }
+  };
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
@@ -134,15 +159,34 @@ export default function StudentTasksPage() {
                     )}
                   </div>
 
-                  <div className="min-w-[200px]">
-                    <Button
-                      variant={isSubmitted ? 'secondary' : 'primary'}
-                      leftIcon={<Upload className="h-4 w-4" />}
-                      onClick={() => setSubmittingAssignment(ass)}
-                      className="w-full"
-                    >
-                      {isSubmitted ? 'Modificar mi entrega' : 'Entregar tarea'}
-                    </Button>
+                  <div className="min-w-[200px] space-y-2">
+                    {isGraded ? (
+                      <p className="flex items-center gap-1.5 rounded-xl bg-slate-50 p-2.5 text-xs text-slate-600">
+                        <Lock className="h-3.5 w-3.5 flex-shrink-0" />
+                        <span>Ya fue calificada: no se puede modificar.</span>
+                      </p>
+                    ) : (
+                      <>
+                        <Button
+                          variant={isSubmitted ? 'secondary' : 'primary'}
+                          leftIcon={<Upload className="h-4 w-4" />}
+                          onClick={() => setSubmittingAssignment(ass)}
+                          className="w-full"
+                        >
+                          {isSubmitted ? 'Modificar mi entrega' : 'Entregar tarea'}
+                        </Button>
+                        {isSubmitted && (
+                          <Button
+                            variant="ghost"
+                            leftIcon={<Trash2 className="h-4 w-4" />}
+                            onClick={() => setRemoveTarget(ass)}
+                            className="w-full text-red-600 hover:bg-red-50"
+                          >
+                            Quitar mi entrega
+                          </Button>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
               </Card>
@@ -150,6 +194,20 @@ export default function StudentTasksPage() {
           })}
         </div>
       )}
+
+      <ConfirmDialog
+        open={Boolean(removeTarget)}
+        onCancel={() => setRemoveTarget(null)}
+        onConfirm={handleConfirmRemove}
+        title="¿Quitar tu entrega?"
+        description={
+          removeTarget
+            ? `Se eliminará lo que entregaste en "${removeTarget.title}" (archivo, enlace y notas). La tarea quedará como no entregada hasta que la vuelvas a subir.`
+            : undefined
+        }
+        confirmLabel="Quitar entrega"
+        loading={removing}
+      />
 
       <SubmitAssignmentModal
         assignment={submittingAssignment}

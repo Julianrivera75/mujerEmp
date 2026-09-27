@@ -4,7 +4,21 @@ import type { TokenPayload } from '@/lib/auth';
 export const session: { current: TokenPayload | null } = { current: null };
 
 export function actAs(
-  user: { id: string; email: string; name: string; role: TokenPayload['role']; roles?: TokenPayload['roles'] } | null,
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    role: TokenPayload['role'];
+    roles?: TokenPayload['roles'];
+    mustChangePassword?: boolean;
+  } | null,
 ) {
-  session.current = user ? { ...user, roles: user.roles ?? [user.role], status: 'ACTIVO' } : null;
+  session.current = user
+    ? {
+        ...user,
+        roles: user.roles ?? [user.role],
+        mustChangePassword: user.mustChangePassword ?? false,
+        status: 'ACTIVO',
+      }
+    : null;
 }

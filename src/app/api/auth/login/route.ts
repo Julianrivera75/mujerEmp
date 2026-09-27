@@ -83,7 +83,13 @@ export const POST = withErrors('auth/login', async (req) => {
   await setSessionCookie(token);
   await setViewCookie(user.role);
 
-  const redirectUrl = user.role === 'ADMIN' ? '/admin' : user.role === 'MENTOR' ? '/mentor' : '/estudiante';
+  const redirectUrl = user.mustChangePassword
+    ? '/cambiar-contrasena'
+    : user.role === 'ADMIN'
+      ? '/admin'
+      : user.role === 'MENTOR'
+        ? '/mentor'
+        : '/estudiante';
 
   return NextResponse.json({
     success: true,

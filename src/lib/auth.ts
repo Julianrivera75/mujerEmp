@@ -24,12 +24,17 @@ export interface TokenPayload {
   role: Role;
   /** Todos los roles de la cuenta. */
   roles: Role[];
+  /** Debe cambiar su contraseña antes de usar la plataforma. */
+  mustChangePassword: boolean;
   name: string;
   status: UserStatus;
 }
 
 /** `tokenVersion` (claim `tv`) permite revocar de golpe todas las sesiones de una cuenta. */
-export async function signToken(payload: Omit<TokenPayload, 'roles'>, tokenVersion: number): Promise<string> {
+export async function signToken(
+  payload: Omit<TokenPayload, 'roles' | 'mustChangePassword'>,
+  tokenVersion: number,
+): Promise<string> {
   return new SignJWT({ ...payload, tv: tokenVersion })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
@@ -58,7 +63,16 @@ export async function getCurrentUser(): Promise<TokenPayload | null> {
 
   const user = await prisma.user.findUnique({
     where: { id: claims.id },
-    select: { id: true, email: true, role: true, extraRoles: true, name: true, status: true, tokenVersion: true },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      extraRoles: true,
+      name: true,
+      status: true,
+      tokenVersion: true,
+      mustChangePassword: true,
+    },
   });
 
   if (!user || user.status === 'INACTIVO' || user.tokenVersion !== claims.tv) {
@@ -70,7 +84,15 @@ export async function getCurrentUser(): Promise<TokenPayload | null> {
   const requested = (await cookies()).get(VIEW_COOKIE)?.value;
   const role = roles.find((r) => r === requested) ?? user.role;
 
-  return { id: user.id, email: user.email, role, roles, name: user.name, status: user.status };
+  return {
+    id: user.id,
+    email: user.email,
+    role,
+    roles,
+    name: user.name,
+    status: user.status,
+    mustChangePassword: user.mustChangePassword,
+  };
 }
 
 export async function setSessionCookie(token: string) {

@@ -129,3 +129,25 @@ La plataforma usa cualquier almacenamiento compatible con S3; solo cambian las v
 6. Probar una subida real (foto en una entrega y afiche de una clase) y una descarga. Conservar el bucket anterior unos días antes de eliminarlo.
 
 Las URLs firmadas usan estilo ruta (`forcePathStyle`), compatible con R2. Los archivos se sirven siempre con URLs firmadas de corta duración: los buckets deben quedar privados.
+
+## Cambio obligatorio de contraseña
+
+Toda contraseña que fija la administración (crear un usuario, escribir una nueva al editarlo, "Restablecer contraseña" por fila o la descarga masiva de credenciales) marca la cuenta con `mustChangePassword`. Mientras esté marcada:
+
+- Al iniciar sesión, la persona llega a `/cambiar-contrasena` y no puede usar ninguna otra pantalla ni ruta de la API (responden 403 con `mustChangePassword: true`), salvo `auth/me` y `auth/profile`.
+- Debe escribir la contraseña que le entregaron y una nueva (mínimo 8 caracteres y distinta de la anterior). Al guardar, la bandera se limpia, se renueva su sesión y no vuelve a aparecer.
+
+La migración `must_change_password` marcó a todas las cuentas ya cargadas que no son administradoras. La contraseña la ve la administración una sola vez (al guardarla o restablecerla); no se guarda de forma legible.
+
+## Tipos de cuenta
+
+El formulario de usuarios ofrece: Estudiante, Mentor / Mentora, Mentor / Mentora y estudiante, y Administrador. El número de estudiante solo se pide y se muestra a las cuentas que son estudiantes (principal o adicional).
+
+## Tareas y entregas
+
+- La mentora de la clase (o la administración) puede editar el título, la descripción y la fecha límite de una tarea, y eliminarla. Eliminar borra también las entregas y los archivos subidos por las estudiantes.
+- La estudiante puede modificar o quitar su entrega. Quitarla deja la tarea como no entregada y elimina su archivo. Una entrega calificada queda bloqueada: la mentora la reabre quitando la nota (calificación vacía).
+
+## Perfil
+
+Cada persona edita su nombre, correo, número de contacto, foto y contraseña. Cambiar el correo exige la contraseña actual. El nombre aparece en los certificados. El número de estudiante, el rol, el estado y las fechas de acceso solo los cambia la administración.

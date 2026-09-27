@@ -4,11 +4,12 @@ import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
-import { ArrowRight, Lock, Mail, ShieldAlert, Eye, EyeOff, Video, ClipboardList, Award } from 'lucide-react';
+import { ArrowRight, Lock, Mail, ShieldAlert, Video, ClipboardList, Award } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { PartnerLogos } from '@/components/PartnerLogos';
 import { Input } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
+import { PasswordInput } from '@/components/ui/PasswordInput';
 import { ParticleField } from '@/components/fx/ParticleField';
 import { AuroraBackground } from '@/components/fx/AuroraBackground';
 import { fadeUp, stagger } from '@/lib/motion';
@@ -26,7 +27,6 @@ function LoginFormContent() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(
     inactiveParam ? 'Tu cuenta se encuentra inactiva. Por favor, comunícate con el administrador.' : '',
@@ -94,25 +94,14 @@ function LoginFormContent() {
             leftIcon={<Mail className="h-4 w-4" />}
           />
 
-          <Input
+          <PasswordInput
             label="Contraseña"
-            type={showPassword ? 'text' : 'password'}
             required
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
             leftIcon={<Lock className="h-4 w-4" />}
-            rightSlot={
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="p-1 text-slate-500 hover:text-slate-600"
-                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            }
           />
 
           <Button

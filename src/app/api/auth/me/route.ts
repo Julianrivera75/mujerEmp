@@ -4,22 +4,28 @@ import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = withAuth('auth/me', 'any', async (_req, user) => {
-  const fullUser = await prisma.user.findUnique({
-    where: { id: user.id },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      status: true,
-      phone: true,
-      studentNumber: true,
-      startDate: true,
-      endDate: true,
-      avatar: true,
-    },
-  });
+export const GET = withAuth(
+  'auth/me',
+  'any',
+  async (_req, user) => {
+    const fullUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        status: true,
+        phone: true,
+        studentNumber: true,
+        startDate: true,
+        endDate: true,
+        avatar: true,
+        extraRoles: true,
+      },
+    });
 
-  return NextResponse.json({ user: fullUser });
-});
+    return NextResponse.json({ user: fullUser, mustChangePassword: user.mustChangePassword });
+  },
+  { allowPendingPasswordChange: true },
+);

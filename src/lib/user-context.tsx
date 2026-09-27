@@ -8,6 +8,7 @@ export interface SessionUser {
   email: string;
   role: 'ADMIN' | 'MENTOR' | 'STUDENT';
   roles: ('ADMIN' | 'MENTOR' | 'STUDENT')[];
+  mustChangePassword?: boolean;
   status: 'ACTIVO' | 'INACTIVO';
   phone?: string | null;
   studentNumber?: string | null;

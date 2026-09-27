@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Users, UserPlus, Search, Edit3, UserX } from 'lucide-react';
+import { Users, UserPlus, Search, Edit3, UserX, KeyRound } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
+import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Field';
 import { Table, THead, TRow, TCell, ResponsiveRow } from '@/components/ui/Table';
@@ -16,6 +17,8 @@ import { SkeletonRow } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Badge } from '@/components/ui/Badge';
+import { PasswordReveal } from '@/components/PasswordReveal';
+import { isStudentAccount } from '@/lib/account-types';
 import { CredentialsExport } from './_components/CredentialsExport';
 import { UserFormModal } from './_components/UserFormModal';
 import type { UserItem } from './types';
@@ -34,6 +37,9 @@ export default function AdminUsersPage() {
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [selectedUser, setSelectedUser] = useState<UserItem | null>(null);
   const [anonTarget, setAnonTarget] = useState<UserItem | null>(null);
+  const [resetTarget, setResetTarget] = useState<UserItem | null>(null);
+  const [resetting, setResetting] = useState(false);
+  const [resetResult, setResetResult] = useState<{ name: string; email: string; password: string } | null>(null);
   const [anonymizing, setAnonymizing] = useState(false);
   const [deactivateTarget, setDeactivateTarget] = useState<UserItem | null>(null);
 
@@ -84,6 +90,32 @@ export default function AdminUsersPage() {
     } catch (err) {
       setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, status: user.status } : u)));
       show('error', 'Error de conexión al actualizar el estado.');
+    }
+  };
+
+  /** Restablece la contraseña de una persona y la muestra una sola vez. */
+  const handleConfirmReset = async () => {
+    if (!resetTarget) return;
+    setResetting(true);
+    try {
+      const res = await fetch('/api/admin/users/credentials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: [resetTarget.id] }),
+      });
+      const data = await res.json();
+      const credential = data.credentials?.[0];
+      if (!res.ok || !credential) {
+        show('error', data.error || 'No se pudo restablecer la contraseña. Usa el formulario de edición.');
+        return;
+      }
+      setResetResult({ name: credential.name, email: credential.email, password: credential.password });
+    } catch (err) {
+      logClientError('Error restableciendo la contraseña:', err);
+      show('error', 'Error de conexión al restablecer la contraseña.');
+    } finally {
+      setResetting(false);
+      setResetTarget(null);
     }
   };
 
@@ -200,7 +232,7 @@ export default function AdminUsersPage() {
                   <TRow>
                     <TCell head>Usuario &amp; rol</TCell>
                     <TCell head>Estado</TCell>
-                    <TCell head>Número de estudiante &amp; contacto</TCell>
+                    <TCell head>Número de estudiante y contacto</TCell>
                     <TCell head>Vigencia</TCell>
                     <TCell head>Actividad</TCell>
                     <TCell head className="text-right">
@@ -246,7 +278,9 @@ export default function AdminUsersPage() {
                         </div>
                       </TCell>
                       <TCell className="text-xs">
-                        <p className="font-medium text-slate-700">{u.studentNumber || 'Sin número'}</p>
+                        {isStudentAccount(u.role, u.extraRoles ?? []) && (
+                          <p className="font-medium text-slate-700">{u.studentNumber || 'Sin número'}</p>
+                        )}
                         <p className="text-slate-500">{u.phone || 'Sin teléfono'}</p>
                       </TCell>
                       <TCell className="text-xs">
@@ -284,6 +318,15 @@ export default function AdminUsersPage() {
                             <Edit3 className="h-4 w-4" />
                           </button>
                           <button
+                            onClick={() => setResetTarget(u)}
+                            disabled={Boolean(u.anonymizedAt) || u.status !== 'ACTIVO' || u.role === 'ADMIN'}
+                            className="rounded-xl p-2 text-slate-500 transition-colors hover:bg-role-soft hover:text-role-ink disabled:pointer-events-none disabled:opacity-40"
+                            aria-label={`Restablecer la contraseña de ${u.name}`}
+                            title="Restablecer contraseña"
+                          >
+                            <KeyRound className="h-4 w-4" />
+                          </button>
+                          <button
                             onClick={() => setAnonTarget(u)}
                             disabled={Boolean(u.anonymizedAt)}
                             className="rounded-xl p-2 text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 disabled:pointer-events-none disabled:opacity-40"
@@ -319,6 +362,14 @@ export default function AdminUsersPage() {
                       <Edit3 className="h-4 w-4" />
                     </button>
                     <button
+                      onClick={() => setResetTarget(u)}
+                      disabled={Boolean(u.anonymizedAt) || u.status !== 'ACTIVO' || u.role === 'ADMIN'}
+                      className="rounded-xl p-2 text-slate-500 hover:bg-role-soft hover:text-role-ink disabled:opacity-40"
+                      aria-label={`Restablecer la contraseña de ${u.name}`}
+                    >
+                      <KeyRound className="h-4 w-4" />
+                    </button>
+                    <button
                       onClick={() => setAnonTarget(u)}
                       disabled={Boolean(u.anonymizedAt)}
                       className="rounded-xl p-2 text-slate-500 hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
@@ -338,7 +389,9 @@ export default function AdminUsersPage() {
                           />
                         ),
                       },
-                      { label: 'Número de estudiante', value: u.studentNumber || 'Sin número' },
+                      ...(isStudentAccount(u.role, u.extraRoles ?? [])
+                        ? [{ label: 'Número de estudiante', value: u.studentNumber || 'Sin número' }]
+                        : []),
                       {
                         label: 'Vigencia',
                         value: u.endDate ? formatDate(u.endDate) : 'Sin límite',
@@ -351,6 +404,31 @@ export default function AdminUsersPage() {
           </>
         )}
       </Card>
+
+      <ConfirmDialog
+        open={Boolean(resetTarget)}
+        onCancel={() => setResetTarget(null)}
+        onConfirm={handleConfirmReset}
+        title="¿Restablecer la contraseña?"
+        description={
+          resetTarget
+            ? `Se fijará una contraseña nueva para ${resetTarget.name} (el número de estudiante sin guiones, o un número aleatorio si no tiene). Reemplaza la actual, cierra sus sesiones y deberá cambiarla al entrar.`
+            : undefined
+        }
+        confirmLabel="Restablecer"
+        danger={false}
+        loading={resetting}
+      />
+
+      <Modal
+        open={Boolean(resetResult)}
+        onClose={() => setResetResult(null)}
+        title="Nueva contraseña"
+        size="sm"
+        footer={<Button onClick={() => setResetResult(null)}>Listo, ya la copié</Button>}
+      >
+        {resetResult && <PasswordReveal {...resetResult} />}
+      </Modal>
 
       <ConfirmDialog
         open={Boolean(deactivateTarget)}

@@ -72,6 +72,7 @@ export const POST = withAuth('admin/users POST', ['ADMIN'], async (req) => {
       name: body.name,
       email: body.email,
       passwordHash,
+      mustChangePassword: true,
       role: body.role,
       extraRoles: cleanExtraRoles(body.role, body.extraRoles),
       status: body.status ?? 'ACTIVO',
@@ -140,6 +141,7 @@ export const PUT = withAuth('admin/users PUT', ['ADMIN'], async (req, currentUse
     const passwordError = validatePassword(newPassword);
     if (passwordError) throw new HttpError(400, passwordError);
     data.passwordHash = await bcrypt.hash(newPassword, BCRYPT_COST);
+    data.mustChangePassword = true;
   }
 
   // Cambiar la contraseña, el rol o desactivar la cuenta cierra las sesiones abiertas.

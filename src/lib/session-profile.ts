@@ -41,6 +41,11 @@ export async function getSessionProfile(): Promise<SessionUser | null> {
 }
 
 /** Bloquea el acceso a la plataforma hasta aceptar la versión vigente de los términos y la política de datos. */
+/** Lleva a la pantalla de cambio de contraseña a quien aún usa una contraseña inicial o restablecida. */
+export function requirePasswordChange(user: SessionUser) {
+  if (user.mustChangePassword) redirect('/cambiar-contrasena');
+}
+
 export function requireAcceptedTerms(user: SessionUser) {
   if (!LEGAL_REVIEW_COMPLETED) return;
   if (user.termsVersion !== CURRENT_TERMS_VERSION || (user.isMinor && !user.guardianConsentAt)) {

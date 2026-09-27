@@ -2,10 +2,13 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { User, Phone, CheckCircle2, ShieldCheck, Save, Download } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { User, Phone, Mail, CheckCircle2, ShieldCheck, Save, Download } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
+import { PasswordInput } from '@/components/ui/PasswordInput';
+import { isStudentAccount } from '@/lib/account-types';
 import { Avatar } from '@/components/ui/Avatar';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import FileUpload from '@/components/FileUpload';
@@ -20,6 +23,7 @@ interface FullProfile {
   name: string;
   email: string;
   role: Role;
+  extraRoles?: Role[];
   status: 'ACTIVO' | 'INACTIVO';
   phone: string | null;
   studentNumber: string | null;
@@ -30,9 +34,12 @@ interface FullProfile {
 
 export default function ProfilePage() {
   const { show } = useToast();
+  const router = useRouter();
   const [profile, setProfile] = useState<FullProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [avatarKey, setAvatarKey] = useState<string | null>(null);
   const [currentPassword, setCurrentPassword] = useState('');
@@ -50,6 +57,8 @@ export default function ProfilePage() {
         const data = await res.json();
         if (data.user) {
           setProfile(data.user);
+          setName(data.user.name || '');
+          setEmail(data.user.email || '');
           setPhone(data.user.phone || '');
           setAvatarKey(data.user.avatar || null);
         }
@@ -92,12 +101,19 @@ export default function ProfilePage() {
       return;
     }
 
+    if (profile && email.trim().toLowerCase() !== profile.email && !currentPassword) {
+      setErrorMsg('Para cambiar el correo escribe tu contraseña actual en la sección de contraseña.');
+      return;
+    }
+
     setSaving(true);
     try {
       const res = await fetch('/api/auth/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          name,
+          email: profile && email.trim().toLowerCase() !== profile.email ? email : undefined,
           phone,
           currentPassword: currentPassword || undefined,
           newPassword: newPassword || undefined,
@@ -111,6 +127,15 @@ export default function ProfilePage() {
       }
 
       show('success', 'Datos actualizados.');
+      if (data.user) {
+        setProfile((prev) =>
+          prev ? { ...prev, name: data.user.name, email: data.user.email, phone: data.user.phone } : prev,
+        );
+        setName(data.user.name);
+        setEmail(data.user.email);
+      }
+      // Recarga los datos del servidor para que la barra superior muestre el nombre nuevo.
+      router.refresh();
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -129,7 +154,7 @@ export default function ProfilePage() {
           <span>Mi perfil y seguridad</span>
         </h1>
         <p className="mt-1 text-sm text-slate-500">
-          Consulta los datos de tu cuenta, periodo de vinculación y actualiza tu contraseña de acceso.
+          Actualiza tus datos, tu foto y tu contraseña, y consulta el periodo de acceso de tu cuenta.
         </p>
       </div>
 
@@ -153,7 +178,7 @@ export default function ProfilePage() {
               <h2 className="text-lg font-bold text-slate-800">{profile.name}</h2>
               <p className="text-xs text-slate-500">{profile.email}</p>
               <span className="mt-2 inline-block rounded-full bg-role-soft px-3 py-0.5 text-[11px] font-bold text-role-ink">
-                {ROLE_META[profile.role].label}
+                {[profile.role, ...(profile.extraRoles ?? [])].map((r) => ROLE_META[r].label).join(' y ')}
               </span>
             </div>
 
@@ -165,10 +190,12 @@ export default function ProfilePage() {
                   {profile.status}
                 </span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500">{STUDENT_NUMBER_LABEL}:</span>
-                <span className="font-semibold text-slate-700">{profile.studentNumber || 'N/A'}</span>
-              </div>
+              {isStudentAccount(profile.role, profile.extraRoles ?? []) && (
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">{STUDENT_NUMBER_LABEL}:</span>
+                  <span className="font-semibold text-slate-700">{profile.studentNumber || 'N/A'}</span>
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">Inicio del acceso:</span>
                 <span className="font-semibold text-slate-700">
@@ -187,7 +214,7 @@ export default function ProfilePage() {
           <Card variant="glass" className="p-6 sm:p-8 md:col-span-2">
             <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-800">
               <ShieldCheck className="h-5 w-5 text-role-ink" />
-              <span>Actualizar datos de contacto y contraseña</span>
+              <span>Mis datos y contraseña</span>
             </h2>
 
             {errorMsg && (
@@ -197,6 +224,23 @@ export default function ProfilePage() {
             )}
 
             <form onSubmit={handleSave} className="space-y-4">
+              <Input
+                label="Nombre completo"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                leftIcon={<User className="h-4 w-4" />}
+                hint="Este nombre aparece en tus certificados."
+              />
+              <Input
+                label="Correo electrónico"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                leftIcon={<Mail className="h-4 w-4" />}
+                hint="Es tu usuario para ingresar. Si lo cambias, escribe tu contraseña actual más abajo."
+              />
               <Input
                 label={PHONE_LABEL}
                 hint={PHONE_HINT}
@@ -210,24 +254,21 @@ export default function ProfilePage() {
                 <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">
                   Cambiar contraseña (opcional)
                 </h3>
-                <Input
+                <PasswordInput
                   label="Contraseña actual"
-                  type="password"
                   placeholder="••••••••"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                 />
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <Input
+                  <PasswordInput
                     label="Nueva contraseña"
-                    type="password"
                     placeholder="Mínimo 8 caracteres"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                   />
-                  <Input
+                  <PasswordInput
                     label="Confirmar nueva contraseña"
-                    type="password"
                     placeholder="Repite la nueva contraseña"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}

@@ -57,11 +57,20 @@ type Handler = (req: Request, user: TokenPayload) => Promise<Response>;
  * Envuelve una ruta: exige sesión (401), comprueba el rol (403) y traduce los errores.
  * `roles: 'any'` acepta a cualquier persona con sesión.
  */
-export function withAuth(scope: string, roles: readonly Role[] | 'any', handler: Handler) {
+export function withAuth(
+  scope: string,
+  roles: readonly Role[] | 'any',
+  handler: Handler,
+  options: { allowPendingPasswordChange?: boolean } = {},
+) {
   return async (req: Request): Promise<Response> => {
     try {
       const user = await getCurrentUser();
       if (!user) return fail(401, 'No autorizado. Inicia sesión.');
+      // Mientras la contraseña inicial no se cambie, solo se permiten las rutas del propio cambio.
+      if (user.mustChangePassword && !options.allowPendingPasswordChange) {
+        return fail(403, 'Debes cambiar tu contraseña antes de continuar.', undefined, { mustChangePassword: true });
+      }
       if (roles !== 'any' && !roles.includes(user.role)) return fail(403, 'Acceso denegado.');
       return await handler(req, user);
     } catch (error) {
