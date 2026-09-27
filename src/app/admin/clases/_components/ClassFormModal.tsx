@@ -88,6 +88,7 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
     if (open) {
       setFormData(buildInitialForm(mode, editingClass, mentors, students));
       setErrorMsg('');
+      setSubmitting(false);
       setRemovedImage(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

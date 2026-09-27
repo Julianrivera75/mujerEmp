@@ -44,6 +44,8 @@ export function UserFormModal({ open, mode, selectedUser, onClose, onSaved }: Us
     if (open) {
       setFormData(buildInitialForm(mode, selectedUser));
       setErrorMsg('');
+      setSubmitting(false);
+      setConfirmRole(false);
     }
   }, [open, mode, selectedUser]);
 
@@ -90,6 +92,8 @@ export function UserFormModal({ open, mode, selectedUser, onClose, onSaved }: Us
         return;
       }
 
+      // El componente sigue montado tras guardar: sin esto el botón quedaba cargando la próxima vez que se abre.
+      setSubmitting(false);
       onSaved();
     } catch (err) {
       setErrorMsg('Error al conectar con el servidor.');
