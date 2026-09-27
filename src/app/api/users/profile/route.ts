@@ -3,6 +3,7 @@ import { HttpError, withAuth } from '@/lib/api';
 import { presenceForViewer } from '@/lib/presence';
 import prisma from '@/lib/prisma';
 import { rolesOf } from '@/lib/roles';
+import { readSocialLinks } from '@/lib/social-links';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,6 +28,8 @@ export const GET = withAuth('users profile', 'any', async (req, user) => {
         role: true,
         extraRoles: true,
         memberNumber: true,
+        occupation: true,
+        socialLinks: true,
         createdAt: true,
         lastSeenAt: true,
         showOnlineStatus: true,
@@ -48,8 +51,12 @@ export const GET = withAuth('users profile', 'any', async (req, user) => {
       roles: rolesOf(person),
       memberNumber: person.memberNumber,
       memberSince: person.createdAt,
+      email: person.email,
+      occupation: person.occupation,
+      socialLinks: readSocialLinks(person.socialLinks),
       presence: presenceForViewer(viewer, person),
-      ...(isAdmin ? { email: person.email, phone: person.phone, status: person.status } : {}),
+      // El contacto directo (WhatsApp) queda reservado a la administración; el correo ya es visible para conectar.
+      ...(isAdmin ? { phone: person.phone, status: person.status } : {}),
     },
   });
 });

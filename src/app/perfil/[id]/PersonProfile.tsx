@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Mail, MessageCircle } from 'lucide-react';
 import { PresenceDot } from '@/components/PresenceDot';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
@@ -15,6 +15,7 @@ import { logClientError } from '@/lib/client-log';
 import { formatDateLong } from '@/lib/format';
 import { numberLabel } from '@/lib/labels';
 import { ROLE_META, type Role } from '@/lib/roles';
+import { SOCIAL_PLATFORMS, type SocialLinks } from '@/lib/social-links';
 
 interface PersonProfileData {
   id: string;
@@ -23,6 +24,8 @@ interface PersonProfileData {
   roles: Role[];
   memberNumber: string | null;
   memberSince: string;
+  occupation?: string | null;
+  socialLinks?: SocialLinks;
   presence: { online: boolean; label: string | null };
   email?: string;
   phone?: string | null;
@@ -105,6 +108,7 @@ export default function PersonProfile({ personId }: { personId: string }) {
             <Avatar avatarKey={profile.avatar} fallbackInitial={profile.name.charAt(0)} size="xl" ring />
             <div>
               <h1 className="font-display text-2xl font-bold text-slate-800">{profile.name}</h1>
+              {profile.occupation && <p className="mt-0.5 text-sm text-slate-600">{profile.occupation}</p>}
               <div className="mt-2 flex flex-wrap justify-center gap-1.5">
                 {profile.roles.map((role) => (
                   <span
@@ -121,6 +125,23 @@ export default function PersonProfile({ personId }: { personId: string }) {
             </div>
           </div>
 
+          {profile.socialLinks && Object.keys(profile.socialLinks).length > 0 && (
+            <div className="flex flex-wrap justify-center gap-2">
+              {SOCIAL_PLATFORMS.filter((platform) => profile.socialLinks?.[platform.key]).map((platform) => (
+                <a
+                  key={platform.key}
+                  href={profile.socialLinks?.[platform.key]}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  aria-label={platform.label}
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-role-soft text-role-ink transition-colors hover:brightness-95"
+                >
+                  <platform.icon className="h-4 w-4" />
+                </a>
+              ))}
+            </div>
+          )}
+
           <dl className="space-y-2.5 border-t border-slate-100 pt-4 text-sm">
             {profile.memberNumber && (
               <div className="flex items-center justify-between gap-3">
@@ -134,7 +155,10 @@ export default function PersonProfile({ personId }: { personId: string }) {
             </div>
             {profile.email && (
               <div className="flex items-center justify-between gap-3">
-                <dt className="text-slate-500">Correo (solo administración)</dt>
+                <dt className="flex items-center gap-1 text-slate-500">
+                  <Mail className="h-3.5 w-3.5" />
+                  <span>Correo</span>
+                </dt>
                 <dd className="font-semibold text-slate-800">{profile.email}</dd>
               </div>
             )}

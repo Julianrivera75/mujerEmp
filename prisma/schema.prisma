@@ -47,6 +47,9 @@ model User {
   extraRoles   Role[]     @default([])
   status       UserStatus @default(ACTIVO)
   memberNumber String?    @map("documentId")
+  // A qué se dedica y sus redes sociales (visibles en el perfil, para conectar con otras personas)
+  occupation   String?
+  socialLinks  Json?
   phone        String?
   avatar       String?
   startDate    DateTime? // Fecha de inicio en la plataforma

@@ -171,3 +171,23 @@ Se generan al ocurrir el evento: tarea nueva (a las estudiantes inscritas), entr
 ## Avisos por correo (pendiente)
 
 La preferencia "Recibir avisos por correo" ya se guarda por persona (`emailNotifications`), pero no se envía ningún correo. Para activarlos hace falta un servicio de envío (por ejemplo Resend o un SMTP), añadir su llave como variable de entorno y llamar al envío desde `notifyMany` (`src/lib/notifications.ts`) para quienes tengan la preferencia activa.
+
+## Omitir el cambio de contraseña
+
+En `/cambiar-contrasena` la persona puede pulsar "Omitir por ahora"; tras una confirmación con el aviso de seguridad, continúa a su panel sin cambiarla (`POST /api/auth/skip-password-change`, marca `pwdSkip` solo en la sesión actual). La cuenta sigue con `mustChangePassword = true` en la base de datos, así que en el siguiente ingreso se le vuelve a pedir. Cambiar la contraseña en cualquier momento limpia la marca para siempre.
+
+## Ocupación y redes sociales
+
+Cada persona puede describir a qué se dedica (`occupation`, hasta 160 caracteres) y enlazar sus redes (`socialLinks`, JSON con Instagram, LinkedIn, Facebook y un enlace libre). Cada enlace debe ser una URL `https://`; se valida en el servidor (`parseSocialLinks`, `src/lib/social-links.ts`). Se muestran en el perfil propio y en el perfil de cualquier otra persona, para facilitar la conexión entre ellas.
+
+## Número de identificación con doble rol
+
+El número (`memberNumber`) es uno solo por cuenta. Su etiqueta cambia según el rol con el que se esté viendo la plataforma en cada momento (`numberLabel(session.role)`): una persona que es mentora y estudiante ve "Número de mentor/a" en la vista de mentora y "Número de estudiante" en la vista de estudiante, pero es el mismo valor guardado.
+
+## Correo visible en el perfil de otras personas
+
+`GET /api/users/profile` ahora entrega el correo de cualquier persona a quien tenga sesión (antes solo a la administración), para facilitar el contacto directo. El número de contacto (WhatsApp) sigue reservado a la administración.
+
+## Nota sobre datos de prueba
+
+Mientras el programa no ha iniciado (nadie ha entrado todavía), se pueden crear cuentas y datos de prueba en producción para validar el chat, las notificaciones y estas funciones a fondo. Antes de que las 61 personas reales empiecen a usar la plataforma, hay que borrar esas cuentas y datos de prueba y dejar la base como estaba.

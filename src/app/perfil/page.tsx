@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { User, Phone, Mail, CheckCircle2, ShieldCheck, Save, Download } from 'lucide-react';
+import { User, Phone, Mail, Briefcase, Link2, CheckCircle2, ShieldCheck, Save, Download } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
@@ -17,6 +17,7 @@ import { ROLE_META, type Role } from '@/lib/roles';
 import { formatDate } from '@/lib/format';
 import { PHONE_HINT, PHONE_LABEL, numberLabel } from '@/lib/labels';
 import { logClientError } from '@/lib/client-log';
+import { SOCIAL_PLATFORMS, type SocialLinks } from '@/lib/social-links';
 
 interface FullProfile {
   id: string;
@@ -29,6 +30,8 @@ interface FullProfile {
   emailNotifications?: boolean;
   phone: string | null;
   memberNumber: string | null;
+  occupation?: string | null;
+  socialLinks?: SocialLinks | null;
   startDate: string | null;
   endDate: string | null;
   avatar: string | null;
@@ -45,6 +48,8 @@ export default function ProfilePage() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [memberNumber, setMemberNumber] = useState('');
+  const [occupation, setOccupation] = useState('');
+  const [socialLinks, setSocialLinks] = useState<SocialLinks>({});
   const [showOnline, setShowOnline] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [avatarKey, setAvatarKey] = useState<string | null>(null);
@@ -67,6 +72,8 @@ export default function ProfilePage() {
           setEmail(data.user.email || '');
           setPhone(data.user.phone || '');
           setMemberNumber(data.user.memberNumber || '');
+          setOccupation(data.user.occupation || '');
+          setSocialLinks(data.user.socialLinks || {});
           setShowOnline(data.user.showOnlineStatus ?? true);
           setEmailNotifications(data.user.emailNotifications ?? true);
           setAvatarKey(data.user.avatar || null);
@@ -125,6 +132,8 @@ export default function ProfilePage() {
           email: profile && email.trim().toLowerCase() !== profile.email ? email : undefined,
           phone,
           memberNumber,
+          occupation,
+          socialLinks,
           showOnlineStatus: showOnline,
           emailNotifications,
           currentPassword: currentPassword || undefined,
@@ -146,6 +155,8 @@ export default function ProfilePage() {
         setName(data.user.name);
         setEmail(data.user.email);
         setMemberNumber(data.user.memberNumber || '');
+        setOccupation(data.user.occupation || '');
+        setSocialLinks(data.user.socialLinks || {});
       }
       // Recarga los datos del servidor para que la barra superior muestre el nombre nuevo.
       router.refresh();
@@ -267,6 +278,33 @@ export default function ProfilePage() {
                 onChange={(e) => setPhone(e.target.value)}
                 leftIcon={<Phone className="h-4 w-4" />}
               />
+              <Input
+                label="¿A qué te dedicas?"
+                placeholder="Ej: Estudiante de Derecho, emprendedora, diseñadora gráfica..."
+                value={occupation}
+                onChange={(e) => setOccupation(e.target.value)}
+                maxLength={160}
+                leftIcon={<Briefcase className="h-4 w-4" />}
+                hint="Se muestra en tu perfil para que otras personas te conozcan mejor."
+              />
+
+              <fieldset className="space-y-3 border-t border-slate-100 pt-4">
+                <legend className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-slate-500">
+                  <Link2 className="h-3.5 w-3.5" />
+                  <span>Tus redes (opcional)</span>
+                </legend>
+                {SOCIAL_PLATFORMS.map((platform) => (
+                  <Input
+                    key={platform.key}
+                    label={platform.label}
+                    type="url"
+                    placeholder={platform.placeholder}
+                    value={socialLinks[platform.key] ?? ''}
+                    onChange={(e) => setSocialLinks((prev) => ({ ...prev, [platform.key]: e.target.value }))}
+                    leftIcon={<platform.icon className="h-4 w-4" />}
+                  />
+                ))}
+              </fieldset>
 
               <fieldset className="space-y-2 border-t border-slate-100 pt-4">
                 <legend className="text-xs font-black uppercase tracking-wider text-slate-500">

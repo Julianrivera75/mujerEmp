@@ -24,6 +24,8 @@ export const GET = withAuth(
         extraRoles: true,
         showOnlineStatus: true,
         emailNotifications: true,
+        occupation: true,
+        socialLinks: true,
       },
     });
 

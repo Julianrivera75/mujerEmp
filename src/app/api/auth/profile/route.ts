@@ -6,6 +6,7 @@ import { setSessionCookie, signToken } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { profileSchema } from '@/lib/schemas';
 import { deleteObject, keyBelongsTo, verifyUploadedObject } from '@/lib/s3';
+import { parseSocialLinks } from '@/lib/social-links';
 import { cleanText, validatePassword } from '@/lib/validators';
 
 export const dynamic = 'force-dynamic';
@@ -21,6 +22,8 @@ export const PUT = withAuth(
       email,
       phone,
       memberNumber,
+      occupation,
+      socialLinks,
       showOnlineStatus,
       emailNotifications,
       currentPassword,
@@ -36,6 +39,16 @@ export const PUT = withAuth(
 
     if (name !== undefined) updateData.name = name;
     if (memberNumber !== undefined) updateData.memberNumber = memberNumber;
+    if (occupation !== undefined) updateData.occupation = occupation;
+    if (socialLinks !== undefined) {
+      const parsed = parseSocialLinks(socialLinks);
+      if (!parsed)
+        throw new HttpError(
+          400,
+          'Alguno de los enlaces de tus redes no es una URL válida (debe empezar por https://).',
+        );
+      updateData.socialLinks = parsed;
+    }
     if (showOnlineStatus !== undefined) updateData.showOnlineStatus = showOnlineStatus;
     if (emailNotifications !== undefined) updateData.emailNotifications = emailNotifications;
 
@@ -96,6 +109,8 @@ export const PUT = withAuth(
         phone: true,
         avatar: true,
         memberNumber: true,
+        occupation: true,
+        socialLinks: true,
         showOnlineStatus: true,
         emailNotifications: true,
         tokenVersion: true,
@@ -122,6 +137,8 @@ export const PUT = withAuth(
         phone: updated.phone,
         avatar: updated.avatar,
         memberNumber: updated.memberNumber,
+        occupation: updated.occupation,
+        socialLinks: updated.socialLinks,
         showOnlineStatus: updated.showOnlineStatus,
         emailNotifications: updated.emailNotifications,
       },

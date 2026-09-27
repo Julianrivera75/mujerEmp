@@ -105,6 +105,8 @@ export const profileSchema = z.object({
     .optional(),
   phone: optionalPhone.optional(),
   memberNumber: optionalText(40).optional(),
+  occupation: optionalText(160).optional(),
+  socialLinks: z.record(z.string(), z.string()).nullish(),
   showOnlineStatus: z.boolean().optional(),
   emailNotifications: z.boolean().optional(),
   avatar: z.string().nullable().optional(),

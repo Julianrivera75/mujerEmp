@@ -11,6 +11,7 @@ export function actAs(
     role: TokenPayload['role'];
     roles?: TokenPayload['roles'];
     mustChangePassword?: boolean;
+    pwdSkip?: boolean;
   } | null,
 ) {
   session.current = user
@@ -18,6 +19,7 @@ export function actAs(
         ...user,
         roles: user.roles ?? [user.role],
         mustChangePassword: user.mustChangePassword ?? false,
+        pwdSkip: user.pwdSkip ?? false,
         status: 'ACTIVO',
       }
     : null;

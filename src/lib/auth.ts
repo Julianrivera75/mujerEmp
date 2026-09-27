@@ -26,28 +26,35 @@ export interface TokenPayload {
   roles: Role[];
   /** Debe cambiar su contraseña antes de usar la plataforma. */
   mustChangePassword: boolean;
+  /** Eligió posponer el cambio de contraseña por esta sesión; se pedirá de nuevo en el próximo ingreso. */
+  pwdSkip: boolean;
   name: string;
   status: UserStatus;
 }
 
 /** `tokenVersion` (claim `tv`) permite revocar de golpe todas las sesiones de una cuenta. */
 export async function signToken(
-  payload: Omit<TokenPayload, 'roles' | 'mustChangePassword'>,
+  payload: Omit<TokenPayload, 'roles' | 'mustChangePassword' | 'pwdSkip'>,
   tokenVersion: number,
+  pwdSkip = false,
 ): Promise<string> {
-  return new SignJWT({ ...payload, tv: tokenVersion })
+  return new SignJWT({ ...payload, tv: tokenVersion, pwdSkip })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime(`${SESSION_SECONDS}s`)
     .sign(JWT_SECRET);
 }
 
-async function readClaims(token: string): Promise<{ id: string; tv: number } | null> {
+async function readClaims(token: string): Promise<{ id: string; tv: number; pwdSkip: boolean } | null> {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET, { algorithms: ['HS256'] });
     if (typeof payload.id !== 'string') return null;
     // Los tokens emitidos antes de existir la revocación no traen `tv` y equivalen a la versión 0.
-    return { id: payload.id, tv: typeof payload.tv === 'number' ? payload.tv : 0 };
+    return {
+      id: payload.id,
+      tv: typeof payload.tv === 'number' ? payload.tv : 0,
+      pwdSkip: payload.pwdSkip === true,
+    };
   } catch {
     return null;
   }
@@ -92,6 +99,7 @@ export async function getCurrentUser(): Promise<TokenPayload | null> {
     name: user.name,
     status: user.status,
     mustChangePassword: user.mustChangePassword,
+    pwdSkip: claims.pwdSkip,
   };
 }
 

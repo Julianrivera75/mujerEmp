@@ -208,12 +208,16 @@ describe('presencia y latido de actividad', () => {
 describe('perfil de otra persona', () => {
   const view = (id: string) => userProfile(request(`/api/users/profile?id=${id}`));
 
-  it('muestra nombre, roles y número, y oculta el correo y el contacto', async () => {
+  it('muestra nombre, roles, número y correo (para conectar entre personas), pero oculta el contacto', async () => {
     actAs(w.sofia);
     const res = await read(await view(w.carolina.id));
     expect(res.status).toBe(200);
-    expect(res.body.profile).toMatchObject({ name: 'Carolina', roles: ['MENTOR'], memberNumber: 'DOC-Carolina' });
-    expect(res.body.profile).not.toHaveProperty('email');
+    expect(res.body.profile).toMatchObject({
+      name: 'Carolina',
+      roles: ['MENTOR'],
+      memberNumber: 'DOC-Carolina',
+      email: 'carolina@prueba.test',
+    });
     expect(res.body.profile).not.toHaveProperty('phone');
   });
 

@@ -64,6 +64,12 @@ describe('signToken', () => {
     expect((payload.exp ?? 0) - (payload.iat ?? 0)).toBe(7 * 24 * 3600);
     expect(decodeJwt(token).email).toBe('a@b.co');
   });
+
+  it('firma pwdSkip en false por defecto, y en true cuando se pospone el cambio de contraseña', async () => {
+    const base = { id: 'u1', email: 'a@b.co', role: 'ADMIN' as const, name: 'A', status: 'ACTIVO' as const };
+    expect(decodeJwt(await auth.signToken(base, 0)).pwdSkip).toBe(false);
+    expect(decodeJwt(await auth.signToken(base, 0, true)).pwdSkip).toBe(true);
+  });
 });
 
 describe('cookie de sesión', () => {

@@ -9,6 +9,7 @@ export interface SessionUser {
   role: 'ADMIN' | 'MENTOR' | 'STUDENT';
   roles: ('ADMIN' | 'MENTOR' | 'STUDENT')[];
   mustChangePassword?: boolean;
+  pwdSkip?: boolean;
   status: 'ACTIVO' | 'INACTIVO';
   phone?: string | null;
   memberNumber?: string | null;

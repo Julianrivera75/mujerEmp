@@ -68,7 +68,7 @@ export function withAuth(
       const user = await getCurrentUser();
       if (!user) return fail(401, 'No autorizado. Inicia sesión.');
       // Mientras la contraseña inicial no se cambie, solo se permiten las rutas del propio cambio.
-      if (user.mustChangePassword && !options.allowPendingPasswordChange) {
+      if (user.mustChangePassword && !user.pwdSkip && !options.allowPendingPasswordChange) {
         return fail(403, 'Debes cambiar tu contraseña antes de continuar.', undefined, { mustChangePassword: true });
       }
       if (roles !== 'any' && !roles.includes(user.role)) return fail(403, 'Acceso denegado.');

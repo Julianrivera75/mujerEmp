@@ -79,7 +79,7 @@ export const POST = withErrors('auth/login', async (req) => {
   const token = await signToken(
     { id: user.id, email: user.email, name: user.name, role: user.role, status: user.status },
     user.tokenVersion,
-  );
+  ); // pwdSkip siempre empieza en false: cada ingreso vuelve a recordar el cambio de contraseña.
   await setSessionCookie(token);
   await setViewCookie(user.role);
 
