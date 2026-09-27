@@ -20,7 +20,8 @@ function getS3Client(): S3Client {
     region: process.env.S3_REGION || 'auto',
     endpoint,
     credentials: { accessKeyId, secretAccessKey },
-    forcePathStyle: false,
+    // Con URLs de estilo ruta (endpoint/bucket/archivo) el almacenamiento responde con las cabeceras CORS que el navegador necesita para subir directo.
+    forcePathStyle: true,
   });
 }
 
