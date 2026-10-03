@@ -11,6 +11,10 @@ beforeEach(async () => {
   vi.useRealTimers();
   await resetDb();
   w = await createWorld();
+  // Las clases del mundo de pruebas son "de mañana": si "ahora" cae en octubre de 2026 chocan
+  // con las clases de módulo fijas de este archivo (también monthKey 2026-10). Se eliminan porque
+  // estas pruebas no las necesitan.
+  await prisma.classSession.deleteMany({ where: { id: { in: [w.claseCarolina.id, w.claseValeria.id] } } });
   actAs(null);
 });
 

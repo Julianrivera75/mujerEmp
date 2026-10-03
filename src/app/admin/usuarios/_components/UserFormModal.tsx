@@ -216,6 +216,9 @@ export function UserFormModal({ open, mode, selectedUser, onClose, onSaved }: Us
               <option value="INACTIVO">Inactivo (bloquea ingreso)</option>
             </Select>
           </div>
+          {isStudent && (
+            <p className="-mt-2 text-xs text-slate-500">Quedará inscrita automáticamente en las clases vigentes.</p>
+          )}
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Input

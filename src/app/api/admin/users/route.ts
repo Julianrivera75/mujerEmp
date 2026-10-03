@@ -3,8 +3,10 @@ import bcrypt from 'bcryptjs';
 import { NextResponse } from 'next/server';
 import { HttpError, MAX_ROWS, parseBody, withAuth } from '@/lib/api';
 import prisma from '@/lib/prisma';
+import { enrollInUpcomingClasses } from '@/lib/enrollment';
 import { createUserSchema, updateUserSchema } from '@/lib/schemas';
 import { ROLES, USER_STATUSES, cleanText, isOneOf, validatePassword } from '@/lib/validators';
+import { isStudentAccount } from '@/lib/account-types';
 
 export const dynamic = 'force-dynamic';
 
@@ -88,6 +90,12 @@ export const POST = withAuth('admin/users POST', ['ADMIN'], async (req) => {
     select: SAFE_USER_SELECT,
   });
 
+  // Una cuenta de estudiante queda al día con las clases vigentes, sin que la administración tenga que
+  // agregarla clase por clase.
+  if (isStudentAccount(newUser.role, newUser.extraRoles)) {
+    await enrollInUpcomingClasses(newUser.id).catch(() => undefined);
+  }
+
   return NextResponse.json({ success: true, message: 'Usuario creado exitosamente.', user: newUser });
 });
 
@@ -155,5 +163,14 @@ export const PUT = withAuth('admin/users PUT', ['ADMIN'], async (req, currentUse
   }
 
   const updatedUser = await prisma.user.update({ where: { id: body.id }, data, select: SAFE_USER_SELECT });
+
+  // Si la cuenta no era de estudiante y ahora sí lo es (por ejemplo, se le agregó ese rol adicional),
+  // queda al día con las clases vigentes, igual que una cuenta de estudiante creada desde cero.
+  const wasStudent = isStudentAccount(target.role, target.extraRoles);
+  const isStudentNow = isStudentAccount(updatedUser.role, updatedUser.extraRoles);
+  if (!wasStudent && isStudentNow) {
+    await enrollInUpcomingClasses(updatedUser.id).catch(() => undefined);
+  }
+
   return NextResponse.json({ success: true, message: 'Usuario actualizado exitosamente.', user: updatedUser });
 });

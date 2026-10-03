@@ -79,12 +79,15 @@ export default function AdminClassesPage() {
     setModalMode('create');
     setEditingClass(null);
     setIsModalOpen(true);
+    // Por si se creó una mentora o estudiante nueva después de cargar esta página.
+    loadUsers();
   };
 
   const handleOpenEdit = (cls: ClassItem) => {
     setModalMode('edit');
     setEditingClass(cls);
     setIsModalOpen(true);
+    loadUsers();
   };
 
   const handleSaved = (saved?: { monthKey: string; dateStart: string }) => {
