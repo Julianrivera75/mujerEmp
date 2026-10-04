@@ -115,7 +115,7 @@ function LoginFormContent() {
         </form>
       </m.div>
 
-      <PartnerLogos className="mt-6" />
+      <PartnerLogos className="mt-6 sm:-mx-12" />
 
       <p className="mt-6 text-center text-xs font-medium text-slate-500">
         Empoderadas Diversas © {new Date().getFullYear()} · Transformando familias

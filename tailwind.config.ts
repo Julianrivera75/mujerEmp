@@ -71,6 +71,10 @@ const config: Config = {
         shimmer: {
           '100%': { transform: 'translateX(100%)' },
         },
+        marquee: {
+          from: { transform: 'translateX(0)' },
+          to: { transform: 'translateX(-50%)' },
+        },
         'fx-in': {
           from: { opacity: '0' },
           to: { opacity: '1' },
@@ -81,6 +85,7 @@ const config: Config = {
         blob: 'blob 7s infinite',
         shimmer: 'shimmer 1.6s infinite',
         'fx-in': 'fx-in 1.2s ease-out both',
+        marquee: 'marquee 32s linear infinite',
       },
     },
   },
