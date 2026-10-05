@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { connection } from 'next/server';
 import { Bricolage_Grotesque, Figtree, Cormorant_Garamond } from 'next/font/google';
 import MotionProvider from '@/components/MotionProvider';
@@ -33,6 +33,14 @@ export const metadata: Metadata = {
   icons: { icon: '/logos/empoderadas-diversas.png' },
   description:
     'Plataforma integral de formación, mentoría, clases virtuales y seguimiento de impacto para el empoderamiento y la diversidad.',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  // Ocupa toda la pantalla en celulares con muesca; los márgenes seguros se resuelven en cada componente.
+  viewportFit: 'cover',
+  themeColor: '#3b0764',
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

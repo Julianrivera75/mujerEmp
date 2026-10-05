@@ -120,7 +120,7 @@ export function Modal({
             exit={{ opacity: 0, scale: 0.96, y: 8 }}
             transition={{ duration: DURATION.base, ease: EASE }}
             className={cn(
-              'glass-panel relative flex max-h-[calc(100dvh-2rem)] w-full flex-col rounded-t-3xl shadow-lift sm:rounded-3xl',
+              'glass-panel relative flex max-h-[calc(100dvh-2rem)] w-full flex-col rounded-t-3xl pb-[env(safe-area-inset-bottom)] shadow-lift sm:rounded-3xl sm:pb-0',
               SIZE_CLS[size],
             )}
           >
@@ -139,7 +139,7 @@ export function Modal({
                 <button
                   onClick={onClose}
                   aria-label="Cerrar"
-                  className="flex-shrink-0 rounded-xl p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                  className="tap-target flex-shrink-0 rounded-xl p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
                 >
                   <X className="h-5 w-5" />
                 </button>

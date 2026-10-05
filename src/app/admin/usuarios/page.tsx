@@ -312,7 +312,7 @@ export default function AdminUsersPage() {
                           <button
                             onClick={() => handleOpenEdit(u)}
                             disabled={Boolean(u.anonymizedAt)}
-                            className="rounded-xl p-2 text-role-ink transition-colors hover:bg-role-soft disabled:pointer-events-none disabled:opacity-40"
+                            className="tap-target rounded-xl p-2 text-role-ink transition-colors hover:bg-role-soft disabled:pointer-events-none disabled:opacity-40"
                             aria-label={`Editar ${u.name}`}
                           >
                             <Edit3 className="h-4 w-4" />
@@ -320,7 +320,7 @@ export default function AdminUsersPage() {
                           <button
                             onClick={() => setResetTarget(u)}
                             disabled={Boolean(u.anonymizedAt) || u.status !== 'ACTIVO' || u.role === 'ADMIN'}
-                            className="rounded-xl p-2 text-slate-500 transition-colors hover:bg-role-soft hover:text-role-ink disabled:pointer-events-none disabled:opacity-40"
+                            className="tap-target rounded-xl p-2 text-slate-500 transition-colors hover:bg-role-soft hover:text-role-ink disabled:pointer-events-none disabled:opacity-40"
                             aria-label={`Restablecer la contraseña de ${u.name}`}
                             title="Restablecer contraseña"
                           >
@@ -329,7 +329,7 @@ export default function AdminUsersPage() {
                           <button
                             onClick={() => setAnonTarget(u)}
                             disabled={Boolean(u.anonymizedAt)}
-                            className="rounded-xl p-2 text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 disabled:pointer-events-none disabled:opacity-40"
+                            className="tap-target rounded-xl p-2 text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 disabled:pointer-events-none disabled:opacity-40"
                             aria-label={`Anonimizar a ${u.name}`}
                             title="Anonimizar (derecho de supresión)"
                           >
@@ -356,7 +356,7 @@ export default function AdminUsersPage() {
                     <button
                       onClick={() => handleOpenEdit(u)}
                       disabled={Boolean(u.anonymizedAt)}
-                      className="rounded-xl p-2 text-role-ink hover:bg-role-soft disabled:opacity-40"
+                      className="tap-target rounded-xl p-2 text-role-ink hover:bg-role-soft disabled:opacity-40"
                       aria-label={`Editar ${u.name}`}
                     >
                       <Edit3 className="h-4 w-4" />
@@ -364,7 +364,7 @@ export default function AdminUsersPage() {
                     <button
                       onClick={() => setResetTarget(u)}
                       disabled={Boolean(u.anonymizedAt) || u.status !== 'ACTIVO' || u.role === 'ADMIN'}
-                      className="rounded-xl p-2 text-slate-500 hover:bg-role-soft hover:text-role-ink disabled:opacity-40"
+                      className="tap-target rounded-xl p-2 text-slate-500 hover:bg-role-soft hover:text-role-ink disabled:opacity-40"
                       aria-label={`Restablecer la contraseña de ${u.name}`}
                     >
                       <KeyRound className="h-4 w-4" />
@@ -372,7 +372,7 @@ export default function AdminUsersPage() {
                     <button
                       onClick={() => setAnonTarget(u)}
                       disabled={Boolean(u.anonymizedAt)}
-                      className="rounded-xl p-2 text-slate-500 hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
+                      className="tap-target rounded-xl p-2 text-slate-500 hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
                       aria-label={`Anonimizar a ${u.name}`}
                     >
                       <UserX className="h-4 w-4" />

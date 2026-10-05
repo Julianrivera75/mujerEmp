@@ -201,7 +201,7 @@ export default async function AdminDashboardPage() {
                         href={safeHref(cls.meetLink) ?? '#'}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-teal-50 px-3 py-1.5 text-xs font-bold text-teal-700 transition-colors hover:bg-teal-100"
+                        className="tap-target inline-flex items-center gap-1.5 rounded-xl bg-teal-50 px-3 py-1.5 text-xs font-bold text-teal-700 transition-colors hover:bg-teal-100"
                       >
                         <Video className="h-3.5 w-3.5" />
                         <span>Google Meet</span>

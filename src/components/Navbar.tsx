@@ -238,7 +238,7 @@ export default function Navbar({ user }: NavbarProps) {
 
             <button
               onClick={() => setDrawerOpen(true)}
-              className="rounded-xl p-2.5 text-slate-600 transition-colors hover:bg-role-soft md:hidden"
+              className="tap-target rounded-xl p-2.5 text-slate-600 transition-colors hover:bg-role-soft md:hidden"
               aria-label="Abrir menú"
             >
               <Menu className="h-5 w-5" />
@@ -321,14 +321,14 @@ function MobileDrawer({
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
         transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-        className="glass-panel absolute right-0 top-0 flex h-full w-72 flex-col p-5"
+        className="glass-panel absolute right-0 top-0 flex h-full w-[85vw] max-w-xs flex-col overflow-y-auto p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
       >
         <div className="mb-6 flex items-center justify-between">
           <Avatar avatarKey={user.avatar} fallbackInitial={user.name.charAt(0)} size="sm" />
           <button
             onClick={onClose}
             aria-label="Cerrar menú"
-            className="rounded-xl p-2 text-slate-500 hover:bg-slate-100"
+            className="tap-target rounded-xl p-2 text-slate-500 hover:bg-slate-100"
           >
             <X className="h-5 w-5" />
           </button>

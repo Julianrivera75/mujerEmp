@@ -5,7 +5,7 @@ import { AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
 const CONTROL_BASE =
-  'w-full h-11 rounded-xl bg-white/70 border border-slate-200 px-3.5 text-sm text-slate-800 placeholder:text-slate-400 transition-all outline-none focus:border-role-from focus:ring-2 focus:ring-primary/20 disabled:opacity-60';
+  'w-full h-11 rounded-xl bg-white/70 border border-slate-200 px-3.5 text-base text-slate-800 sm:text-sm placeholder:text-slate-400 transition-all outline-none focus:border-role-from focus:ring-2 focus:ring-primary/20 disabled:opacity-60';
 
 type InputOwnProps = {
   label?: string;

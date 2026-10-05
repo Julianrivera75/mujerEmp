@@ -93,7 +93,7 @@ export function NotificationBell() {
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={total > 0 ? `Notificaciones: ${total} sin leer` : 'Notificaciones'}
-        className="relative rounded-xl p-2 text-slate-600 transition-colors hover:bg-role-soft hover:text-role-ink"
+        className="tap-target relative rounded-xl p-2 text-slate-600 transition-colors hover:bg-role-soft hover:text-role-ink"
       >
         <Bell className="h-5 w-5" strokeWidth={1.75} />
         {total > 0 && (

@@ -235,7 +235,7 @@ export default function StudentDashboardPage() {
                       {cls.youtubeUrl && (
                         <Link
                           href="/estudiante/repositorio"
-                          className="inline-flex items-center gap-1.5 rounded-xl bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 transition-colors hover:bg-red-100 hover:text-red-800"
+                          className="tap-target inline-flex items-center gap-1.5 rounded-xl bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 transition-colors hover:bg-red-100 hover:text-red-800"
                         >
                           <Youtube className="h-3.5 w-3.5" />
                           <span>Ver grabación en repositorio</span>

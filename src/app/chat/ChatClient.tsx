@@ -351,7 +351,7 @@ export default function ChatClient() {
                   type="button"
                   onClick={() => router.push('/chat')}
                   aria-label="Volver a las conversaciones"
-                  className="rounded-xl p-1.5 text-slate-600 hover:bg-role-soft md:hidden"
+                  className="tap-target rounded-xl p-1.5 text-slate-600 hover:bg-role-soft md:hidden"
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </button>
@@ -365,7 +365,7 @@ export default function ChatClient() {
                 </div>
                 <Link
                   href={`/perfil/${selected.other.id}`}
-                  className="flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-bold text-role-ink hover:bg-role-soft"
+                  className="tap-target flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-bold text-role-ink hover:bg-role-soft"
                 >
                   <UserRound className="h-4 w-4" />
                   <span className="hidden sm:inline">Ver perfil</span>
@@ -433,7 +433,7 @@ export default function ChatClient() {
                   rows={1}
                   maxLength={2000}
                   placeholder="Escribe un mensaje... (Enter para enviar)"
-                  className="max-h-32 min-h-11 flex-1 resize-none rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 focus:border-role-accent focus:outline-none focus:ring-2 focus:ring-role-accent/20"
+                  className="max-h-32 min-h-11 flex-1 resize-none rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-base text-slate-800 focus:border-role-accent focus:outline-none focus:ring-2 focus:ring-role-accent/20"
                 />
                 <Button type="submit" loading={sending} disabled={!draft.trim()} aria-label="Enviar mensaje">
                   <Send className="h-4 w-4" />
