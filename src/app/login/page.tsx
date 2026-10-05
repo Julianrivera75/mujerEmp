@@ -62,8 +62,9 @@ function LoginFormContent() {
 
   return (
     <m.div variants={stagger} initial="hidden" animate="show" className="w-full max-w-md">
-      <m.div variants={fadeUp} className="mb-6 flex justify-center lg:hidden">
+      <m.div variants={fadeUp} className="mb-6 flex flex-col items-center gap-3 text-center lg:hidden">
         <Logo />
+        <p className="max-w-xs text-sm font-medium text-slate-600">Tu red de mentoría para crecer sin límites</p>
       </m.div>
 
       <m.div variants={fadeUp} className="glass-card rounded-3xl border border-white/80 p-7 shadow-lift sm:p-8">
@@ -148,27 +149,36 @@ export default function LoginPage() {
           variants={stagger}
           initial="hidden"
           animate="show"
-          className="relative z-10 flex flex-col justify-center px-12 text-white xl:px-16"
+          className="relative z-10 mx-auto flex w-full max-w-xl flex-col justify-center px-10 text-white xl:px-12"
         >
           <m.div variants={fadeUp}>
             <Logo variant="mark-only" tone="white" />
           </m.div>
           <m.h2
             variants={fadeUp}
-            className="mt-8 max-w-md font-display text-4xl font-bold leading-[1.05] tracking-tight xl:text-5xl"
+            className="mt-8 font-display text-4xl font-bold leading-[1.05] tracking-tight xl:text-5xl"
           >
-            Tu red de mentoría para crecer sin límites
+            Tu red de mentoría para crecer{' '}
+            <span className="whitespace-nowrap bg-gradient-to-r from-fuchsia-300 to-pink-300 bg-clip-text text-transparent">
+              sin límites
+            </span>
           </m.h2>
-          <m.div variants={fadeUp} className="mt-10 space-y-4">
+          <m.ul variants={fadeUp} className="mt-10 space-y-3">
             {VALUE_POINTS.map((point, i) => (
-              <div key={i} className="flex items-start gap-3">
-                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-white/10 backdrop-blur-md">
-                  <point.icon className="h-[18px] w-[18px]" strokeWidth={1.75} />
-                </div>
-                <p className="pt-1.5 text-sm text-white/85">{point.text}</p>
-              </div>
+              <li
+                key={i}
+                className="flex items-center gap-4 rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-md"
+              >
+                <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-white/15">
+                  <point.icon className="h-5 w-5" strokeWidth={1.75} />
+                </span>
+                <p className="text-[15px] leading-snug text-white/90">{point.text}</p>
+              </li>
             ))}
-          </m.div>
+          </m.ul>
+          <m.p variants={fadeUp} className="mt-8 text-xs font-semibold uppercase tracking-wider text-white/60">
+            Plataforma de Capacitación
+          </m.p>
         </m.div>
       </div>
 

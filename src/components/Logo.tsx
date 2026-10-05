@@ -5,7 +5,7 @@ import { cn } from '@/lib/cn';
 interface LogoProps {
   /** `default` incluye la leyenda; `compact` es para la barra superior; `mark-only` muestra solo el logo. */
   variant?: 'default' | 'compact' | 'mark-only';
-  /** `white` coloca el logo sobre una tarjeta blanca para usarlo encima de fondos oscuros. */
+  /** `white` usa la versión clara del logo, para colocarlo directamente sobre fondos oscuros. */
   tone?: 'brand' | 'white';
   className?: string;
 }
@@ -17,7 +17,7 @@ export function Logo({ variant = 'default', tone = 'brand', className }: LogoPro
   const height = HEIGHT[variant];
   const image = (
     <Image
-      src="/logos/empoderadas-diversas.png"
+      src={tone === 'white' ? '/logos/empoderadas-diversas-claro.png' : '/logos/empoderadas-diversas.png'}
       alt="Empoderadas Diversas"
       width={640}
       height={154}
@@ -28,7 +28,7 @@ export function Logo({ variant = 'default', tone = 'brand', className }: LogoPro
 
   return (
     <div className={cn('flex flex-col items-start gap-1', className)}>
-      {tone === 'white' ? <span className="rounded-2xl bg-white px-5 py-3 shadow-lift">{image}</span> : image}
+      {image}
       {variant === 'default' && (
         <span
           className={cn(

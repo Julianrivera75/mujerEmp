@@ -60,6 +60,29 @@ async function whiteToAlpha(image, floor = 12) {
   return sharp(data, { raw: { width: info.width, height: info.height, channels: 4 } });
 }
 
+/** Versión del logo principal para fondos oscuros: el morado pasa a blanco y el rosa se aclara un poco. */
+async function lightVariant(file, out) {
+  const { data, info } = await sharp(path.join(TARGET, file)).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    // El alfa de los trazos sólidos oscuros quedó parcial al quitar el fondo: se refuerza para que el blanco sea pleno.
+    data[i + 3] = Math.min(255, Math.round(data[i + 3] * 1.45));
+    if (b > r + 12) {
+      data[i] = data[i + 1] = data[i + 2] = 255;
+    } else {
+      data[i] = Math.round(r + (255 - r) * 0.3);
+      data[i + 1] = Math.round(g + (255 - g) * 0.3);
+      data[i + 2] = Math.round(b + (255 - b) * 0.3);
+    }
+  }
+  const info2 = await sharp(data, { raw: info })
+    .png({ compressionLevel: 9, palette: true })
+    .toFile(path.join(TARGET, out));
+  console.log(`${out}: ${info2.width}x${info2.height} (${Math.round(info2.size / 1024)} KB)`);
+}
+
 async function main() {
   for (const logo of LOGOS) {
     const input = path.join(SOURCE, logo.file);
@@ -100,6 +123,7 @@ async function main() {
       .toFile(path.join(TARGET, logo.out));
     console.log(`${logo.out}: ${info.width}x${info.height} (${Math.round(info.size / 1024)} KB)`);
   }
+  await lightVariant('empoderadas-diversas.png', 'empoderadas-diversas-claro.png');
 }
 
 main().catch((err) => {
