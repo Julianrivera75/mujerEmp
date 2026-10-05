@@ -168,7 +168,7 @@ export default function MentorDashboardPage() {
                   <div className="flex-1 space-y-3">
                     <div className="flex flex-wrap items-center gap-2">
                       <StatusPill label={cls.status} tone={cls.status === 'FINALIZADA' ? 'neutral' : 'success'} />
-                      <span className="text-xs font-semibold capitalize text-slate-500">{formattedDate}</span>
+                      <span className="text-xs font-semibold text-slate-500">{formattedDate}</span>
                       <span className="flex items-center gap-1 rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-bold text-teal-700">
                         <Clock className="h-3.5 w-3.5" />
                         {formattedTime}

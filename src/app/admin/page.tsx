@@ -20,12 +20,12 @@ import { Card } from '@/components/ui/Card';
 import { StatusPill } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { safeHref } from '@/lib/validators';
-import { formatTimeRange, formatWeekdayDate } from '@/lib/format';
+import { formatTimeRange, formatWeekdayDate, upperFirst } from '@/lib/format';
 
 export default async function AdminDashboardPage() {
   const user = await getCurrentUser();
   const monthKey = format(new Date(), 'yyyy-MM');
-  const monthLabel = format(new Date(), 'MMMM yyyy', { locale: es });
+  const monthLabel = upperFirst(format(new Date(), 'MMMM yyyy', { locale: es }));
 
   const [totalStudents, totalMentors, activeUsers, inactiveUsers, currentMonthClasses, totalAttendances] =
     await Promise.all([
@@ -82,8 +82,8 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* Métricas */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <Card variant="glass" className="p-6">
+      <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+        <Card variant="glass" className="p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Estudiantes</span>
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-fuchsia-100 text-fuchsia-600">
@@ -91,7 +91,7 @@ export default async function AdminDashboardPage() {
             </div>
           </div>
           <p className="mt-3 font-display text-3xl font-bold tabular-nums text-slate-800">{totalStudents}</p>
-          <div className="mt-2 flex items-center gap-1.5 text-xs text-slate-500">
+          <div className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-slate-500">
             <span className="flex items-center font-semibold text-emerald-600">
               <UserCheck className="mr-1 h-3.5 w-3.5" />
               {activeUsers} activos
@@ -104,7 +104,7 @@ export default async function AdminDashboardPage() {
           </div>
         </Card>
 
-        <Card variant="glass" className="p-6">
+        <Card variant="glass" className="p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Mentoras</span>
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-teal-100 text-teal-600">
@@ -115,7 +115,7 @@ export default async function AdminDashboardPage() {
           <p className="mt-2 text-xs font-medium text-slate-500">Asignadas a módulos de liderazgo</p>
         </Card>
 
-        <Card variant="glass" className="p-6">
+        <Card variant="glass" className="p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Clases del mes</span>
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-purple-100 text-purple-600">
@@ -125,10 +125,10 @@ export default async function AdminDashboardPage() {
           <p className="mt-3 font-display text-3xl font-bold tabular-nums text-slate-800">
             {currentMonthClasses.length}
           </p>
-          <p className="mt-2 text-xs font-medium capitalize text-slate-500">{monthLabel}</p>
+          <p className="mt-2 text-xs font-medium text-slate-500">{monthLabel}</p>
         </Card>
 
-        <Card variant="glass" className="p-6">
+        <Card variant="glass" className="p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Asistencias clic</span>
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600">
@@ -144,7 +144,7 @@ export default async function AdminDashboardPage() {
       <Card variant="glass" className="p-6 sm:p-8">
         <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <h2 className="flex items-center gap-2 font-display text-xl font-bold capitalize text-slate-800">
+            <h2 className="flex items-center gap-2 font-display text-xl font-bold text-slate-800">
               <Calendar className="h-5 w-5 text-role-ink" />
               <span>Cronograma de clases · {monthLabel}</span>
             </h2>
@@ -177,13 +177,13 @@ export default async function AdminDashboardPage() {
                   className="flex flex-col justify-between gap-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-soft transition-all hover:border-role-accent/30 lg:flex-row lg:items-center"
                 >
                   <div className="space-y-1.5">
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
                       <StatusPill
                         label={cls.status}
                         tone={cls.status === 'FINALIZADA' ? 'neutral' : 'success'}
                         pulse={cls.status !== 'FINALIZADA'}
                       />
-                      <span className="text-xs font-semibold capitalize text-slate-500">
+                      <span className="text-xs font-semibold text-slate-500">
                         {formattedDate} · {formattedTime}
                       </span>
                     </div>

@@ -229,7 +229,7 @@ export default function ChatClient() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mb-4 flex items-center justify-between gap-3">
+      <div className={cn('mb-4 items-center justify-between gap-3', selectedId ? 'hidden md:flex' : 'flex')}>
         <h1 className="flex items-center gap-2.5 font-display text-2xl font-bold text-slate-800">
           <MessageCircle className="h-6 w-6 text-role-ink" />
           <span>Chat</span>
@@ -239,7 +239,7 @@ export default function ChatClient() {
         </Button>
       </div>
 
-      <div className="grid h-[calc(100dvh-14rem)] min-h-[28rem] grid-cols-1 overflow-hidden rounded-3xl border border-white/70 bg-white/80 shadow-soft md:grid-cols-[320px_1fr]">
+      <div className="grid h-[calc(100dvh-10rem)] min-h-[28rem] grid-cols-1 overflow-hidden rounded-3xl border border-white/70 bg-white/80 shadow-soft md:h-[calc(100dvh-14rem)] md:grid-cols-[320px_1fr]">
         {/* Lista de conversaciones y búsqueda */}
         <aside className={cn('flex min-h-0 flex-col border-slate-100 md:border-r', selectedId && 'hidden md:flex')}>
           {showNew && (
@@ -425,14 +425,15 @@ export default function ChatClient() {
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
+                    // En pantallas táctiles Enter salta de línea (hay un botón de enviar); con teclado, Enter envía.
+                    if (e.key === 'Enter' && !e.shiftKey && window.matchMedia('(pointer: fine)').matches) {
                       e.preventDefault();
                       e.currentTarget.form?.requestSubmit();
                     }
                   }}
                   rows={1}
                   maxLength={2000}
-                  placeholder="Escribe un mensaje... (Enter para enviar)"
+                  placeholder="Escribe un mensaje..."
                   className="max-h-32 min-h-11 flex-1 resize-none rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-base text-slate-800 focus:border-role-accent focus:outline-none focus:ring-2 focus:ring-role-accent/20"
                 />
                 <Button type="submit" loading={sending} disabled={!draft.trim()} aria-label="Enviar mensaje">

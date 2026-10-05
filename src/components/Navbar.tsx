@@ -2,6 +2,7 @@
 
 import React, { useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
+import { createPortal } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
 import { AnimatePresence, m } from 'framer-motion';
 import {
@@ -301,95 +302,99 @@ function MobileDrawer({
     };
   }, []);
 
-  return (
-    <m.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.15 }}
-      className="fixed inset-0 z-modal md:hidden"
-    >
-      <button
-        type="button"
-        aria-label="Cerrar menú"
-        tabIndex={-1}
-        className="absolute inset-0 cursor-default bg-slate-900/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
+  // El header usa backdrop-filter y atrapa a sus hijos fixed: el menú se dibuja fuera de él.
+  return createPortal(
+    <div data-role={ROLE_META[user.role].variant}>
       <m.div
-        initial={{ x: '100%' }}
-        animate={{ x: 0 }}
-        exit={{ x: '100%' }}
-        transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-        className="glass-panel absolute right-0 top-0 flex h-full w-[85vw] max-w-xs flex-col overflow-y-auto p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.15 }}
+        className="fixed inset-0 z-modal md:hidden"
       >
-        <div className="mb-6 flex items-center justify-between">
-          <Avatar avatarKey={user.avatar} fallbackInitial={user.name.charAt(0)} size="sm" />
-          <button
-            onClick={onClose}
-            aria-label="Cerrar menú"
-            className="tap-target rounded-xl p-2 text-slate-500 hover:bg-slate-100"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        <p className="text-sm font-bold text-slate-800">{user.name}</p>
-        <RoleBadge role={user.role} className="mb-5 mt-1 self-start" />
-
-        <nav className="flex flex-1 flex-col gap-1">
-          {navLinks.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onClose}
-                className={cn(
-                  'flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-colors',
-                  isActive
-                    ? 'bg-gradient-to-r from-role-from to-role-to text-white'
-                    : 'text-slate-600 hover:bg-role-soft',
-                )}
-              >
-                <Icon className="h-4 w-4" strokeWidth={1.75} />
-                <span>{item.label}</span>
-                {item.href === '/chat' && unreadMessages > 0 && (
-                  <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 text-[11px] font-bold text-white">
-                    {unreadMessages}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <Link
-          href="/perfil"
-          onClick={onClose}
-          className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-role-soft"
-        >
-          <UserIcon className="h-4 w-4" />
-          <span>Mi perfil</span>
-        </Link>
-        {otherRoles.map((role) => (
-          <button
-            key={role}
-            onClick={() => onSwitchRole(role)}
-            className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-role-soft"
-          >
-            <Repeat className="h-4 w-4" />
-            <span>Cambiar a vista de {ROLE_META[role].label}</span>
-          </button>
-        ))}
         <button
-          onClick={onLogout}
-          className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50"
+          type="button"
+          aria-label="Cerrar menú"
+          tabIndex={-1}
+          className="absolute inset-0 cursor-default bg-slate-900/50 backdrop-blur-sm"
+          onClick={onClose}
+        />
+        <m.div
+          initial={{ x: '100%' }}
+          animate={{ x: 0 }}
+          exit={{ x: '100%' }}
+          transition={{ type: 'spring', stiffness: 320, damping: 32 }}
+          className="glass-panel absolute right-0 top-0 flex h-full w-[85vw] max-w-xs flex-col overflow-y-auto p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
         >
-          <LogOut className="h-4 w-4" />
-          <span>Cerrar sesión</span>
-        </button>
+          <div className="mb-6 flex items-center justify-between">
+            <Avatar avatarKey={user.avatar} fallbackInitial={user.name.charAt(0)} size="sm" />
+            <button
+              onClick={onClose}
+              aria-label="Cerrar menú"
+              className="tap-target rounded-xl p-2 text-slate-500 hover:bg-slate-100"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          <p className="text-sm font-bold text-slate-800">{user.name}</p>
+          <RoleBadge role={user.role} className="mb-5 mt-1 self-start" />
+
+          <nav className="flex flex-1 flex-col gap-1">
+            {navLinks.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onClose}
+                  className={cn(
+                    'flex items-center gap-2.5 rounded-xl px-3.5 py-3 text-sm font-semibold transition-colors',
+                    isActive
+                      ? 'bg-gradient-to-r from-role-from to-role-to text-white'
+                      : 'text-slate-600 hover:bg-role-soft',
+                  )}
+                >
+                  <Icon className="h-4 w-4" strokeWidth={1.75} />
+                  <span>{item.label}</span>
+                  {item.href === '/chat' && unreadMessages > 0 && (
+                    <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 text-[11px] font-bold text-white">
+                      {unreadMessages}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
+
+          <Link
+            href="/perfil"
+            onClick={onClose}
+            className="flex items-center gap-2.5 rounded-xl px-3.5 py-3 text-sm font-semibold text-slate-600 hover:bg-role-soft"
+          >
+            <UserIcon className="h-4 w-4" />
+            <span>Mi perfil</span>
+          </Link>
+          {otherRoles.map((role) => (
+            <button
+              key={role}
+              onClick={() => onSwitchRole(role)}
+              className="flex items-center gap-2.5 rounded-xl px-3.5 py-3 text-sm font-semibold text-slate-600 hover:bg-role-soft"
+            >
+              <Repeat className="h-4 w-4" />
+              <span>Cambiar a vista de {ROLE_META[role].label}</span>
+            </button>
+          ))}
+          <button
+            onClick={onLogout}
+            className="flex items-center gap-2.5 rounded-xl px-3.5 py-3 text-sm font-semibold text-red-600 hover:bg-red-50"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Cerrar sesión</span>
+          </button>
+        </m.div>
       </m.div>
-    </m.div>
+    </div>,
+    document.body,
   );
 }

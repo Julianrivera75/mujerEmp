@@ -44,8 +44,13 @@ export function Modal({
   const titleId = useRef(`modal-title-${Math.random().toString(36).slice(2)}`).current;
   const descId = useRef(`modal-desc-${Math.random().toString(36).slice(2)}`).current;
   const [mounted, setMounted] = React.useState(false);
+  // El modal se dibuja en <body>, fuera del área con el tema del rol: se copia para conservar sus colores.
+  const [roleTheme, setRoleTheme] = React.useState<string | undefined>();
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setRoleTheme(document.querySelector('[data-role]')?.getAttribute('data-role') ?? undefined);
+    setMounted(true);
+  }, []);
 
   const onCloseRef = useRef(onClose);
   useEffect(() => {
@@ -99,7 +104,10 @@ export function Modal({
   return createPortal(
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-modal flex items-end justify-center p-0 sm:items-center sm:p-4">
+        <div
+          data-role={roleTheme}
+          className="fixed inset-0 z-modal flex items-end justify-center p-0 sm:items-center sm:p-4"
+        >
           <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

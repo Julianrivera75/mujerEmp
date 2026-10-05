@@ -34,9 +34,12 @@ export const formatDayMonthShort = (value: DateInput) =>
 export const formatDateLong = (value: DateInput) =>
   formatter({ day: 'numeric', month: 'long', year: 'numeric' }).format(toDate(value));
 
-/** viernes, 25 de septiembre */
+/** Solo la primera letra en mayúscula: "Viernes, 25 de septiembre". */
+export const upperFirst = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+
+/** Viernes, 25 de septiembre */
 export const formatWeekdayDate = (value: DateInput) =>
-  formatter({ weekday: 'long', day: 'numeric', month: 'long' }).format(toDate(value));
+  upperFirst(formatter({ weekday: 'long', day: 'numeric', month: 'long' }).format(toDate(value)));
 
 /** 03:00 p. m. */
 export const formatTime = (value: DateInput) => formatter({ hour: '2-digit', minute: '2-digit' }).format(toDate(value));
@@ -44,9 +47,9 @@ export const formatTime = (value: DateInput) => formatter({ hour: '2-digit', min
 /** 03:00 p. m. - 05:00 p. m. */
 export const formatTimeRange = (start: DateInput, end: DateInput) => `${formatTime(start)} - ${formatTime(end)}`;
 
-/** viernes, 25 de septiembre de 2026 */
+/** Viernes, 25 de septiembre de 2026 */
 export const formatWeekdayDateLong = (value: DateInput) =>
-  formatter({ weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(toDate(value));
+  upperFirst(formatter({ weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(toDate(value)));
 
 /** vie, 25 de septiembre, 03:00 p. m. */
 export const formatDue = (value: DateInput) =>

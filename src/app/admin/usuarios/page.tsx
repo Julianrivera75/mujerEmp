@@ -184,20 +184,20 @@ export default function AdminUsersPage() {
       <Card variant="glass" className="flex flex-col items-center gap-4 p-5 md:flex-row">
         <div className="w-full flex-1">
           <Input
-            placeholder="Buscar por nombre, correo o número..."
+            placeholder="Nombre, correo o número..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             leftIcon={<Search className="h-4 w-4" />}
           />
         </div>
-        <div className="flex w-full items-center gap-3 md:w-auto">
-          <Select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="w-auto">
+        <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 md:flex md:w-auto md:items-center">
+          <Select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="w-full md:w-auto">
             <option value="ALL">Todos los roles</option>
             <option value="STUDENT">Estudiantes</option>
             <option value="MENTOR">Mentoras</option>
             <option value="ADMIN">Administradoras</option>
           </Select>
-          <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-auto">
+          <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-full md:w-auto">
             <option value="ALL">Todos los estados</option>
             <option value="ACTIVO">Solo activos</option>
             <option value="INACTIVO">Solo inactivos</option>
@@ -353,40 +353,23 @@ export default function AdminUsersPage() {
                       <p className="font-bold leading-tight text-slate-800">{u.name}</p>
                       <UserRoles user={u} className="mt-1" />
                     </div>
-                    <button
-                      onClick={() => handleOpenEdit(u)}
-                      disabled={Boolean(u.anonymizedAt)}
-                      className="tap-target rounded-xl p-2 text-role-ink hover:bg-role-soft disabled:opacity-40"
-                      aria-label={`Editar ${u.name}`}
-                    >
-                      <Edit3 className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => setResetTarget(u)}
-                      disabled={Boolean(u.anonymizedAt) || u.status !== 'ACTIVO' || u.role === 'ADMIN'}
-                      className="tap-target rounded-xl p-2 text-slate-500 hover:bg-role-soft hover:text-role-ink disabled:opacity-40"
-                      aria-label={`Restablecer la contraseña de ${u.name}`}
-                    >
-                      <KeyRound className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => setAnonTarget(u)}
-                      disabled={Boolean(u.anonymizedAt)}
-                      className="tap-target rounded-xl p-2 text-slate-500 hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
-                      aria-label={`Anonimizar a ${u.name}`}
-                    >
-                      <UserX className="h-4 w-4" />
-                    </button>
                   </div>
                   <ResponsiveRow
                     columns={[
                       {
                         label: 'Estado',
                         value: (
-                          <StatusPill
-                            label={u.status === 'ACTIVO' ? 'Activo' : 'Inactivo'}
-                            tone={u.status === 'ACTIVO' ? 'success' : 'danger'}
-                          />
+                          <span className="inline-flex items-center gap-2.5">
+                            <Switch
+                              checked={u.status === 'ACTIVO'}
+                              onChange={() => (u.status === 'ACTIVO' ? setDeactivateTarget(u) : handleToggleStatus(u))}
+                              label={`Cambiar estado de ${u.name}`}
+                            />
+                            <StatusPill
+                              label={u.status === 'ACTIVO' ? 'Activo' : 'Inactivo'}
+                              tone={u.status === 'ACTIVO' ? 'success' : 'danger'}
+                            />
+                          </span>
                         ),
                       },
                       { label: numberLabel(u.role), value: u.memberNumber || 'Sin número' },
@@ -396,6 +379,35 @@ export default function AdminUsersPage() {
                       },
                     ]}
                   />
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    <button
+                      onClick={() => handleOpenEdit(u)}
+                      disabled={Boolean(u.anonymizedAt)}
+                      className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-role-soft text-xs font-bold text-role-ink disabled:opacity-40"
+                      aria-label={`Editar ${u.name}`}
+                    >
+                      <Edit3 className="h-4 w-4" />
+                      <span>Editar</span>
+                    </button>
+                    <button
+                      onClick={() => setResetTarget(u)}
+                      disabled={Boolean(u.anonymizedAt) || u.status !== 'ACTIVO' || u.role === 'ADMIN'}
+                      className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-slate-100 text-xs font-bold text-slate-600 disabled:opacity-40"
+                      aria-label={`Restablecer la contraseña de ${u.name}`}
+                    >
+                      <KeyRound className="h-4 w-4" />
+                      <span>Clave</span>
+                    </button>
+                    <button
+                      onClick={() => setAnonTarget(u)}
+                      disabled={Boolean(u.anonymizedAt)}
+                      className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-red-50 text-xs font-bold text-red-600 disabled:opacity-40"
+                      aria-label={`Anonimizar a ${u.name}`}
+                    >
+                      <UserX className="h-4 w-4" />
+                      <span>Anonimizar</span>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

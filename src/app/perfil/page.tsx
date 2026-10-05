@@ -280,7 +280,7 @@ export default function ProfilePage() {
               />
               <Input
                 label="¿A qué te dedicas?"
-                placeholder="Ej: Estudiante de Derecho, emprendedora, diseñadora gráfica..."
+                placeholder="Ej: Estudiante, emprendedora..."
                 value={occupation}
                 onChange={(e) => setOccupation(e.target.value)}
                 maxLength={160}
@@ -367,7 +367,12 @@ export default function ProfilePage() {
               </div>
 
               <div className="flex justify-end pt-4">
-                <Button type="submit" loading={saving} leftIcon={<Save className="h-4 w-4" />}>
+                <Button
+                  type="submit"
+                  loading={saving}
+                  className="w-full sm:w-auto"
+                  leftIcon={<Save className="h-4 w-4" />}
+                >
                   Guardar cambios
                 </Button>
               </div>
