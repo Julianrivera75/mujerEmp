@@ -47,9 +47,9 @@ export default function StudentDashboardPage() {
   const [classes, setClasses] = useState<StudentClass[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const loadData = async () => {
+  const loadData = async ({ silent = false } = {}) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await fetch('/api/classes');
       const data = await res.json();
       setClasses(data.classes || []);
@@ -61,7 +61,7 @@ export default function StudentDashboardPage() {
   };
 
   useEffect(() => {
-    loadData();
+    void loadData();
   }, []);
 
   const now = new Date();
@@ -207,7 +207,7 @@ export default function StudentDashboardPage() {
                     key={`sala-${cls.id}`}
                     classes={room.map((r) => upcomingClasses.find((c) => c.id === r.id) ?? cls)}
                     userId={user.id}
-                    onChanged={loadData}
+                    onChanged={() => loadData({ silent: true })}
                   />
                 );
               }
@@ -249,7 +249,7 @@ export default function StudentDashboardPage() {
                         meetLink={cls.meetLink}
                         alreadyAttended={Boolean(myAttendance)}
                         attendedAt={myAttendance?.joinedAt}
-                        onAttendanceSuccess={loadData}
+                        onAttendanceSuccess={() => loadData({ silent: true })}
                       />
                       {cls.youtubeUrl && (
                         <Link

@@ -27,25 +27,22 @@ export default function JoinMeetButton({
   onAttendanceSuccess,
 }: JoinMeetButtonProps) {
   const { show } = useToast();
-  const [loading, setLoading] = useState(false);
   const [attended, setAttended] = useState(initialAttended);
   const [attendedTime, setAttendedTime] = useState<string | null>(
     initialAttendedAt ? formatTime(initialAttendedAt) : null,
   );
+  const safeMeetLink = safeHref(meetLink);
 
-  const handleJoin = async () => {
-    if (!meetLink) {
-      show('info', 'Aún no se ha publicado el enlace de Google Meet para esta clase.');
-      return;
-    }
-
-    setLoading(true);
-
+  // La asistencia se registra en segundo plano: abrir Meet no puede esperar a la red, porque en iPhone el navegador
+  // bloquea las ventanas que no se abren en el mismo instante del toque.
+  const registerAttendance = async () => {
     try {
       const res = await fetch('/api/attendance/mark', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ classId }),
+        // Sigue enviándose aunque la pestaña pase a segundo plano al abrir Meet.
+        keepalive: true,
       });
 
       const data = await res.json();
@@ -63,8 +60,7 @@ export default function JoinMeetButton({
               : `Asistencia registrada en «${target.title}».`,
           );
         }
-        const now = new Date();
-        setAttendedTime(formatTime(now));
+        setAttendedTime(formatTime(new Date()));
 
         const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (!reduceMotion) {
@@ -88,25 +84,24 @@ export default function JoinMeetButton({
       }
     } catch (err) {
       logClientError('Error al marcar asistencia:', err);
-    } finally {
-      setLoading(false);
-      const safeMeetLink = safeHref(meetLink);
-      if (safeMeetLink) window.open(safeMeetLink, '_blank', 'noopener,noreferrer');
     }
   };
 
-  if (!meetLink) {
+  if (!safeMeetLink) {
     return <StatusPill label="Enlace de Meet pendiente de publicación" tone="warning" pulse />;
   }
 
   return (
     <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+      {/* Enlace nativo: el navegador abre Meet en el mismo toque, sin depender de la respuesta del servidor. */}
       <Button
-        onClick={handleJoin}
-        loading={loading}
+        href={safeMeetLink}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={() => void registerAttendance()}
         size="lg"
         className="!bg-gradient-to-r !from-emerald-500 !via-teal-600 !to-cyan-600 !shadow-teal-500/25"
-        leftIcon={!loading ? <Video className="h-5 w-5" /> : undefined}
+        leftIcon={<Video className="h-5 w-5" />}
         rightIcon={<ExternalLink className="h-4 w-4 opacity-75" />}
       >
         Unirme a clase en Google Meet
