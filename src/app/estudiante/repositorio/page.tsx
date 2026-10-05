@@ -52,9 +52,9 @@ export default function StudentRepositoryPage() {
       <div>
         <Badge tone="danger" className="mb-2">
           <Youtube className="h-3.5 w-3.5" />
-          <span>Biblioteca audiovisual</span>
+          <span>Tus clases pasadas</span>
         </Badge>
-        <h1 className="font-display text-2xl font-bold text-slate-800 sm:text-3xl">Repositorio de clases grabadas</h1>
+        <h1 className="font-display text-2xl font-bold text-slate-800 sm:text-3xl">Clases grabadas</h1>
         <p className="mt-1 text-sm text-slate-500">
           Repasa las clases dictadas por tus mentoras cuando lo desees, reproduce los videos y descarga materiales de
           estudio.
@@ -65,7 +65,7 @@ export default function StudentRepositoryPage() {
         <SkeletonCard />
       ) : classes.length === 0 ? (
         <Card variant="glass" className="p-0">
-          <EmptyState icon={BookOpen} title="Aún no hay clases registradas en el repositorio" />
+          <EmptyState icon={BookOpen} title="Aún no hay clases grabadas" />
         </Card>
       ) : (
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">

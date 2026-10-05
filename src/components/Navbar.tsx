@@ -61,7 +61,7 @@ const mentorLinks = [
 
 const studentLinks = [
   { href: '/estudiante', label: 'Mis clases', icon: Video },
-  { href: '/estudiante/repositorio', label: 'Repositorio', icon: BookOpen },
+  { href: '/estudiante/repositorio', label: 'Clases grabadas', icon: BookOpen },
   { href: '/estudiante/tareas', label: 'Mis tareas', icon: ClipboardList },
   { href: '/estudiante/asistencias', label: 'Mi asistencia', icon: CheckCircle2 },
   { href: '/estudiante/certificado', label: 'Certificados', icon: Award },

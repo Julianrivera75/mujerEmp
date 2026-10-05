@@ -193,7 +193,7 @@ export default function StudentDashboardPage() {
             <EmptyState
               icon={Calendar}
               title="No tienes clases próximas pendientes"
-              description="Revisa el repositorio para ver clases grabadas de sesiones anteriores."
+              description="Revisa las clases grabadas para repasar las sesiones anteriores."
             />
           </Card>
         ) : (
@@ -257,7 +257,7 @@ export default function StudentDashboardPage() {
                           className="tap-target inline-flex items-center gap-1.5 rounded-xl bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 transition-colors hover:bg-red-100 hover:text-red-800"
                         >
                           <Youtube className="h-3.5 w-3.5" />
-                          <span>Ver grabación en repositorio</span>
+                          <span>Ver la grabación</span>
                         </Link>
                       )}
                     </div>
@@ -279,7 +279,7 @@ export default function StudentDashboardPage() {
             href="/estudiante/repositorio"
             className="flex items-center gap-1 text-xs font-bold text-role-ink hover:underline"
           >
-            <span>Ir al repositorio completo</span>
+            <span>Ver todas las clases grabadas</span>
             <ChevronRight className="h-4 w-4" />
           </Link>
         </div>

@@ -172,7 +172,7 @@ export function ResourcesModal({ cls, onClose, onUpdated }: ResourcesModalProps)
         onCancel={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
         title="¿Eliminar este material?"
-        description="Las estudiantes ya no podrán verlo en el repositorio de la clase."
+        description="Las estudiantes ya no podrán verlo en las clases grabadas."
         confirmLabel="Eliminar"
       />
     </>

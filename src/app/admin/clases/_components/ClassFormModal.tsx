@@ -237,7 +237,7 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
             className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-red-900"
           >
             <Youtube className="h-4 w-4 text-red-600" />
-            <span>Grabación en YouTube (para repositorio)</span>
+            <span>Grabación en YouTube (se muestra en Clases grabadas)</span>
           </label>
           <input
             id="class-youtube-url"
