@@ -30,6 +30,12 @@ enum ResourceType {
   LINK
 }
 
+// Cómo quedó registrada una asistencia: por clic en el enlace o por permanencia en una sala compartida
+enum AttendanceSource {
+  CLICK
+  CARRY
+}
+
 enum FileType {
   PDF
   DOC
@@ -141,12 +147,15 @@ model ClassEnrollment {
 }
 
 model Attendance {
-  id           String       @id @default(cuid())
+  id           String           @id @default(cuid())
   classId      String
   studentId    String
-  joinedAt     DateTime     @default(now()) // Hora exacta de clic al enlace de Google Meet
-  classSession ClassSession @relation(fields: [classId], references: [id], onDelete: Cascade)
-  student      User         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  joinedAt     DateTime         @default(now()) // Hora exacta de clic al enlace de Google Meet
+  source       AttendanceSource @default(CLICK)
+  // La estudiante avisó que salió de la sala: ya no se le propaga la asistencia a las clases siguientes
+  leftAt       DateTime?
+  classSession ClassSession     @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student      User             @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([classId, studentId])
   @@index([studentId])

@@ -2,11 +2,13 @@ import { NextResponse } from 'next/server';
 import { HttpError, withAuth } from '@/lib/api';
 import { CERTIFICATE_MODULES, attendancePercentage, certificateOpensAt, moduleStatus } from '@/lib/modules';
 import prisma from '@/lib/prisma';
+import { settleCarryOver } from '@/lib/rooms-db';
 
 export const dynamic = 'force-dynamic';
 
 /** Estado de los certificados por módulo de la estudiante con sesión. */
 export const GET = withAuth('certificates GET', ['STUDENT'], async (_req, user) => {
+  await settleCarryOver().catch(() => undefined);
   const student = await prisma.user.findUnique({
     where: { id: user.id },
     select: { name: true, memberNumber: true },

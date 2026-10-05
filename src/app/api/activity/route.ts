@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api';
 import { countUnreadMessages, syncDueSoon } from '@/lib/notifications';
 import prisma from '@/lib/prisma';
+import { settleCarryOver } from '@/lib/rooms-db';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +21,11 @@ export const POST = withAuth('activity', 'any', async (_req, user) => {
     await prisma.user.update({ where: { id: user.id }, data: { lastSeenAt: now } });
   }
 
-  if (user.roles.includes('STUDENT')) await syncDueSoon(user.id, now);
+  if (user.roles.includes('STUDENT')) {
+    await syncDueSoon(user.id, now);
+    // Mantiene al día la asistencia por permanencia mientras haya estudiantes con la plataforma abierta.
+    await settleCarryOver(now).catch(() => undefined);
+  }
 
   const [unreadNotifications, unreadMessages] = await Promise.all([
     prisma.notification.count({ where: { userId: user.id, readAt: null } }),

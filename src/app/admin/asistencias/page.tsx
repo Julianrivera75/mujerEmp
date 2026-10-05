@@ -18,6 +18,7 @@ import { logClientError } from '@/lib/client-log';
 interface AttendanceLog {
   id: string;
   joinedAt: string;
+  source?: 'CLICK' | 'CARRY';
   student: { id: string; name: string; email: string; memberNumber: string | null };
   classSession: {
     id: string;
@@ -223,7 +224,13 @@ export default function AdminAttendancePage() {
                   </span>
                 ),
               },
-              { header: 'Estado', align: 'center', cell: () => <StatusPill label="Presente" tone="success" /> },
+              {
+                header: 'Estado',
+                align: 'center',
+                cell: (log) => (
+                  <StatusPill label={log.source === 'CARRY' ? 'Presente (automática)' : 'Presente'} tone="success" />
+                ),
+              },
             ]}
           />
         )}

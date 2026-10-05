@@ -14,6 +14,7 @@ import { logClientError } from '@/lib/client-log';
 interface MentorAttendanceLog {
   id: string;
   joinedAt: string;
+  source?: 'CLICK' | 'CARRY';
   student: { id: string; name: string; email: string };
   classSession: { id: string; title: string; dateStart: string; meetLink: string | null };
 }
@@ -83,7 +84,13 @@ export default function MentorAttendancesPage() {
                   </span>
                 ),
               },
-              { header: 'Estado', align: 'center', cell: () => <StatusPill label="Conectada" tone="success" /> },
+              {
+                header: 'Estado',
+                align: 'center',
+                cell: (log) => (
+                  <StatusPill label={log.source === 'CARRY' ? 'Conectada (automática)' : 'Conectada'} tone="success" />
+                ),
+              },
             ]}
           />
         )}

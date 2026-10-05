@@ -52,6 +52,17 @@ export default function JoinMeetButton({
 
       if (res.ok) {
         setAttended(true);
+        const target = data.attendedClass as { id: string; title: string } | null;
+        const following = (data.continuesIn ?? []) as unknown[];
+        // Varias clases pueden compartir sala: se aclara a cuál quedó la asistencia y que sigue en las siguientes.
+        if (target && (following.length > 0 || target.id !== classId)) {
+          show(
+            'success',
+            following.length > 0
+              ? `Asistencia registrada en «${target.title}». Seguirás presente en las ${following.length} clase(s) siguientes de esta sala; avisa con «Ya salí de la sala» si te retiras.`
+              : `Asistencia registrada en «${target.title}».`,
+          );
+        }
         const now = new Date();
         setAttendedTime(formatTime(now));
 

@@ -25,6 +25,18 @@ export function monthKeyOf(date: Date, timeZone: string = ORG_TIME_ZONE): string
   return toKey(year, month);
 }
 
+/** Día (AAAA-MM-DD) de un instante, en la zona horaria de la organización. */
+export function dayKeyOf(date: Date, timeZone: string = ORG_TIME_ZONE): string {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+  return `${get('year')}-${get('month')}-${get('day')}`;
+}
+
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
 /** Meses alrededor de la fecha dada (por defecto 6 hacia atrás y 6 hacia adelante). */

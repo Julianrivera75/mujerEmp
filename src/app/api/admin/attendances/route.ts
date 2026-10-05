@@ -2,10 +2,12 @@ import type { Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { MAX_ROWS, withAuth } from '@/lib/api';
 import prisma from '@/lib/prisma';
+import { settleCarryOver } from '@/lib/rooms-db';
 
 export const dynamic = 'force-dynamic';
 
 export const GET = withAuth('admin/attendances', 'any', async (req, user) => {
+  await settleCarryOver().catch(() => undefined);
   const { searchParams } = new URL(req.url);
   const classId = searchParams.get('classId');
   const studentIdParam = searchParams.get('studentId');

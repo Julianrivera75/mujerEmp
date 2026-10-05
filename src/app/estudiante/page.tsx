@@ -25,6 +25,8 @@ import JoinMeetButton from '@/components/JoinMeetButton';
 import { formatDateLong, formatTimeRange, formatWeekdayDate } from '@/lib/format';
 import { logClientError } from '@/lib/client-log';
 import { ClassPoster } from '@/components/ClassPoster';
+import { RoomCard } from '@/components/RoomCard';
+import { groupRooms } from '@/lib/rooms';
 
 interface StudentClass {
   id: string;
@@ -37,7 +39,7 @@ interface StudentClass {
   youtubeUrl: string | null;
   status: string;
   mentor: { name: string; email: string };
-  attendances: { studentId: string; joinedAt: string }[];
+  attendances: { studentId: string; joinedAt: string; source?: 'CLICK' | 'CARRY'; leftAt?: string | null }[];
 }
 
 export default function StudentDashboardPage() {
@@ -65,6 +67,11 @@ export default function StudentDashboardPage() {
   const now = new Date();
   const upcomingClasses = classes.filter((c) => c.status !== 'FINALIZADA');
   const completedClasses = classes.filter((c) => c.status === 'FINALIZADA' || new Date(c.dateEnd) < now);
+  // Clases seguidas con el mismo enlace de Meet: se muestran como una sola sala.
+  const roomChains = groupRooms(
+    upcomingClasses.map((c) => ({ ...c, dateStart: new Date(c.dateStart), dateEnd: new Date(c.dateEnd) })),
+  ).filter((chain) => chain.length > 1);
+  const roomOf = new Map(roomChains.flatMap((chain) => chain.map((c) => [c.id, chain] as const)));
   const totalAttended = classes.filter((c) => c.attendances.some((a) => a.studentId === user.id)).length;
   const progressPct = classes.length > 0 ? Math.round((totalAttended / classes.length) * 100) : 0;
 
@@ -192,6 +199,18 @@ export default function StudentDashboardPage() {
         ) : (
           <div className="space-y-4">
             {upcomingClasses.map((cls, i) => {
+              const room = roomOf.get(cls.id);
+              if (room) {
+                if (room[0].id !== cls.id) return null;
+                return (
+                  <RoomCard
+                    key={`sala-${cls.id}`}
+                    classes={room.map((r) => upcomingClasses.find((c) => c.id === r.id) ?? cls)}
+                    userId={user.id}
+                    onChanged={loadData}
+                  />
+                );
+              }
               const start = new Date(cls.dateStart);
               const end = new Date(cls.dateEnd);
               const formattedDate = formatWeekdayDate(start);
