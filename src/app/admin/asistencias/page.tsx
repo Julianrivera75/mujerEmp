@@ -6,7 +6,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Field';
-import { Table, THead, TRow, TCell } from '@/components/ui/Table';
+import { ResponsiveTable } from '@/components/ui/Table';
 import { StatusPill } from '@/components/ui/Badge';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -164,7 +164,7 @@ export default function AdminAttendancePage() {
         )}
       </div>
 
-      <Card variant="glass" className="p-6">
+      <Card variant="glass" className="p-4 sm:p-6">
         <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h2 className="font-display text-lg font-bold text-slate-800">Historial detallado de ingresos</h2>
@@ -191,47 +191,41 @@ export default function AdminAttendancePage() {
         ) : filteredLogs.length === 0 ? (
           <EmptyState icon={CheckCircle2} title="No se encontraron registros de asistencia" />
         ) : (
-          <Table caption="Registro de asistencias a clases">
-            <THead>
-              <TRow>
-                <TCell head>Estudiante</TCell>
-                <TCell head>Clase / módulo</TCell>
-                <TCell head>Docente</TCell>
-                <TCell head>Fecha y hora de clic</TCell>
-                <TCell head className="text-center">
-                  Estado
-                </TCell>
-              </TRow>
-            </THead>
-            <tbody>
-              {filteredLogs.map((log) => {
-                const clickDate = new Date(log.joinedAt);
-                const formatted = formatDateTimeSeconds(clickDate);
-
-                return (
-                  <TRow key={log.id}>
-                    <TCell>
-                      <p className="font-bold text-slate-800">{log.student.name}</p>
-                      <p className="text-[11px] text-slate-500">{log.student.email}</p>
-                    </TCell>
-                    <TCell>
-                      <p className="font-semibold text-slate-700">{log.classSession.title}</p>
-                    </TCell>
-                    <TCell className="font-medium text-slate-600">{log.classSession.mentor.name}</TCell>
-                    <TCell>
-                      <span className="flex items-center gap-1.5 font-semibold text-slate-700">
-                        <Clock className="h-3.5 w-3.5 text-emerald-600" />
-                        {formatted}
-                      </span>
-                    </TCell>
-                    <TCell className="text-center">
-                      <StatusPill label="Presente" tone="success" />
-                    </TCell>
-                  </TRow>
-                );
-              })}
-            </tbody>
-          </Table>
+          <ResponsiveTable
+            caption="Registro de asistencias a clases"
+            rows={filteredLogs}
+            rowKey={(log) => log.id}
+            columns={[
+              {
+                header: 'Estudiante',
+                primary: true,
+                cell: (log) => (
+                  <>
+                    <p className="font-bold text-slate-800">{log.student.name}</p>
+                    <p className="text-[11px] font-normal text-slate-500">{log.student.email}</p>
+                  </>
+                ),
+              },
+              {
+                header: 'Clase / módulo',
+                cell: (log) => <span className="font-semibold text-slate-700">{log.classSession.title}</span>,
+              },
+              {
+                header: 'Docente',
+                cell: (log) => <span className="font-medium text-slate-600">{log.classSession.mentor.name}</span>,
+              },
+              {
+                header: 'Fecha y hora de clic',
+                cell: (log) => (
+                  <span className="inline-flex items-center gap-1.5 font-semibold text-slate-700">
+                    <Clock className="h-3.5 w-3.5 text-emerald-600" />
+                    {formatDateTimeSeconds(new Date(log.joinedAt))}
+                  </span>
+                ),
+              },
+              { header: 'Estado', align: 'center', cell: () => <StatusPill label="Presente" tone="success" /> },
+            ]}
+          />
         )}
       </Card>
     </div>

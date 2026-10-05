@@ -225,8 +225,8 @@ export default function AdminUsersPage() {
           />
         ) : (
           <>
-            {/* Tabla — visible ≥ sm */}
-            <div className="hidden sm:block">
+            {/* Tabla — visible ≥ md */}
+            <div className="hidden md:block">
               <Table caption="Usuarias de la plataforma">
                 <THead>
                   <TRow>
@@ -343,8 +343,8 @@ export default function AdminUsersPage() {
               </Table>
             </div>
 
-            {/* Tarjetas apiladas — < sm */}
-            <div className="space-y-3 divide-y divide-slate-100 p-3 sm:hidden">
+            {/* Tarjetas apiladas — < md */}
+            <div className="space-y-3 divide-y divide-slate-100 p-3 md:hidden">
               {filteredUsers.map((u) => (
                 <div key={u.id} className="rounded-2xl border border-slate-100 p-4">
                   <div className="mb-3 flex items-center gap-3">

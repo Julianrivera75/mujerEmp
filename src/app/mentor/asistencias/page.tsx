@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { CheckCircle2, Clock } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
-import { Table, THead, TRow, TCell } from '@/components/ui/Table';
+import { ResponsiveTable } from '@/components/ui/Table';
 import { StatusPill } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonRow } from '@/components/ui/Skeleton';
@@ -45,7 +45,7 @@ export default function MentorAttendancesPage() {
         description="Registro cronológico de las estudiantes que hicieron clic en el enlace de Google Meet de tus sesiones."
       />
 
-      <Card variant="glass" className="p-6">
+      <Card variant="glass" className="p-4 sm:p-6">
         {loading ? (
           <div className="divide-y divide-slate-100">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -55,43 +55,37 @@ export default function MentorAttendancesPage() {
         ) : attendances.length === 0 ? (
           <EmptyState icon={CheckCircle2} title="Aún no hay registros de asistencia a tus clases" />
         ) : (
-          <Table caption="Asistencias de las estudiantes a mis clases">
-            <THead>
-              <TRow>
-                <TCell head>Estudiante</TCell>
-                <TCell head>Clase / sesión</TCell>
-                <TCell head>Fecha y hora de clic</TCell>
-                <TCell head className="text-center">
-                  Estado
-                </TCell>
-              </TRow>
-            </THead>
-            <tbody>
-              {attendances.map((log) => {
-                const clickDate = new Date(log.joinedAt);
-                const formatted = formatDayMonthTime(clickDate);
-
-                return (
-                  <TRow key={log.id}>
-                    <TCell>
-                      <p className="font-bold text-slate-800">{log.student.name}</p>
-                      <p className="text-[11px] text-slate-500">{log.student.email}</p>
-                    </TCell>
-                    <TCell className="font-semibold text-slate-700">{log.classSession.title}</TCell>
-                    <TCell>
-                      <span className="flex items-center gap-1.5 font-medium text-slate-700">
-                        <Clock className="h-3.5 w-3.5 text-role-ink" />
-                        {formatted}
-                      </span>
-                    </TCell>
-                    <TCell className="text-center">
-                      <StatusPill label="Conectada" tone="success" />
-                    </TCell>
-                  </TRow>
-                );
-              })}
-            </tbody>
-          </Table>
+          <ResponsiveTable
+            caption="Asistencias de las estudiantes a mis clases"
+            rows={attendances}
+            rowKey={(log) => log.id}
+            columns={[
+              {
+                header: 'Estudiante',
+                primary: true,
+                cell: (log) => (
+                  <>
+                    <p className="font-bold text-slate-800">{log.student.name}</p>
+                    <p className="text-[11px] font-normal text-slate-500">{log.student.email}</p>
+                  </>
+                ),
+              },
+              {
+                header: 'Clase / sesión',
+                cell: (log) => <span className="font-semibold text-slate-700">{log.classSession.title}</span>,
+              },
+              {
+                header: 'Fecha y hora de clic',
+                cell: (log) => (
+                  <span className="inline-flex items-center gap-1.5 font-medium text-slate-700">
+                    <Clock className="h-3.5 w-3.5 text-role-ink" />
+                    {formatDayMonthTime(new Date(log.joinedAt))}
+                  </span>
+                ),
+              },
+              { header: 'Estado', align: 'center', cell: () => <StatusPill label="Conectada" tone="success" /> },
+            ]}
+          />
         )}
       </Card>
     </div>

@@ -61,7 +61,7 @@ export function ResponsiveRow({
   className?: string;
 }) {
   return (
-    <div className={cn('space-y-2 rounded-2xl border border-slate-100 p-4 sm:hidden', className)}>
+    <div className={cn('space-y-2 rounded-2xl border border-slate-100 p-4 md:hidden', className)}>
       {columns.map((c, i) => (
         <div key={i} className="flex items-center justify-between gap-3 text-sm">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-500">{c.label}</span>
@@ -69,5 +69,88 @@ export function ResponsiveRow({
         </div>
       ))}
     </div>
+  );
+}
+
+export interface ResponsiveColumn<T> {
+  header: string;
+  cell: (row: T) => React.ReactNode;
+  align?: 'left' | 'center' | 'right';
+  className?: string;
+  /** Columna que encabeza la tarjeta en el celular (una por tabla, normalmente la primera). */
+  primary?: boolean;
+}
+
+const ALIGN: Record<'left' | 'center' | 'right', string> = {
+  left: '',
+  center: 'text-center',
+  right: 'text-right',
+};
+
+/**
+ * Tabla en pantallas medianas y grandes; en el celular (< md) cada fila pasa a ser una tarjeta
+ * con el dato principal arriba y el resto como pares etiqueta: valor, sin desplazamiento lateral.
+ */
+export function ResponsiveTable<T>({
+  caption,
+  rows,
+  rowKey,
+  columns,
+  className,
+}: {
+  caption: string;
+  rows: T[];
+  rowKey: (row: T) => string;
+  columns: ResponsiveColumn<T>[];
+  className?: string;
+}) {
+  const primary = columns.find((c) => c.primary) ?? columns[0];
+  const rest = columns.filter((c) => c !== primary);
+
+  return (
+    <>
+      <div className="hidden md:block">
+        <Table caption={caption} className={className}>
+          <THead>
+            <TRow>
+              {columns.map((c) => (
+                <TCell key={c.header} head className={ALIGN[c.align ?? 'left']}>
+                  {c.header}
+                </TCell>
+              ))}
+            </TRow>
+          </THead>
+          <tbody>
+            {rows.map((row) => (
+              <TRow key={rowKey(row)}>
+                {columns.map((c) => (
+                  <TCell key={c.header} className={cn(ALIGN[c.align ?? 'left'], c.className)}>
+                    {c.cell(row)}
+                  </TCell>
+                ))}
+              </TRow>
+            ))}
+          </tbody>
+        </Table>
+      </div>
+
+      <ul aria-label={caption} className="space-y-3 md:hidden">
+        {rows.map((row) => (
+          <li key={rowKey(row)} className="rounded-2xl border border-slate-100 bg-white/60 p-4">
+            <div className="mb-3 min-w-0 break-words font-bold text-slate-800">{primary.cell(row)}</div>
+            <dl className="space-y-2">
+              {rest.map((c) => (
+                <div key={c.header} className="flex items-start justify-between gap-4 text-sm">
+                  <dt className="flex-shrink-0 pt-0.5 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    {c.header}
+                  </dt>
+                  <dd className="min-w-0 break-words text-right text-slate-700">{c.cell(row)}</dd>
+                </div>
+              ))}
+            </dl>
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }

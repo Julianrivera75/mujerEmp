@@ -1,8 +1,17 @@
 import type { Metadata } from 'next';
 import { LegalDocument, LegalSection } from '@/components/legal/LegalDocument';
-import { Table, TCell, THead, TRow } from '@/components/ui/Table';
+import { ResponsiveTable } from '@/components/ui/Table';
 
 export const metadata: Metadata = { title: 'Política de cookies | Empoderadas Diversas' };
+
+const COOKIES = [
+  {
+    name: '__Host-empoderas_session',
+    purpose: 'Mantener tu sesión iniciada de forma segura.',
+    duration: '7 días',
+    kind: 'Técnica, necesaria (propia)',
+  },
+];
 
 export default function CookiesPage() {
   return (
@@ -11,24 +20,18 @@ export default function CookiesPage() {
       intro="Una cookie es un pequeño archivo que el sitio guarda en tu navegador. Esta plataforma usa la mínima cantidad necesaria."
     >
       <LegalSection title="Cookies que usamos">
-        <Table caption="Cookies que usa la plataforma" className="text-xs">
-          <THead>
-            <tr>
-              <TCell head>Nombre</TCell>
-              <TCell head>Finalidad</TCell>
-              <TCell head>Duración</TCell>
-              <TCell head>Tipo</TCell>
-            </tr>
-          </THead>
-          <tbody>
-            <TRow>
-              <TCell className="font-mono">__Host-empoderas_session</TCell>
-              <TCell>Mantener tu sesión iniciada de forma segura.</TCell>
-              <TCell>7 días</TCell>
-              <TCell>Técnica, necesaria (propia)</TCell>
-            </TRow>
-          </tbody>
-        </Table>
+        <ResponsiveTable
+          caption="Cookies que usa la plataforma"
+          className="text-xs"
+          rows={COOKIES}
+          rowKey={(c) => c.name}
+          columns={[
+            { header: 'Nombre', primary: true, cell: (c) => <span className="font-mono text-sm">{c.name}</span> },
+            { header: 'Finalidad', cell: (c) => c.purpose },
+            { header: 'Duración', cell: (c) => c.duration },
+            { header: 'Tipo', cell: (c) => c.kind },
+          ]}
+        />
         <p>
           Es una cookie estrictamente necesaria: sin ella no podrías ingresar, por eso no requiere un consentimiento
           separado. No es accesible desde scripts del navegador y solo se envía por conexión segura.

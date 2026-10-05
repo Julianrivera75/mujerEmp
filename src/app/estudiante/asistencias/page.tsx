@@ -5,7 +5,7 @@ import { CheckCircle2, Clock, Calendar, Award } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { StatCard } from '@/components/ui/StatCard';
-import { Table, THead, TRow, TCell } from '@/components/ui/Table';
+import { ResponsiveTable } from '@/components/ui/Table';
 import { StatusPill } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonRow } from '@/components/ui/Skeleton';
@@ -65,7 +65,7 @@ export default function StudentAttendanceHistoryPage() {
         />
       </div>
 
-      <Card variant="glass" className="p-6">
+      <Card variant="glass" className="p-4 sm:p-6">
         <h2 className="mb-4 font-display text-lg font-bold text-slate-800">
           Detalle de clases conectadas en Google Meet
         </h2>
@@ -83,39 +83,32 @@ export default function StudentAttendanceHistoryPage() {
             description="Conéctate a tus próximas clases para marcar tu presencia."
           />
         ) : (
-          <Table caption="Mis asistencias a clases">
-            <THead>
-              <TRow>
-                <TCell head>Clase / sesión</TCell>
-                <TCell head>Docente</TCell>
-                <TCell head>Fecha y hora de clic</TCell>
-                <TCell head className="text-center">
-                  Estado
-                </TCell>
-              </TRow>
-            </THead>
-            <tbody>
-              {attendances.map((item) => {
-                const clickDate = new Date(item.joinedAt);
-                const formatted = formatDayMonthLongTime(clickDate);
-                return (
-                  <TRow key={item.id}>
-                    <TCell className="font-bold text-slate-800">{item.classSession.title}</TCell>
-                    <TCell className="font-medium text-slate-600">{item.classSession.mentor.name}</TCell>
-                    <TCell>
-                      <span className="flex items-center gap-1.5 font-semibold text-slate-700">
-                        <Clock className="h-3.5 w-3.5 text-emerald-600" />
-                        {formatted}
-                      </span>
-                    </TCell>
-                    <TCell className="text-center">
-                      <StatusPill label="Presente" tone="success" />
-                    </TCell>
-                  </TRow>
-                );
-              })}
-            </tbody>
-          </Table>
+          <ResponsiveTable
+            caption="Mis asistencias a clases"
+            rows={attendances}
+            rowKey={(item) => item.id}
+            columns={[
+              {
+                header: 'Clase / sesión',
+                primary: true,
+                cell: (item) => item.classSession.title,
+              },
+              {
+                header: 'Docente',
+                cell: (item) => <span className="font-medium text-slate-600">{item.classSession.mentor.name}</span>,
+              },
+              {
+                header: 'Fecha y hora de clic',
+                cell: (item) => (
+                  <span className="inline-flex items-center gap-1.5 font-semibold text-slate-700">
+                    <Clock className="h-3.5 w-3.5 text-emerald-600" />
+                    {formatDayMonthLongTime(new Date(item.joinedAt))}
+                  </span>
+                ),
+              },
+              { header: 'Estado', align: 'center', cell: () => <StatusPill label="Presente" tone="success" /> },
+            ]}
+          />
         )}
       </Card>
     </div>
