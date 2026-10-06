@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { POST as postUser, PUT as putUser } from '@/app/api/admin/users/route';
+import { GET as getMissing, POST as syncMissing } from '@/app/api/admin/enrollments/route';
 import { POST as toggleStatus } from '@/app/api/admin/users/toggle-status/route';
 import { enrollInUpcomingClasses } from '@/lib/enrollment';
 import prisma from '@/lib/prisma';
@@ -127,5 +128,69 @@ describe('reactivar una cuenta', () => {
 
     await toggle(w.lucia.id, 'INACTIVO');
     expect(await enrolled(w.lucia.id)).toBe(0);
+  });
+});
+
+describe('revisión de inscripciones (administración)', () => {
+  const summary = async () => read(await getMissing(request('/api/admin/enrollments')));
+  const sync = async () => read(await syncMissing(request('/api/admin/enrollments', { method: 'POST' })));
+
+  it('cuenta las inscripciones que faltan sin modificar nada', async () => {
+    actAs(w.admin);
+    const res = await summary();
+    expect(res.status).toBe(200);
+    // Mundo de pruebas: 2 clases vigentes y 2 estudiantes activas; solo Sofia está inscrita (en la de Carolina).
+    expect(res.body).toMatchObject({ totalClasses: 2, totalStudents: 2, missingStudents: 2, missingEnrollments: 3 });
+    expect(res.body.pairs).toBeUndefined();
+    expect(await prisma.classEnrollment.count()).toBe(1);
+  });
+
+  it('ignora clases canceladas o terminadas y cuentas inactivas, anonimizadas, vencidas o que no son estudiantes', async () => {
+    await prisma.classSession.update({ where: { id: w.claseValeria.id }, data: { status: 'CANCELADA' } });
+    actAs(w.admin);
+    expect((await summary()).body.missingEnrollments).toBe(1); // solo Lucia en la clase de Carolina
+
+    await prisma.user.update({ where: { id: w.lucia.id }, data: { status: 'INACTIVO' } });
+    expect((await summary()).body.missingEnrollments).toBe(0);
+
+    await prisma.user.update({ where: { id: w.lucia.id }, data: { status: 'ACTIVO', anonymizedAt: new Date() } });
+    expect((await summary()).body.missingEnrollments).toBe(0);
+
+    await prisma.user.update({
+      where: { id: w.lucia.id },
+      data: { anonymizedAt: null, endDate: new Date(Date.now() - 86400000) },
+    });
+    expect((await summary()).body.missingEnrollments).toBe(0);
+  });
+
+  it('incluye a las cuentas con dos roles (mentora y estudiante)', async () => {
+    await prisma.user.update({ where: { id: w.valeria.id }, data: { extraRoles: ['STUDENT'] } });
+    actAs(w.admin);
+    expect((await summary()).body.totalStudents).toBe(3);
+  });
+
+  it('inscribe solo lo que falta, no toca las inscripciones existentes y es idempotente', async () => {
+    const before = await prisma.classEnrollment.findFirst({ where: { studentId: w.sofia.id } });
+    actAs(w.admin);
+
+    const first = await sync();
+    expect(first.status).toBe(200);
+    expect(first.body.added).toBe(3);
+    expect(await prisma.classEnrollment.count()).toBe(4);
+    expect(await prisma.classEnrollment.findUnique({ where: { id: before!.id } })).not.toBeNull();
+    expect((await summary()).body.missingEnrollments).toBe(0);
+
+    expect((await sync()).body.added).toBe(0);
+    expect(await prisma.classEnrollment.count()).toBe(4);
+  });
+
+  it('solo la administración puede revisar o inscribir', async () => {
+    for (const actor of [null, w.carolina, w.sofia]) {
+      actAs(actor);
+      const expected = actor ? 403 : 401;
+      expect((await summary()).status).toBe(expected);
+      expect((await sync()).status).toBe(expected);
+    }
+    expect(await prisma.classEnrollment.count()).toBe(1);
   });
 });

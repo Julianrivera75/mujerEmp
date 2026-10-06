@@ -67,7 +67,8 @@ export default function StudentDashboardPage() {
   }, []);
 
   const now = new Date();
-  const upcomingClasses = classes.filter((c) => c.status !== 'FINALIZADA');
+  // Una clase que ya terminó deja de ser "próxima" aunque nadie la haya marcado como finalizada.
+  const upcomingClasses = classes.filter((c) => c.status !== 'FINALIZADA' && new Date(c.dateEnd) >= now);
   const completedClasses = classes.filter((c) => c.status === 'FINALIZADA' || new Date(c.dateEnd) < now);
   // Clases seguidas con el mismo enlace de Meet: se muestran como una sola sala.
   const roomChains = groupRooms(

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Calendar as CalendarIcon, PlusCircle, Video, Youtube, Clock, Edit3, Trash2 } from 'lucide-react';
+import { Calendar as CalendarIcon, PlusCircle, Users, Video, Youtube, Clock, Edit3, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -15,6 +15,7 @@ import { formatDateLong, formatTimeRange, formatWeekdayDate } from '@/lib/format
 import { monthKeyOf, monthOptions } from '@/lib/months';
 import { safeHref } from '@/lib/validators';
 import { ClassFormModal } from './_components/ClassFormModal';
+import { EnrollmentsModal } from './_components/EnrollmentsModal';
 import type { ClassItem, ManagedUser, SimpleUser } from './types';
 import { logClientError } from '@/lib/client-log';
 import { ClassPoster } from '@/components/ClassPoster';
@@ -30,6 +31,7 @@ export default function AdminClassesPage() {
   const { show } = useToast();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [enrollmentsOpen, setEnrollmentsOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [editingClass, setEditingClass] = useState<ClassItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ClassItem | null>(null);
@@ -125,9 +127,18 @@ export default function AdminClassesPage() {
         title="Programación mensual de clases"
         description="Programa las clases virtuales, vincula Google Meet y carga las grabaciones de YouTube para las estudiantes."
         actions={
-          <Button leftIcon={<PlusCircle className="h-4 w-4" />} onClick={handleOpenCreate} disabled={!usersReady}>
-            Programar nueva clase
-          </Button>
+          <div className="flex flex-wrap gap-2.5">
+            <Button
+              variant="secondary"
+              leftIcon={<Users className="h-4 w-4" />}
+              onClick={() => setEnrollmentsOpen(true)}
+            >
+              Revisar inscripciones
+            </Button>
+            <Button leftIcon={<PlusCircle className="h-4 w-4" />} onClick={handleOpenCreate} disabled={!usersReady}>
+              Programar nueva clase
+            </Button>
+          </div>
         }
       />
 
@@ -276,6 +287,12 @@ export default function AdminClassesPage() {
           })}
         </div>
       )}
+
+      <EnrollmentsModal
+        open={enrollmentsOpen}
+        onClose={() => setEnrollmentsOpen(false)}
+        onUpdated={() => void loadClasses(selectedMonth)}
+      />
 
       <ClassFormModal
         open={isModalOpen}
