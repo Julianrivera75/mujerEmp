@@ -33,6 +33,8 @@ const LOGOS = [
   { file: 'Mujeres en break.jpeg', out: 'mujeres-en-break.png', width: 300, background: '#ffffff', transparent: true },
   // Versión blanca sobre fondo transparente: se muestra sobre una base oscura.
   { file: 'alcaldialocalsantafe-sinfondo.png', out: 'alcaldia-santa-fe.png', width: 360, alphaTrim: true },
+  // Trae un degradado gris de captura bajo el texto: el fondo se calcula fila por fila.
+  { file: 'DemoData.jpeg', out: 'demodata.png', width: 360, rowBackground: true, floor: 14 },
   { file: 'Museo.jpeg', out: 'museo-empresarial-cultural.png', width: 360, background: '#ffffff', transparent: true },
 ];
 
@@ -83,6 +85,32 @@ async function lightVariant(file, out) {
   console.log(`${out}: ${info2.width}x${info2.height} (${Math.round(info2.size / 1024)} KB)`);
 }
 
+/** Convierte en transparente un fondo que cambia de arriba hacia abajo (la misma tonalidad en toda la fila). */
+async function rowBackgroundToAlpha(image, floor = 12) {
+  const { data, info } = await image.ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const { width, height } = info;
+  for (let y = 0; y < height; y++) {
+    // Fondo de la fila: promedio de las primeras columnas, que no tienen logo.
+    const bg = [0, 0, 0];
+    for (let x = 0; x < 4; x++) for (let c = 0; c < 3; c++) bg[c] += data[(y * width + x) * 4 + c] / 4;
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+      // Cuánto se aparta el píxel del fondo de su fila (0 = fondo, 1 = tinta plena).
+      const raw = Math.max(...[0, 1, 2].map((c) => (bg[c] - data[i + c]) / Math.max(bg[c], 1)));
+      const a = Math.max(0, Math.min(1, raw));
+      const alpha = a * 255 <= floor ? 0 : Math.min(255, Math.round(((a * 255 - floor) * 255) / (255 - floor)));
+      if (alpha === 0) {
+        data[i] = data[i + 1] = data[i + 2] = 0;
+      } else {
+        for (let c = 0; c < 3; c++)
+          data[i + c] = Math.max(0, Math.min(255, Math.round(bg[c] - (bg[c] - data[i + c]) / a)));
+      }
+      data[i + 3] = alpha;
+    }
+  }
+  return sharp(data, { raw: { width, height, channels: 4 } });
+}
+
 async function main() {
   for (const logo of LOGOS) {
     const input = path.join(SOURCE, logo.file);
@@ -109,6 +137,14 @@ async function main() {
     } else if (logo.crop) {
       // Este original trae mucho fondo y una marca de agua: se recorta el área del logo a mano.
       image = sharp(input).extract(logo.crop);
+    } else if (logo.rowBackground) {
+      const clean = await rowBackgroundToAlpha(sharp(input), logo.floor);
+      image = sharp(
+        await sharp(await clean.png().toBuffer())
+          .trim({ background: '#00000000', threshold: 12 })
+          .png()
+          .toBuffer(),
+      );
     } else if (logo.alphaTrim) {
       image = sharp(await sharp(input).trim({ background: '#00000000', threshold: 8 }).png().toBuffer());
     } else {

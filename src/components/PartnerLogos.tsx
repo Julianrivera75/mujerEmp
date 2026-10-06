@@ -9,6 +9,8 @@ interface Partner {
   height: number;
   /** Logo pensado para fondo oscuro: se muestra dentro de una pastilla oscura. */
   dark?: boolean;
+  /** Alto con el que se muestra; por defecto 40 (28 si va en pastilla). Los logos casi cuadrados con texto necesitan más. */
+  displayHeight?: number;
 }
 
 /** Para sumar una organización aliada basta con agregarla aquí y guardar su logo en public/logos. */
@@ -30,6 +32,7 @@ const PARTNERS: Partner[] = [
     width: 360,
     height: 143,
   },
+  { name: 'DemoData', src: '/logos/demodata.png', width: 226, height: 224, displayHeight: 48 },
   { name: 'Mujeres en Break', src: '/logos/mujeres-en-break.png', width: 300, height: 331 },
   { name: "Mago's Apple Fix Miami", src: '/logos/magos-apple-fix.png', width: 240, height: 243, dark: true },
 ];
@@ -39,7 +42,7 @@ const MIN_FOR_CAROUSEL = 4;
 const SECONDS_PER_LOGO = 4;
 
 function PartnerItem({ partner, hidden }: { partner: Partner; hidden?: boolean }) {
-  const height = partner.dark ? 28 : 40;
+  const height = partner.displayHeight ?? (partner.dark ? 28 : 40);
   return (
     <li
       aria-hidden={hidden || undefined}
