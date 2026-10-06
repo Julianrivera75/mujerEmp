@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dayKeyOf, summarizeByMonth, summarizeDays, type DayClass } from '@/lib/attendance-days';
+import { dayKeyOf, isPastClass, summarizeByMonth, summarizeDays, type DayClass } from '@/lib/attendance-days';
 
 const LINK = 'https://meet.google.com/abc-defg-hij';
 /** Hora de Colombia (UTC−5): 14:00 en Bogotá es 19:00Z. */
@@ -147,5 +147,40 @@ describe('summarizeByMonth', () => {
     const months = summarizeByMonth(s.days);
     expect(months.get('2026-10')).toEqual({ totalDays: 2, attendedDays: 1, percentage: 50 });
     expect(months.get('2026-11')).toEqual({ totalDays: 1, attendedDays: 0, percentage: 0 });
+  });
+});
+
+describe('isPastClass', () => {
+  const cls = (start: string, end: string, extra: Record<string, unknown> = {}) => ({
+    dateStart: new Date(start),
+    dateEnd: new Date(end),
+    status: 'PROGRAMADA',
+    ...extra,
+  });
+  const NOW = bogota('2026-10-06', '18:25');
+
+  it('una clase de ayer que ya terminó es pasada aunque nadie la haya marcado como finalizada', () => {
+    expect(isPastClass(cls('2026-10-05T17:00:00-05:00', '2026-10-05T17:30:00-05:00'), NOW)).toBe(true);
+  });
+
+  it('una clase de hoy en curso o que aún no empieza no es pasada', () => {
+    expect(isPastClass(cls('2026-10-06T18:00:00-05:00', '2026-10-06T19:15:00-05:00'), NOW)).toBe(false);
+    expect(isPastClass(cls('2026-10-06T19:20:00-05:00', '2026-10-06T20:30:00-05:00'), NOW)).toBe(false);
+  });
+
+  it('una clase finalizada es pasada aunque su fin esté en el futuro', () => {
+    expect(
+      isPastClass(cls('2026-10-06T19:20:00-05:00', '2026-10-06T20:30:00-05:00', { status: 'FINALIZADA' }), NOW),
+    ).toBe(true);
+  });
+
+  it('una clase de ayer con la fecha de fin mal guardada (en el futuro) también es pasada', () => {
+    expect(isPastClass(cls('2026-10-05T17:00:00-05:00', '2026-10-07T17:30:00-05:00'), NOW)).toBe(true);
+  });
+
+  it('una clase nocturna que cruza la medianoche sigue en curso en la madrugada', () => {
+    const night = cls('2026-10-05T23:30:00-05:00', '2026-10-06T00:45:00-05:00');
+    expect(isPastClass(night, bogota('2026-10-06', '00:15'))).toBe(false);
+    expect(isPastClass(night, bogota('2026-10-06', '01:00'))).toBe(true);
   });
 });

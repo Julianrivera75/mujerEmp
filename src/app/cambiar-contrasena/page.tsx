@@ -11,5 +11,5 @@ export default async function ChangePasswordPage() {
   // Quien ya cambió su contraseña no vuelve a ver esta pantalla.
   if (!user.mustChangePassword) redirect(HOME_BY_ROLE[user.role]);
 
-  return <ChangePasswordForm userName={user.name} homeHref={HOME_BY_ROLE[user.role]} />;
+  return <ChangePasswordForm userName={user.name} email={user.email} homeHref={HOME_BY_ROLE[user.role]} />;
 }

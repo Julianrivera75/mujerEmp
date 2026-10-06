@@ -258,6 +258,7 @@ export default function ProfilePage() {
                 label="Correo electrónico"
                 type="email"
                 required
+                autoComplete="username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 leftIcon={<Mail className="h-4 w-4" />}
@@ -346,6 +347,7 @@ export default function ProfilePage() {
                 </h3>
                 <PasswordInput
                   label="Contraseña actual"
+                  autoComplete="current-password"
                   placeholder="••••••••"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
@@ -353,12 +355,14 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <PasswordInput
                     label="Nueva contraseña"
+                    autoComplete="new-password"
                     placeholder="Mínimo 8 caracteres"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                   />
                   <PasswordInput
                     label="Confirmar nueva contraseña"
+                    autoComplete="new-password"
                     placeholder="Repite la nueva contraseña"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}

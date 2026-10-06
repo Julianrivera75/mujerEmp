@@ -87,13 +87,17 @@ export const PUT = withAuth(
       if (!(await bcrypt.compare(currentPassword, dbUser.passwordHash))) {
         throw new HttpError(400, 'La contraseña actual es incorrecta.');
       }
-      const passwordError = validatePassword(newPassword.trim());
+      // No se recorta en silencio: lo que se guarda es lo que la persona escribió, y así coincide al ingresar.
+      if (newPassword !== newPassword.trim()) {
+        throw new HttpError(400, 'La nueva contraseña no puede empezar ni terminar con espacios.');
+      }
+      const passwordError = validatePassword(newPassword);
       if (passwordError) throw new HttpError(400, passwordError);
-      if (newPassword.trim() === currentPassword) {
+      if (newPassword === currentPassword) {
         throw new HttpError(400, 'La nueva contraseña debe ser distinta de la actual.');
       }
 
-      updateData.passwordHash = await bcrypt.hash(newPassword.trim(), BCRYPT_COST);
+      updateData.passwordHash = await bcrypt.hash(newPassword, BCRYPT_COST);
       // Cierra las demás sesiones abiertas; la actual se renueva más abajo.
       updateData.tokenVersion = { increment: 1 };
       updateData.mustChangePassword = false;

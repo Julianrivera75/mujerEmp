@@ -16,12 +16,16 @@ const MAX_ATTEMPTS_PER_IP = 30;
 // Hash de relleno para ejecutar bcrypt aunque el correo no exista y no delatar qué cuentas existen por el tiempo de respuesta.
 const DUMMY_HASH = bcrypt.hashSync('relleno-para-igualar-tiempos', 10);
 
-const INVALID_CREDENTIALS = 'Credenciales inválidas. Verifica tu correo y contraseña.';
+const INVALID_CREDENTIALS =
+  'Credenciales inválidas. Verifica tu correo y contraseña. Si acabas de cambiar tu contraseña, usa la nueva.';
 
 function tooManyAttempts(retryAfterSec: number) {
-  return new HttpError(429, 'Demasiados intentos. Espera unos minutos antes de volver a intentarlo.', {
-    'Retry-After': String(retryAfterSec),
-  });
+  const minutes = Math.max(1, Math.ceil(retryAfterSec / 60));
+  return new HttpError(
+    429,
+    `Demasiados intentos. Vuelve a intentarlo en ${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}.`,
+    { 'Retry-After': String(retryAfterSec) },
+  );
 }
 
 export const POST = withErrors('auth/login', async (req) => {
@@ -41,7 +45,11 @@ export const POST = withErrors('auth/login', async (req) => {
 
   // Siempre se ejecuta bcrypt: mismo trabajo y misma respuesta exista o no la cuenta.
   const candidate = password.slice(0, PASSWORD_MAX_LENGTH);
-  const isMatch = await bcrypt.compare(candidate, user?.passwordHash ?? DUMMY_HASH);
+  const hash = user?.passwordHash ?? DUMMY_HASH;
+  let isMatch = await bcrypt.compare(candidate, hash);
+  // Un espacio de más al principio o al final (el teclado del celular o un pegado lo agregan) no debe impedir el ingreso.
+  const trimmed = candidate.trim();
+  if (!isMatch && trimmed !== candidate && trimmed.length > 0) isMatch = await bcrypt.compare(trimmed, hash);
 
   if (!user || !isMatch || password.length > PASSWORD_MAX_LENGTH) {
     await recordAttempt(ipKey, accountKey);

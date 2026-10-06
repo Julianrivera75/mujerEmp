@@ -26,7 +26,7 @@ import { formatDateLong, formatTimeRange, formatWeekdayDate } from '@/lib/format
 import { logClientError } from '@/lib/client-log';
 import { ClassPoster } from '@/components/ClassPoster';
 import { RoomCard } from '@/components/RoomCard';
-import { summarizeDays } from '@/lib/attendance-days';
+import { isPastClass, summarizeDays } from '@/lib/attendance-days';
 import { groupRooms } from '@/lib/rooms';
 import { RoleSwitchBanner } from '@/components/RoleSwitchBanner';
 
@@ -67,9 +67,10 @@ export default function StudentDashboardPage() {
   }, []);
 
   const now = new Date();
-  // Una clase que ya terminó deja de ser "próxima" aunque nadie la haya marcado como finalizada.
-  const upcomingClasses = classes.filter((c) => c.status !== 'FINALIZADA' && new Date(c.dateEnd) >= now);
-  const completedClasses = classes.filter((c) => c.status === 'FINALIZADA' || new Date(c.dateEnd) < now);
+  // Una clase que ya terminó deja de ser "próxima" aunque nadie la haya marcado como finalizada, y cada clase sale en
+  // exactamente una de las dos listas.
+  const upcomingClasses = classes.filter((c) => !isPastClass(c, now));
+  const completedClasses = classes.filter((c) => isPastClass(c, now));
   // Clases seguidas con el mismo enlace de Meet: se muestran como una sola sala.
   const roomChains = groupRooms(
     upcomingClasses.map((c) => ({ ...c, dateStart: new Date(c.dateStart), dateEnd: new Date(c.dateEnd) })),

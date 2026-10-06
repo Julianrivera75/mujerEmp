@@ -34,6 +34,30 @@ describe('POST /api/auth/login', () => {
     expect((await read(await tryLogin('ADMIN@prueba.test ', PASSWORD))).body.redirectUrl).toBe('/admin');
   });
 
+  it('un espacio de más al escribir la contraseña no impide entrar (el teclado del celular lo agrega)', async () => {
+    expect((await read(await tryLogin('sofia@prueba.test', `${PASSWORD} `))).status).toBe(200);
+    expect((await read(await tryLogin('sofia@prueba.test', ` ${PASSWORD}  `))).status).toBe(200);
+    expect((await read(await tryLogin('sofia@prueba.test', `${PASSWORD}x `))).status).toBe(401);
+  });
+
+  it('una contraseña que empieza o termina con espacio, guardada tal cual, también entra', async () => {
+    const bcrypt = (await import('bcryptjs')).default;
+    await prisma.user.update({
+      where: { email: 'lucia@prueba.test' },
+      data: { passwordHash: await bcrypt.hash('con espacio ', 4) },
+    });
+    expect((await read(await tryLogin('lucia@prueba.test', 'con espacio '))).status).toBe(200);
+    expect((await read(await tryLogin('lucia@prueba.test', 'con espacio'))).status).toBe(401);
+  });
+
+  it('el mensaje de bloqueo dice cuántos minutos faltan', async () => {
+    const ip = `10.9.9.${++ipCounter}`;
+    for (let i = 0; i < 5; i++) await tryLogin('sofia@prueba.test', 'incorrecta-' + i, ip);
+    const blocked = await read(await tryLogin('sofia@prueba.test', PASSWORD, ip));
+    expect(blocked.status).toBe(429);
+    expect(blocked.body.error).toMatch(/\d+ minutos?/);
+  });
+
   it('responde igual con un correo inexistente y con una contraseña incorrecta', async () => {
     const unknown = await read(await tryLogin('nadie@prueba.test', 'cualquiera-1234'));
     const wrong = await read(await tryLogin('sofia@prueba.test', 'cualquiera-1234'));
@@ -124,6 +148,22 @@ describe('PUT /api/auth/profile', () => {
     expect((await read(await put({ newPassword: '123', currentPassword: PASSWORD }))).status).toBe(400);
     expect((await read(await put({ newPassword: 'una-clave-nueva-1', currentPassword: PASSWORD }))).status).toBe(200);
     expect((await read(await tryLogin('sofia@prueba.test', 'una-clave-nueva-1'))).status).toBe(200);
+  });
+
+  it('rechaza una contraseña nueva con espacios al principio o al final en vez de recortarla en silencio', async () => {
+    actAs(w.sofia);
+    const res = await read(await put({ newPassword: 'una-clave-nueva-1 ', currentPassword: PASSWORD }));
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain('espacios');
+    // La contraseña actual sigue funcionando: no se cambió nada.
+    expect((await read(await tryLogin('sofia@prueba.test', PASSWORD))).status).toBe(200);
+  });
+
+  it('después de cambiar la contraseña entra con la nueva y deja de servir la anterior', async () => {
+    actAs(w.sofia);
+    expect((await read(await put({ newPassword: 'Otra clave 2026', currentPassword: PASSWORD }))).status).toBe(200);
+    expect((await read(await tryLogin('sofia@prueba.test', 'Otra clave 2026'))).status).toBe(200);
+    expect((await read(await tryLogin('sofia@prueba.test', PASSWORD))).status).toBe(401);
   });
 
   it('solo acepta una foto propia que exista en el almacenamiento', async () => {

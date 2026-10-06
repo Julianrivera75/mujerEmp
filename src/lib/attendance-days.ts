@@ -58,6 +58,23 @@ function percentOf(attended: number, total: number): number {
   return total > 0 ? Math.round((attended / total) * 100) : 0;
 }
 
+/** Una clase que empezó en un día anterior a hoy y hace más de esto ya terminó, aunque su fecha de fin esté mal guardada. */
+const STALE_AFTER_MS = 12 * 60 * 60 * 1000;
+
+/**
+ * Si una clase ya pasó: está finalizada, su fin ya llegó o empezó en un día anterior a hoy hace más de 12 horas. La
+ * última condición evita que una fecha de fin mal guardada deje una clase de ayer como "próxima", sin ocultar una clase
+ * nocturna que cruza la medianoche.
+ */
+export function isPastClass(
+  cls: Pick<DayClass, 'dateStart' | 'status'> & { dateEnd: DateInput },
+  now: Date = new Date(),
+): boolean {
+  if (cls.status === 'FINALIZADA') return true;
+  if (toDate(cls.dateEnd).getTime() < now.getTime()) return true;
+  return dayKeyOf(cls.dateStart) < dayKeyOf(now) && now.getTime() - toDate(cls.dateStart).getTime() > STALE_AFTER_MS;
+}
+
 /**
  * Resumen de una estudiante. `classes` debe incluir sus clases inscritas y también las de sus asistencias; una
  * asistencia a una clase que no está en la lista se ignora.

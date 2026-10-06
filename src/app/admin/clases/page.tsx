@@ -12,6 +12,7 @@ import { SkeletonCard } from '@/components/ui/Skeleton';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
 import { formatDateLong, formatTimeRange, formatWeekdayDate } from '@/lib/format';
+import { dayKeyOf } from '@/lib/attendance-days';
 import { monthKeyOf, monthOptions } from '@/lib/months';
 import { safeHref } from '@/lib/validators';
 import { ClassFormModal } from './_components/ClassFormModal';
@@ -180,6 +181,8 @@ export default function AdminClassesPage() {
             const end = new Date(cls.dateEnd);
             const formattedDate = formatWeekdayDate(start);
             const formattedTime = formatTimeRange(start, end);
+            // Si el fin cae en otro día se muestra la fecha, para que un error al guardar la fecha de fin no pase inadvertido.
+            const endsAnotherDay = dayKeyOf(start) !== dayKeyOf(end);
 
             return (
               <Card key={cls.id} variant="interactive" className="flex cursor-default flex-col justify-between p-6">
@@ -207,6 +210,11 @@ export default function AdminClassesPage() {
                         {formattedTime}
                       </span>
                     </div>
+                    {endsAnotherDay && (
+                      <p className="rounded-lg bg-amber-50 px-2.5 py-1.5 font-semibold text-amber-800">
+                        Termina el {formatDateLong(end)}. Revisa que la fecha de fin sea correcta.
+                      </p>
+                    )}
                     <div className="flex items-center justify-between">
                       <span className="text-slate-500">Docente asignada:</span>
                       <span className="font-bold text-teal-700">{cls.mentor.name}</span>

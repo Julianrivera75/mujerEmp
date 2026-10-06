@@ -10,11 +10,13 @@ import { logClientError } from '@/lib/client-log';
 
 interface ChangePasswordFormProps {
   userName: string;
+  /** Correo de la cuenta: se declara como usuario para que el administrador de contraseñas actualice la clave correcta. */
+  email: string;
   homeHref: string;
 }
 
 /** Pantalla obligatoria de primer ingreso: cambiar la contraseña inicial por una propia (o posponerlo). */
-export default function ChangePasswordForm({ userName, homeHref }: ChangePasswordFormProps) {
+export default function ChangePasswordForm({ userName, email, homeHref }: ChangePasswordFormProps) {
   const router = useRouter();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -102,6 +104,17 @@ export default function ChangePasswordForm({ userName, homeHref }: ChangePasswor
         )}
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+          {/* Campo de usuario para el administrador de contraseñas: así actualiza la clave de esta cuenta. */}
+          <input
+            type="text"
+            name="username"
+            autoComplete="username"
+            value={email}
+            readOnly
+            tabIndex={-1}
+            aria-label="Correo de la cuenta"
+            className="sr-only"
+          />
           <PasswordInput
             label="Contraseña que te entregaron"
             required
