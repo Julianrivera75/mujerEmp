@@ -5,14 +5,12 @@ import { monthKeyOf } from '@/lib/months';
 import { rolesOf } from '@/lib/roles';
 import { createPresignedDownloadUrl, deleteObject, keyBelongsTo, verifyUploadedObject } from '@/lib/s3';
 import prisma from '@/lib/prisma';
-import { settleCarryOver } from '@/lib/rooms-db';
 import { createClassSchema, meetLink, updateClassSchema, youtubeLink } from '@/lib/schemas';
 import { CLASS_STATUSES, cleanText, isOneOf, parseDate } from '@/lib/validators';
 
 export const dynamic = 'force-dynamic';
 
 export const GET = withAuth('classes GET', 'any', async (req, user) => {
-  await settleCarryOver().catch(() => undefined);
   const { searchParams } = new URL(req.url);
   const monthKey = searchParams.get('monthKey'); // p. ej. "2026-09"
   const status = searchParams.get('status');

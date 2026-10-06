@@ -12,21 +12,19 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonRow } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { formatDate, formatDateTimeSeconds, formatTimeSeconds } from '@/lib/format';
+import { formatDateTimeSeconds, formatTimeSeconds, formatWeekdayDate } from '@/lib/format';
 import { logClientError } from '@/lib/client-log';
 
-interface AttendanceLog {
-  id: string;
-  joinedAt: string;
-  source?: 'CLICK' | 'CARRY';
-  student: { id: string; name: string; email: string; memberNumber: string | null };
-  classSession: {
-    id: string;
-    title: string;
-    dateStart: string;
-    meetLink: string | null;
-    mentor: { id: string; name: string };
-  };
+interface DayRow {
+  studentId: string;
+  name: string;
+  email: string;
+  memberNumber: string | null;
+  day: string;
+  firstJoinedAt: string | null;
+  classesAttended: number;
+  classesInDay: number;
+  classTitles: string[];
 }
 
 interface StudentSummary {
@@ -34,13 +32,16 @@ interface StudentSummary {
   name: string;
   email: string;
   status: string;
-  totalEnrolled: number;
-  totalAttended: number;
+  totalDays: number;
+  attendedDays: number;
   percentage: number;
 }
 
+/** El día viene como AAAA-MM-DD en hora de Colombia; se muestra a mediodía para que ninguna zona lo mueva de fecha. */
+const dayDate = (day: string) => new Date(`${day}T12:00:00-05:00`);
+
 export default function AdminAttendancePage() {
-  const [attendances, setAttendances] = useState<AttendanceLog[]>([]);
+  const [days, setDays] = useState<DayRow[]>([]);
   const [studentSummary, setStudentSummary] = useState<StudentSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -52,7 +53,7 @@ export default function AdminAttendancePage() {
         setLoading(true);
         const res = await fetch('/api/admin/attendances');
         const data = await res.json();
-        setAttendances(data.attendances || []);
+        setDays(data.days || []);
         setStudentSummary(data.studentSummary || []);
       } catch (err) {
         logClientError('Error cargando asistencias:', err);
@@ -62,51 +63,51 @@ export default function AdminAttendancePage() {
     })();
   }, []);
 
-  const filteredLogs = attendances.filter((att) => {
+  const filteredDays = days.filter((d) => {
     const q = search.toLowerCase();
     return (
-      att.student.name.toLowerCase().includes(q) ||
-      att.student.email.toLowerCase().includes(q) ||
-      att.classSession.title.toLowerCase().includes(q)
+      d.name.toLowerCase().includes(q) ||
+      d.email.toLowerCase().includes(q) ||
+      d.classTitles.some((title) => title.toLowerCase().includes(q))
     );
   });
 
   const exportToCsv = () => {
-    if (filteredLogs.length === 0) {
+    if (filteredDays.length === 0) {
       show('info', 'No hay datos para exportar con el filtro actual.');
       return;
     }
 
+    const quote = (value: string) => `"${value.replace(/"/g, '""')}"`;
     const headers = [
       'Estudiante',
       'Número de estudiante',
       'Correo',
-      'Clase / Sesión',
-      'Docente',
-      'Fecha',
-      'Hora',
+      'Día',
+      'Primer ingreso',
+      'Charlas a las que entró',
+      'Charlas del día',
       'Estado',
     ];
-    const rows = filteredLogs.map((log) => {
-      const d = new Date(log.joinedAt);
-      return [
-        `"${log.student.name.replace(/"/g, '""')}"`,
-        `"${(log.student.memberNumber || 'N/A').replace(/"/g, '""')}"`,
-        `"${log.student.email.replace(/"/g, '""')}"`,
-        `"${log.classSession.title.replace(/"/g, '""')}"`,
-        `"${log.classSession.mentor.name.replace(/"/g, '""')}"`,
-        `"${formatDate(d)}"`,
-        `"${formatTimeSeconds(d)}"`,
+    const rows = filteredDays.map((d) =>
+      [
+        quote(d.name),
+        quote(d.memberNumber || 'N/A'),
+        quote(d.email),
+        quote(d.day),
+        quote(d.firstJoinedAt ? formatTimeSeconds(new Date(d.firstJoinedAt)) : ''),
+        d.classesAttended,
+        d.classesInDay,
         '"PRESENTE"',
-      ].join(',');
-    });
+      ].join(','),
+    );
 
     const csvContent = '﻿' + [headers.join(','), ...rows].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `reporte_asistencias_empoderas_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `reporte_asistencia_por_dia_empoderas_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -118,7 +119,7 @@ export default function AdminAttendancePage() {
       <PageHeader
         eyebrow="Reportes"
         title="Control y reporte de asistencias"
-        description="Registro automático generado cada vez que una estudiante hace clic en el enlace de Google Meet."
+        description="La asistencia se mide por día: una estudiante está presente un día si entró al menos a una de las charlas de ese día."
         actions={
           <Button variant="secondary" leftIcon={<Download className="h-4 w-4" />} onClick={exportToCsv}>
             Exportar CSV
@@ -129,7 +130,7 @@ export default function AdminAttendancePage() {
       <div>
         <h2 className="mb-4 flex items-center gap-2 font-display text-lg font-bold text-slate-800">
           <Award className="h-5 w-5 text-role-ink" />
-          <span>Porcentaje de asistencia por estudiante</span>
+          <span>Porcentaje de asistencia por estudiante (sobre días con charlas)</span>
         </h2>
 
         {loading ? (
@@ -155,7 +156,7 @@ export default function AdminAttendancePage() {
                 </div>
                 <div className="flex items-center justify-between border-t border-slate-100 pt-2 text-xs text-slate-600">
                   <span>
-                    Asistió a <strong>{st.totalAttended}</strong> de {st.totalEnrolled}
+                    Presente <strong>{st.attendedDays}</strong> de {st.totalDays} días
                   </span>
                   <span className="text-sm font-black text-role-ink">{st.percentage}%</span>
                 </div>
@@ -168,14 +169,14 @@ export default function AdminAttendancePage() {
       <Card variant="glass" className="p-4 sm:p-6">
         <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <h2 className="font-display text-lg font-bold text-slate-800">Historial detallado de ingresos</h2>
+            <h2 className="font-display text-lg font-bold text-slate-800">Historial de asistencia por día</h2>
             <p className="text-xs text-slate-500">
-              Fecha y hora exacta en la que cada estudiante dio clic para unirse a la sesión.
+              Un registro por estudiante y día, con el primer ingreso y a cuántas charlas del día entró.
             </p>
           </div>
           <div className="w-full sm:w-72">
             <Input
-              placeholder="Filtrar por alumna o clase..."
+              placeholder="Filtrar por alumna o charla..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               leftIcon={<Search className="h-4 w-4" />}
@@ -189,48 +190,50 @@ export default function AdminAttendancePage() {
               <SkeletonRow key={i} />
             ))}
           </div>
-        ) : filteredLogs.length === 0 ? (
+        ) : filteredDays.length === 0 ? (
           <EmptyState icon={CheckCircle2} title="No se encontraron registros de asistencia" />
         ) : (
           <ResponsiveTable
-            caption="Registro de asistencias a clases"
-            rows={filteredLogs}
-            rowKey={(log) => log.id}
+            caption="Asistencia por día"
+            rows={filteredDays}
+            rowKey={(d) => `${d.studentId}-${d.day}`}
             columns={[
               {
                 header: 'Estudiante',
                 primary: true,
-                cell: (log) => (
+                cell: (d) => (
                   <>
-                    <p className="font-bold text-slate-800">{log.student.name}</p>
-                    <p className="text-[11px] font-normal text-slate-500">{log.student.email}</p>
+                    <p className="font-bold text-slate-800">{d.name}</p>
+                    <p className="text-[11px] font-normal text-slate-500">{d.email}</p>
                   </>
                 ),
               },
               {
-                header: 'Clase / módulo',
-                cell: (log) => <span className="font-semibold text-slate-700">{log.classSession.title}</span>,
-              },
-              {
-                header: 'Docente',
-                cell: (log) => <span className="font-medium text-slate-600">{log.classSession.mentor.name}</span>,
-              },
-              {
-                header: 'Fecha y hora de clic',
-                cell: (log) => (
-                  <span className="inline-flex items-center gap-1.5 font-semibold text-slate-700">
-                    <Clock className="h-3.5 w-3.5 text-emerald-600" />
-                    {formatDateTimeSeconds(new Date(log.joinedAt))}
+                header: 'Día',
+                cell: (d) => (
+                  <span className="font-semibold text-slate-700 first-letter:uppercase">
+                    {formatWeekdayDate(dayDate(d.day))}
                   </span>
                 ),
               },
               {
-                header: 'Estado',
-                align: 'center',
-                cell: (log) => (
-                  <StatusPill label={log.source === 'CARRY' ? 'Presente (automática)' : 'Presente'} tone="success" />
+                header: 'Charlas a las que entró',
+                cell: (d) => (
+                  <span className="font-medium text-slate-600">
+                    {d.classesAttended} de {d.classesInDay}
+                  </span>
                 ),
               },
+              {
+                header: 'Primer ingreso',
+                cell: (d) => (
+                  <span className="inline-flex items-center gap-1.5 font-semibold text-slate-700">
+                    <Clock className="h-3.5 w-3.5 text-emerald-600" />
+                    {d.firstJoinedAt ? formatDateTimeSeconds(new Date(d.firstJoinedAt)) : '—'}
+                  </span>
+                ),
+              },
+              { header: 'Estado', align: 'center', cell: () => <StatusPill label="Presente" tone="success" /> },
             ]}
           />
         )}

@@ -23,9 +23,6 @@ export const formatDate = (value: DateInput) => formatter({}).format(toDate(valu
 const formatDateShort = (value: DateInput) =>
   formatter({ day: '2-digit', month: 'short', year: 'numeric' }).format(toDate(value));
 
-/** 25 de septiembre */
-const formatDayMonth = (value: DateInput) => formatter({ day: 'numeric', month: 'long' }).format(toDate(value));
-
 /** 25 sept */
 export const formatDayMonthShort = (value: DateInput) =>
   formatter({ day: 'numeric', month: 'short' }).format(toDate(value));
@@ -64,9 +61,6 @@ export const formatTimeSeconds = (value: DateInput) =>
 /** 25 sept a las 03:00 p. m. */
 export const formatDayMonthTime = (value: DateInput) =>
   `${formatter({ day: '2-digit', month: 'short' }).format(toDate(value))} a las ${formatTime(value)}`;
-
-/** 25 de septiembre a las 03:00 p. m. */
-export const formatDayMonthLongTime = (value: DateInput) => `${formatDayMonth(value)} a las ${formatTime(value)}`;
 
 /** 25 sept 2026 a las 03:00:15 p. m. */
 export const formatDateTimeSeconds = (value: DateInput) =>

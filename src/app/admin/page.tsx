@@ -1,6 +1,7 @@
 import React from 'react';
 import { getCurrentUser } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { countAttendanceDays } from '@/lib/attendance-days-db';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -41,7 +42,7 @@ export default async function AdminDashboardPage() {
         },
         orderBy: { dateStart: 'asc' },
       }),
-      prisma.attendance.count(),
+      countAttendanceDays(),
     ]);
 
   return (
@@ -130,13 +131,13 @@ export default async function AdminDashboardPage() {
 
         <Card variant="glass" className="p-4 sm:p-6">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Asistencias clic</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Días de asistencia</span>
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600">
               <CheckCircle2 className="h-5 w-5" strokeWidth={1.75} />
             </div>
           </div>
           <p className="mt-3 font-display text-3xl font-bold tabular-nums text-slate-800">{totalAttendances}</p>
-          <p className="mt-2 text-xs font-medium text-slate-500">Registros vía Google Meet</p>
+          <p className="mt-2 text-xs font-medium text-slate-500">Estudiante-día con ingreso a una charla</p>
         </Card>
       </div>
 
@@ -190,7 +191,7 @@ export default async function AdminDashboardPage() {
                     <h3 className="text-base font-bold text-slate-800">{cls.title}</h3>
                     <p className="text-xs text-slate-500">
                       Docente: <strong className="text-slate-700">{cls.mentor.name}</strong> · Inscritas:{' '}
-                      <strong className="text-role-ink">{cls._count.enrollments}</strong> · Asistieron:{' '}
+                      <strong className="text-role-ink">{cls._count.enrollments}</strong> · Entraron:{' '}
                       <strong className="text-emerald-700">{cls._count.attendances}</strong>
                     </p>
                   </div>

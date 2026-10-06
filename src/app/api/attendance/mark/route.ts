@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { HttpError, parseBody, withAuth } from '@/lib/api';
 import prisma from '@/lib/prisma';
-import { followingClasses, resolveTargetClass } from '@/lib/rooms';
+import { resolveTargetClass } from '@/lib/rooms';
 import { loadRoomClasses } from '@/lib/rooms-db';
 import { markAttendanceSchema } from '@/lib/schemas';
 
@@ -18,7 +18,6 @@ export const POST = withAuth('attendance/mark', 'any', async (req, user) => {
 
   let attendance = null;
   let attendedClass: { id: string; title: string } | null = null;
-  let continuesIn: { id: string; title: string; dateStart: Date }[] = [];
 
   if (user.role === 'STUDENT') {
     const isEnrolled = async (id: string) =>
@@ -38,14 +37,12 @@ export const POST = withAuth('attendance/mark', 'any', async (req, user) => {
 
     attendance = await prisma.attendance.upsert({
       where: { classId_studentId: { classId: targetId, studentId: user.id } },
-      // Si ya figuraba por permanencia o había avisado su salida, volver a entrar lo confirma y reactiva.
-      update: { source: 'CLICK', leftAt: null },
+      update: {},
       create: { classId: targetId, studentId: user.id, joinedAt: new Date() },
     });
 
     const target = nearby.find((c) => c.id === targetId) ?? classSession;
     attendedClass = { id: target.id, title: target.title };
-    continuesIn = followingClasses(targetId, nearby).map(({ id, title, dateStart }) => ({ id, title, dateStart }));
   }
 
   return NextResponse.json({
@@ -54,6 +51,5 @@ export const POST = withAuth('attendance/mark', 'any', async (req, user) => {
     meetLink: classSession.meetLink,
     attendance,
     attendedClass,
-    continuesIn,
   });
 });

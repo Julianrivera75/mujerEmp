@@ -20,15 +20,16 @@ beforeEach(async () => {
 
 const list = () => GET(request('/api/certificates'));
 
-/** Clase de octubre de 2026 a la que se inscribe Sofia; `attended` indica si registra asistencia. */
-async function octoberClass(title: string, attended: boolean) {
+/** Clase de octubre de 2026 (del día indicado) a la que se inscribe Sofia; `attended` indica si registra asistencia. */
+async function octoberClass(title: string, attended: boolean, day = 6) {
   const cls = await prisma.classSession.create({
     data: {
       title,
-      dateStart: new Date(2026, 9, 6, 15),
-      dateEnd: new Date(2026, 9, 6, 17),
+      dateStart: new Date(2026, 9, day, 15),
+      dateEnd: new Date(2026, 9, day, 17),
       monthKey: '2026-10',
       mentorId: w.carolina.id,
+      meetLink: 'https://meet.google.com/abc-defg-hij',
       enrollments: { create: [{ studentId: w.sofia.id }] },
       ...(attended ? { attendances: { create: [{ studentId: w.sofia.id }] } } : {}),
     },
@@ -52,9 +53,9 @@ describe('GET /api/certificates', () => {
     expect(res.body.modules.map((m: { number: number }) => m.number)).toEqual([1, 2, 3, 4, 5]);
   });
 
-  it('cuenta solo las clases del módulo en las que la estudiante está inscrita', async () => {
+  it('cuenta solo los días con charlas del módulo en los que la estudiante está inscrita', async () => {
     await octoberClass('Clase 1', true);
-    await octoberClass('Clase 2', false);
+    await octoberClass('Clase 2', false, 7);
     await prisma.classSession.create({
       data: {
         title: 'Ajena',
@@ -66,10 +67,22 @@ describe('GET /api/certificates', () => {
     });
 
     actAs(w.sofia);
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date(2026, 9, 29) });
     const res = await read(await list());
     const first = res.body.modules[0];
     expect(first).toMatchObject({ number: 1, total: 2, attended: 1, percentage: 50 });
     expect(res.body.modules[1]).toMatchObject({ number: 2, total: 0, attended: 0 });
+  });
+
+  it('entrar a una sola charla del día basta: varias charlas el mismo día cuentan un solo día', async () => {
+    await octoberClass('Charla 1', true);
+    await octoberClass('Charla 2', false);
+    await octoberClass('Charla 3', false);
+
+    actAs(w.sofia);
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date(2026, 9, 29) });
+    const first = (await read(await list())).body.modules[0];
+    expect(first).toMatchObject({ number: 1, total: 1, attended: 1, percentage: 100, status: 'available' });
   });
 
   it('el estado depende de la fecha: bloqueado antes de la ventana y disponible después con 80 %', async () => {

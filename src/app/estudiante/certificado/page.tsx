@@ -98,7 +98,8 @@ export default function StudentCertificatesPage() {
         <h1 className="font-display text-2xl font-bold text-slate-800 sm:text-3xl">Certificados por módulo</h1>
         <p className="mt-0.5 text-xs text-slate-500">
           Cada módulo se certifica al terminar el mes. Necesitas asistir al menos al{' '}
-          {CERTIFICATE_MIN_ATTENDANCE_PERCENT}% de las clases del módulo.
+          {CERTIFICATE_MIN_ATTENDANCE_PERCENT}% de los días con charlas del módulo (cuenta cada día en que entras al
+          menos a una charla).
         </p>
       </div>
 
@@ -189,7 +190,7 @@ function ModuleCard({
         <div className="mb-1.5 flex justify-between font-semibold">
           <span>Asistencia</span>
           <span className="text-role-ink">
-            {module.percentage}% ({module.attended} de {module.total} clases)
+            {module.percentage}% ({module.attended} de {module.total} días)
           </span>
         </div>
         <ProgressBar value={module.percentage} label={`Asistencia del módulo ${module.number}`} />

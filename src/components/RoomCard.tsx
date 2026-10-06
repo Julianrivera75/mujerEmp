@@ -1,14 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Clock, LogOut, Radio } from 'lucide-react';
+import React from 'react';
+import { CheckCircle2, Clock, Radio } from 'lucide-react';
 import JoinMeetButton from '@/components/JoinMeetButton';
-import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { StatusPill } from '@/components/ui/Badge';
 import { Tip } from '@/components/ui/Tip';
-import { useToast } from '@/components/ui/Toast';
-import { logClientError } from '@/lib/client-log';
 import { formatTimeRange, formatWeekdayDate } from '@/lib/format';
 import { currentClassOf } from '@/lib/rooms';
 
@@ -20,7 +17,7 @@ export interface RoomClassItem {
   meetLink: string | null;
   status: string;
   mentor: { name: string };
-  attendances: { studentId: string; joinedAt: string; source?: 'CLICK' | 'CARRY'; leftAt?: string | null }[];
+  attendances: { studentId: string; joinedAt: string }[];
 }
 
 interface RoomCardProps {
@@ -31,39 +28,16 @@ interface RoomCardProps {
 }
 
 /**
- * Varias clases seguidas con el mismo enlace se muestran como una sola sala: la estudiante entra una vez y su
- * asistencia se registra en la clase que esté en curso y sigue con las siguientes mientras permanezca.
+ * Varias clases seguidas con el mismo enlace se muestran como una sola sala: la estudiante entra una vez y el clic se
+ * cuenta en la charla que esté en curso. La asistencia se mide por día: entrar a una sola charla del día basta.
  */
 export function RoomCard({ classes, userId, onChanged }: RoomCardProps) {
-  const { show } = useToast();
-  const [leaving, setLeaving] = useState(false);
-
   const now = new Date();
   const dated = classes.map((c) => ({ ...c, dateStart: new Date(c.dateStart), dateEnd: new Date(c.dateEnd) }));
   const current = currentClassOf(dated, now);
   const action = current ?? dated.find((c) => c.dateEnd > now) ?? dated[dated.length - 1];
   const mine = (c: Pick<RoomClassItem, 'attendances'>) => c.attendances.find((a) => a.studentId === userId);
-  const roomOver = dated[dated.length - 1].dateEnd <= now;
-  const canLeave = !roomOver && classes.some((c) => mine(c) && !mine(c)?.leftAt);
-
-  const handleLeave = async () => {
-    setLeaving(true);
-    try {
-      const res = await fetch('/api/attendance/leave', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ classId: action.id }),
-      });
-      if (res.ok) {
-        show('info', 'Listo: tu asistencia ya no continuará en las clases siguientes de esta sala.');
-        onChanged();
-      }
-    } catch (err) {
-      logClientError('Error al salir de la sala:', err);
-    } finally {
-      setLeaving(false);
-    }
-  };
+  const presentToday = classes.some((c) => mine(c));
 
   return (
     <Card variant="glass" className="border-role-accent/20 p-6 shadow-lift sm:p-8">
@@ -74,6 +48,12 @@ export function RoomCard({ classes, userId, onChanged }: RoomCardProps) {
           <Clock className="h-3.5 w-3.5" />
           {formatTimeRange(dated[0].dateStart, dated[dated.length - 1].dateEnd)}
         </span>
+        {presentToday && (
+          <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            Hoy ya quedaste presente
+          </span>
+        )}
       </div>
 
       <h3 className="flex items-center gap-2 text-xl font-bold text-slate-800">
@@ -81,15 +61,15 @@ export function RoomCard({ classes, userId, onChanged }: RoomCardProps) {
         <span>{dated.length} clases seguidas en la misma sala</span>
       </h3>
       <p className="mt-1 text-xs text-slate-500">
-        Entra una sola vez: tu asistencia se registra en la clase que esté en curso y continúa en las siguientes
-        mientras sigas en la sala.
+        Entra una sola vez con el botón. Tu asistencia se mide por día: con entrar a una de las charlas ya cuenta tu
+        día.
       </p>
 
       <ol className="mt-5 space-y-2">
         {dated.map((c) => {
           const attendance = mine(c);
-          const ended = c.dateEnd <= now;
           const live = current?.id === c.id;
+          const ended = c.dateEnd <= now;
           return (
             <li
               key={c.id}
@@ -104,14 +84,7 @@ export function RoomCard({ classes, userId, onChanged }: RoomCardProps) {
               <div className="flex flex-shrink-0 flex-wrap items-center gap-2">
                 {live && <StatusPill label="En vivo" tone="success" pulse />}
                 {!live && !ended && <StatusPill label="Próxima" tone="neutral" />}
-                {attendance ? (
-                  <StatusPill
-                    label={attendance.source === 'CARRY' ? 'Presente (automática)' : 'Presente'}
-                    tone="success"
-                  />
-                ) : (
-                  ended && <StatusPill label="Sin registro" tone="warning" />
-                )}
+                {attendance && <StatusPill label="Entraste" tone="success" />}
               </div>
             </li>
           );
@@ -126,20 +99,8 @@ export function RoomCard({ classes, userId, onChanged }: RoomCardProps) {
           attendedAt={mine(action)?.joinedAt}
           onAttendanceSuccess={onChanged}
         />
-        {canLeave && (
-          <Button
-            variant="ghost"
-            size="sm"
-            loading={leaving}
-            onClick={handleLeave}
-            leftIcon={<LogOut className="h-4 w-4" />}
-          >
-            Ya salí de la sala
-          </Button>
-        )}
         <Tip className="border-none bg-transparent p-0">
-          Si te retiras antes de que termine, pulsa «Ya salí de la sala» para no quedar registrada en las clases que
-          siguen.
+          Si ya entraste a una charla hoy, no necesitas volver a marcar: tu día ya cuenta.
         </Tip>
       </div>
     </Card>

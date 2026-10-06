@@ -1,13 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  currentClassOf,
-  followingClasses,
-  groupRooms,
-  meetKey,
-  planCarryOver,
-  resolveTargetClass,
-  type RoomClass,
-} from '@/lib/rooms';
+import { currentClassOf, groupRooms, meetKey, resolveTargetClass, type RoomClass } from '@/lib/rooms';
 
 const LINK = 'https://meet.google.com/abc-defg-hij';
 const at = (hhmm: string, day = '2026-10-05') => new Date(`${day}T${hhmm}:00Z`);
@@ -107,86 +99,5 @@ describe('resolveTargetClass', () => {
   it('una clase sin sala compartida no cambia', () => {
     expect(resolveTargetClass('A', [A], at('14:30'))).toBe('A');
     expect(resolveTargetClass('Z', all, at('14:30'))).toBe('Z');
-  });
-});
-
-describe('followingClasses', () => {
-  it('lista las clases que siguen dentro de la cadena', () => {
-    expect(followingClasses('A', [A, B, C]).map((c) => c.id)).toEqual(['B', 'C']);
-    expect(followingClasses('C', [A, B, C])).toEqual([]);
-  });
-});
-
-describe('planCarryOver', () => {
-  const chain = [A, B, C];
-  const enroll = (...ids: string[]) =>
-    ids.flatMap((classId) => ['s1', 's2'].map((studentId) => ({ classId, studentId })));
-
-  it('propaga la asistencia de A a B y a C cuando ya empezaron', () => {
-    const rows = planCarryOver(
-      chain,
-      at('16:10'),
-      [{ classId: 'A', studentId: 's1', leftAt: null }],
-      enroll('A', 'B', 'C'),
-    );
-    expect(rows.map((r) => `${r.classId}:${r.studentId}`)).toEqual(['B:s1', 'C:s1']);
-    expect(rows[0].joinedAt).toEqual(B.dateStart);
-  });
-
-  it('no crea la de una clase que todavía no empieza', () => {
-    const rows = planCarryOver(
-      chain,
-      at('15:30'),
-      [{ classId: 'A', studentId: 's1', leftAt: null }],
-      enroll('A', 'B', 'C'),
-    );
-    expect(rows.map((r) => r.classId)).toEqual(['B']);
-  });
-
-  it('no propaga si la estudiante avisó que salió', () => {
-    const rows = planCarryOver(
-      chain,
-      at('16:10'),
-      [{ classId: 'A', studentId: 's1', leftAt: at('14:50') }],
-      enroll('A', 'B', 'C'),
-    );
-    expect(rows).toEqual([]);
-  });
-
-  it('solo propaga a quien está inscrita en la clase siguiente', () => {
-    const rows = planCarryOver(
-      chain,
-      at('16:10'),
-      [{ classId: 'A', studentId: 's1', leftAt: null }],
-      [
-        { classId: 'B', studentId: 's2' },
-        { classId: 'C', studentId: 's1' },
-      ],
-    );
-    expect(rows).toEqual([]);
-  });
-
-  it('no duplica una asistencia que ya existe y no arrastra a quien no estaba', () => {
-    const rows = planCarryOver(
-      chain,
-      at('16:10'),
-      [
-        { classId: 'A', studentId: 's1', leftAt: null },
-        { classId: 'B', studentId: 's1', leftAt: null },
-      ],
-      enroll('A', 'B', 'C'),
-    );
-    expect(rows.map((r) => `${r.classId}:${r.studentId}`)).toEqual(['C:s1']);
-    expect(planCarryOver(chain, at('16:10'), [], enroll('A', 'B', 'C'))).toEqual([]);
-  });
-
-  it('quien entra en B directamente la arrastra a C', () => {
-    const rows = planCarryOver(
-      chain,
-      at('16:10'),
-      [{ classId: 'B', studentId: 's2', leftAt: null }],
-      enroll('A', 'B', 'C'),
-    );
-    expect(rows.map((r) => `${r.classId}:${r.studentId}`)).toEqual(['C:s2']);
   });
 });

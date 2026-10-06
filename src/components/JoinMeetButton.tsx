@@ -50,16 +50,8 @@ export default function JoinMeetButton({
       if (res.ok) {
         setAttended(true);
         const target = data.attendedClass as { id: string; title: string } | null;
-        const following = (data.continuesIn ?? []) as unknown[];
-        // Varias clases pueden compartir sala: se aclara a cuál quedó la asistencia y que sigue en las siguientes.
-        if (target && (following.length > 0 || target.id !== classId)) {
-          show(
-            'success',
-            following.length > 0
-              ? `Asistencia registrada en «${target.title}». Seguirás presente en las ${following.length} clase(s) siguientes de esta sala; avisa con «Ya salí de la sala» si te retiras.`
-              : `Asistencia registrada en «${target.title}».`,
-          );
-        }
+        // Varias clases pueden compartir sala: si el clic se contó en otra charla, se aclara en cuál quedó.
+        if (target && target.id !== classId) show('success', `Quedaste presente en «${target.title}».`);
         setAttendedTime(formatTime(new Date()));
 
         const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;

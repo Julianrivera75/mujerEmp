@@ -16,21 +16,24 @@ interface StatCardProps {
 
 function useCountUp(target: number, reduce: boolean | null) {
   const [value, setValue] = useState(reduce ? target : 0);
-  const started = useRef(false);
+  const shown = useRef(value);
 
+  // Anima desde el valor que se ve hasta el nuevo: sirve tanto al montar como cuando el dato llega después de cargar.
   useEffect(() => {
     if (reduce) {
+      shown.current = target;
       setValue(target);
       return;
     }
-    if (started.current) return;
-    started.current = true;
+    const from = shown.current;
     const duration = 600;
     const start = performance.now();
     let raf = 0;
     const tick = (now: number) => {
       const t = Math.min(1, (now - start) / duration);
-      setValue(Math.round(target * (1 - Math.pow(1 - t, 3))));
+      const next = Math.round(from + (target - from) * (1 - Math.pow(1 - t, 3)));
+      shown.current = next;
+      setValue(next);
       if (t < 1) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);

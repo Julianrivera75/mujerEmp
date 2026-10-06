@@ -65,7 +65,7 @@ export function currentClassOf<T extends RoomClass>(chain: readonly T[], now: Da
 }
 
 /** Cadena que contiene a una clase; null si la clase no tiene enlace de Meet válido o está cancelada. */
-export function chainOf<T extends RoomClass>(classId: string, classes: readonly T[]): T[] | null {
+function chainOf<T extends RoomClass>(classId: string, classes: readonly T[]): T[] | null {
   return groupRooms(classes).find((chain) => chain.some((c) => c.id === classId)) ?? null;
 }
 
@@ -77,63 +77,4 @@ export function resolveTargetClass<T extends RoomClass>(clickedId: string, class
   const chain = chainOf(clickedId, classes);
   if (!chain || chain.length < 2) return clickedId;
   return currentClassOf(chain, now)?.id ?? clickedId;
-}
-
-/** Clases que siguen a `classId` dentro de su cadena. */
-export function followingClasses<T extends RoomClass>(classId: string, classes: readonly T[]): T[] {
-  const chain = chainOf(classId, classes);
-  if (!chain) return [];
-  const index = chain.findIndex((c) => c.id === classId);
-  return chain.slice(index + 1);
-}
-
-export interface CarryAttendance {
-  classId: string;
-  studentId: string;
-  leftAt: Date | null;
-}
-
-export interface CarryEnrollment {
-  classId: string;
-  studentId: string;
-}
-
-/**
- * Qué asistencias por permanencia hay que crear en una cadena. Para cada par consecutivo A→B, cuando B ya empezó:
- * a cada estudiante inscrita en B que está presente en A (y no avisó que salió) sin fila en B. Se procesa en orden,
- * así que la permanencia se propaga A→B→C.
- */
-export function planCarryOver(
-  chain: readonly RoomClass[],
-  now: Date,
-  attendances: readonly CarryAttendance[],
-  enrollments: readonly CarryEnrollment[],
-): { classId: string; studentId: string; joinedAt: Date }[] {
-  const present = new Map<string, Map<string, Date | null>>();
-  for (const a of attendances) {
-    if (!present.has(a.classId)) present.set(a.classId, new Map());
-    present.get(a.classId)?.set(a.studentId, a.leftAt);
-  }
-  const enrolledIn = new Map<string, Set<string>>();
-  for (const e of enrollments) {
-    if (!enrolledIn.has(e.classId)) enrolledIn.set(e.classId, new Set());
-    enrolledIn.get(e.classId)?.add(e.studentId);
-  }
-
-  const created: { classId: string; studentId: string; joinedAt: Date }[] = [];
-  for (let i = 1; i < chain.length; i++) {
-    const previous = chain[i - 1];
-    const next = chain[i];
-    if (next.dateStart.getTime() > now.getTime()) break;
-    const before = present.get(previous.id) ?? new Map<string, Date | null>();
-    const already = present.get(next.id) ?? new Map<string, Date | null>();
-    for (const [studentId, leftAt] of before) {
-      if (leftAt !== null || already.has(studentId)) continue;
-      if (!enrolledIn.get(next.id)?.has(studentId)) continue;
-      already.set(studentId, null);
-      created.push({ classId: next.id, studentId, joinedAt: next.dateStart });
-    }
-    present.set(next.id, already);
-  }
-  return created;
 }

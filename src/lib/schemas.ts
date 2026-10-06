@@ -245,8 +245,6 @@ export const gradeSubmissionSchema = z.object({
 
 export const markAttendanceSchema = z.object({ classId: requiredId('ID de clase requerido.') });
 
-export const leaveRoomSchema = z.object({ classId: requiredId('ID de clase requerido.') });
-
 export const uploadRequestSchema = z.object({
   category: z.string({ error: 'Categoría de archivo inválida.' }),
   fileName: z

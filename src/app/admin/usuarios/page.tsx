@@ -296,7 +296,7 @@ export default function AdminUsersPage() {
                       <TCell className="text-xs">
                         {u.role === 'STUDENT' && (
                           <p>
-                            Asistencias: <strong className="text-emerald-700">{u._count.attendances}</strong> · Tareas:{' '}
+                            Ingresos: <strong className="text-emerald-700">{u._count.attendances}</strong> · Tareas:{' '}
                             <strong className="text-role-ink">{u._count.submissions}</strong>
                           </p>
                         )}

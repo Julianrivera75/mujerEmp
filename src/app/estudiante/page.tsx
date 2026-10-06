@@ -26,6 +26,7 @@ import { formatDateLong, formatTimeRange, formatWeekdayDate } from '@/lib/format
 import { logClientError } from '@/lib/client-log';
 import { ClassPoster } from '@/components/ClassPoster';
 import { RoomCard } from '@/components/RoomCard';
+import { summarizeDays } from '@/lib/attendance-days';
 import { groupRooms } from '@/lib/rooms';
 
 interface StudentClass {
@@ -39,7 +40,7 @@ interface StudentClass {
   youtubeUrl: string | null;
   status: string;
   mentor: { name: string; email: string };
-  attendances: { studentId: string; joinedAt: string; source?: 'CLICK' | 'CARRY'; leftAt?: string | null }[];
+  attendances: { studentId: string; joinedAt: string }[];
 }
 
 export default function StudentDashboardPage() {
@@ -72,8 +73,16 @@ export default function StudentDashboardPage() {
     upcomingClasses.map((c) => ({ ...c, dateStart: new Date(c.dateStart), dateEnd: new Date(c.dateEnd) })),
   ).filter((chain) => chain.length > 1);
   const roomOf = new Map(roomChains.flatMap((chain) => chain.map((c) => [c.id, chain] as const)));
-  const totalAttended = classes.filter((c) => c.attendances.some((a) => a.studentId === user.id)).length;
-  const progressPct = classes.length > 0 ? Math.round((totalAttended / classes.length) * 100) : 0;
+  // La asistencia se mide por día: con entrar a una sola charla del día ya cuenta ese día.
+  const daySummary = summarizeDays(
+    classes,
+    classes.flatMap((c) =>
+      c.attendances.filter((a) => a.studentId === user.id).map((a) => ({ classId: c.id, joinedAt: a.joinedAt })),
+    ),
+    now,
+  );
+  const totalAttended = daySummary.attendedDays;
+  const progressPct = daySummary.percentage;
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
@@ -126,7 +135,7 @@ export default function StudentDashboardPage() {
             <CheckCircle2 className="h-6 w-6" strokeWidth={1.75} />
           </div>
           <div>
-            <p className="text-xs font-bold uppercase text-slate-500">Asistencias confirmadas</p>
+            <p className="text-xs font-bold uppercase text-slate-500">Días asistidos</p>
             <p className="font-display text-2xl font-bold tabular-nums text-slate-800">{totalAttended}</p>
           </div>
         </Card>
@@ -153,8 +162,8 @@ export default function StudentDashboardPage() {
               <div>
                 <h2 className="text-base font-bold text-slate-800">Tu progreso hacia los certificados por módulo</h2>
                 <p className="text-xs text-slate-600">
-                  Requiere al menos un {CERTIFICATE_MIN_ATTENDANCE_PERCENT}% de asistencia a las sesiones en vivo vía
-                  Google Meet.
+                  Requiere al menos un {CERTIFICATE_MIN_ATTENDANCE_PERCENT}% de asistencia. Cuenta cada día en que
+                  entras al menos a una charla por Google Meet.
                 </p>
               </div>
             </div>

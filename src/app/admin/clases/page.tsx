@@ -205,7 +205,7 @@ export default function AdminClassesPage() {
                       <span className="font-bold text-role-ink">{cls.enrollments.length} alumnas</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Asistencia registrada:</span>
+                      <span className="text-slate-500">Entraron a la charla:</span>
                       <span className="font-bold text-emerald-600">
                         {cls.attendances.length} de {cls.enrollments.length}
                       </span>
