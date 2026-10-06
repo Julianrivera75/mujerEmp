@@ -15,6 +15,13 @@ export const ROLE_META: Record<Role, RoleMeta> = {
   STUDENT: { label: 'Estudiante', variant: 'student', icon: GraduationCap },
 };
 
+/** Nombre corto de cada rol, para botones y avisos. */
+export const ROLE_SHORT_LABEL: Record<Role, string> = {
+  ADMIN: 'Administradora',
+  MENTOR: 'Mentora',
+  STUDENT: 'Estudiante',
+};
+
 /** Todos los roles de una cuenta: el principal y los adicionales, sin repetir. */
 export function rolesOf(user: { role: Role; extraRoles?: readonly Role[] | null }): Role[] {
   return Array.from(new Set<Role>([user.role, ...(user.extraRoles ?? [])]));

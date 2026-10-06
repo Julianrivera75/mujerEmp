@@ -26,6 +26,20 @@ function tempPassword(length = 12) {
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ROLES = ['STUDENT', 'MENTOR'];
 
+/** Inscribe a la estudiante en las clases vigentes (no canceladas y que aún no terminaron); no duplica. */
+async function enrollInUpcomingClasses(prisma, studentId) {
+  const classes = await prisma.classSession.findMany({
+    where: { status: { not: 'CANCELADA' }, dateEnd: { gte: new Date() } },
+    select: { id: true },
+  });
+  if (classes.length === 0) return 0;
+  const result = await prisma.classEnrollment.createMany({
+    data: classes.map((c) => ({ classId: c.id, studentId })),
+    skipDuplicates: true,
+  });
+  return result.count;
+}
+
 async function main() {
   const file = process.argv[2];
   const apply = process.argv.includes('--apply');
@@ -40,9 +54,9 @@ async function main() {
   const prisma = new PrismaClient({ datasourceUrl: url });
 
   try {
-    const existing = await prisma.user.findMany({ select: { email: true, documentId: true } });
+    const existing = await prisma.user.findMany({ select: { email: true, memberNumber: true } });
     const emails = new Set(existing.map((u) => u.email.toLowerCase()));
-    const documents = new Set(existing.map((u) => u.documentId).filter(Boolean));
+    const documents = new Set(existing.map((u) => u.memberNumber).filter(Boolean));
 
     const toCreate = [];
     const skipped = [];
@@ -90,17 +104,21 @@ async function main() {
     const credentials = [];
     for (const person of toCreate) {
       const password = tempPassword();
-      await prisma.user.create({
+      const created = await prisma.user.create({
         data: {
           name: person.name,
           email: person.email,
-          documentId: person.documentId,
+          memberNumber: person.documentId,
           phone: person.phone,
           role: person.role,
           status: 'ACTIVO',
+          mustChangePassword: true,
           passwordHash: await bcrypt.hash(password, 12),
         },
+        select: { id: true },
       });
+      // Una estudiante nueva queda inscrita en las clases vigentes, como al crearla desde el panel.
+      if (person.role === 'STUDENT') await enrollInUpcomingClasses(prisma, created.id);
       credentials.push({ nombre: person.name, correo: person.email, contrasena_temporal: password });
     }
 

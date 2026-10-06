@@ -22,6 +22,7 @@ import { StatusPill } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { safeHref } from '@/lib/validators';
 import { formatTimeRange, formatWeekdayDate, upperFirst } from '@/lib/format';
+import { RoleSwitchBanner } from '@/components/RoleSwitchBanner';
 
 export default async function AdminDashboardPage() {
   const user = await getCurrentUser();
@@ -47,6 +48,7 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
+      <RoleSwitchBanner />
       {/* Banner de bienvenida */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-role-from via-purple-700 to-role-to p-8 text-white shadow-lift sm:p-10">
         <div className="pointer-events-none absolute -bottom-10 -right-10 h-60 w-60 rounded-full bg-white/10 blur-2xl" />

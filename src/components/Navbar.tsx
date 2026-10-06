@@ -27,9 +27,10 @@ import { useActivity } from '@/components/ActivityProvider';
 import { NotificationBell } from '@/components/NotificationBell';
 import { Avatar } from '@/components/ui/Avatar';
 import { RoleBadge } from '@/components/ui/RoleBadge';
-import { ROLE_META, type Role } from '@/lib/roles';
+import { ROLE_META, ROLE_SHORT_LABEL, type Role } from '@/lib/roles';
 import { cn } from '@/lib/cn';
 import { logClientError } from '@/lib/client-log';
+import { switchRole } from '@/lib/switch-role';
 
 interface NavbarProps {
   user: {
@@ -106,22 +107,7 @@ export default function Navbar({ user }: NavbarProps) {
 
   const otherRoles = (user.roles ?? []).filter((r) => r !== user.role);
 
-  const handleSwitchRole = async (role: Role) => {
-    try {
-      const res = await fetch('/api/auth/switch-role', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        // Recarga completa para que el panel, el menú y los permisos se calculen con la vista nueva.
-        window.location.assign(data.redirectUrl || '/');
-      }
-    } catch (err) {
-      logClientError('Error cambiando de vista:', err);
-    }
-  };
+  const handleSwitchRole = (role: Role) => switchRole(role);
 
   const handleLogout = async () => {
     try {
@@ -182,6 +168,15 @@ export default function Navbar({ user }: NavbarProps) {
           </nav>
 
           <div className="flex items-center gap-1 sm:gap-2">
+            {otherRoles[0] && (
+              <button
+                onClick={() => handleSwitchRole(otherRoles[0])}
+                className="hidden items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-role-ink transition-colors hover:bg-role-soft lg:flex"
+              >
+                <Repeat className="h-3.5 w-3.5" />
+                <span>Ver como {ROLE_SHORT_LABEL[otherRoles[0]]}</span>
+              </button>
+            )}
             <NotificationBell />
             <div ref={menuRef} className="relative hidden sm:block">
               <button

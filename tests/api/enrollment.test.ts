@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { POST as postUser, PUT as putUser } from '@/app/api/admin/users/route';
+import { POST as toggleStatus } from '@/app/api/admin/users/toggle-status/route';
 import { enrollInUpcomingClasses } from '@/lib/enrollment';
 import prisma from '@/lib/prisma';
 import { read, request } from '../helpers/http';
@@ -87,5 +88,44 @@ describe('inscripción automática al crear o editar un usuario', () => {
     const res = await read(await put(putUser, '/api/admin/users', { id: w.sofia.id, phone: '+1 305 555 0000' }));
     expect(res.status).toBe(200);
     expect(await prisma.classEnrollment.count({ where: { studentId: w.sofia.id } })).toBe(before);
+  });
+});
+
+describe('reactivar una cuenta', () => {
+  const toggle = (id: string, status: 'ACTIVO' | 'INACTIVO') =>
+    post(toggleStatus, '/api/admin/users/toggle-status', { id, status });
+  const enrolled = (userId: string) => prisma.classEnrollment.count({ where: { studentId: userId } });
+
+  it('una estudiante reactivada recupera las clases vigentes, sin duplicar', async () => {
+    await prisma.user.update({ where: { id: w.lucia.id }, data: { status: 'INACTIVO' } });
+    actAs(w.admin);
+
+    expect((await toggle(w.lucia.id, 'ACTIVO')).status).toBe(200);
+    expect(await enrolled(w.lucia.id)).toBe(2);
+
+    expect((await toggle(w.lucia.id, 'ACTIVO')).status).toBe(200);
+    expect(await enrolled(w.lucia.id)).toBe(2);
+  });
+
+  it('una cuenta de mentora y estudiante reactivada también se inscribe', async () => {
+    await prisma.user.update({
+      where: { id: w.lucia.id },
+      data: { role: 'MENTOR', extraRoles: ['STUDENT'], status: 'INACTIVO' },
+    });
+    actAs(w.admin);
+
+    await toggle(w.lucia.id, 'ACTIVO');
+    expect(await enrolled(w.lucia.id)).toBe(2);
+  });
+
+  it('una mentora sin rol de estudiante no se inscribe, y desactivar tampoco inscribe', async () => {
+    await prisma.user.update({ where: { id: w.valeria.id }, data: { status: 'INACTIVO' } });
+    actAs(w.admin);
+
+    await toggle(w.valeria.id, 'ACTIVO');
+    expect(await enrolled(w.valeria.id)).toBe(0);
+
+    await toggle(w.lucia.id, 'INACTIVO');
+    expect(await enrolled(w.lucia.id)).toBe(0);
   });
 });

@@ -28,6 +28,7 @@ import type { MentorClass } from './types';
 import { formatTimeRange, formatWeekdayDateLong } from '@/lib/format';
 import { logClientError } from '@/lib/client-log';
 import { ClassPoster } from '@/components/ClassPoster';
+import { RoleSwitchBanner } from '@/components/RoleSwitchBanner';
 
 export default function MentorDashboardPage() {
   const user = useSessionUser();
@@ -109,6 +110,7 @@ export default function MentorDashboardPage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
+      <RoleSwitchBanner />
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-role-from via-teal-600 to-role-to p-8 text-white shadow-lift">
         <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div>

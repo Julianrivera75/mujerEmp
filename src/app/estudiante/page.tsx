@@ -28,6 +28,7 @@ import { ClassPoster } from '@/components/ClassPoster';
 import { RoomCard } from '@/components/RoomCard';
 import { summarizeDays } from '@/lib/attendance-days';
 import { groupRooms } from '@/lib/rooms';
+import { RoleSwitchBanner } from '@/components/RoleSwitchBanner';
 
 interface StudentClass {
   id: string;
@@ -86,6 +87,7 @@ export default function StudentDashboardPage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
+      <RoleSwitchBanner />
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-role-from via-purple-600 to-role-to p-8 text-white shadow-lift sm:p-10">
         <div className="pointer-events-none absolute right-0 top-0 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
         <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
