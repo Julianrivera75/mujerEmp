@@ -1,6 +1,7 @@
 import type { Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { HttpError, MAX_ROWS, parseBody, parseValue, withAuth } from '@/lib/api';
+import { MAX_CLASS_IMAGES, classImageKeys } from '@/lib/class-images';
 import { monthKeyOf } from '@/lib/months';
 import { rolesOf } from '@/lib/roles';
 import { createPresignedDownloadUrl, deleteObject, keyBelongsTo, verifyUploadedObject } from '@/lib/s3';
@@ -48,20 +49,38 @@ export const GET = withAuth('classes GET', 'any', async (req, user) => {
 
   // El afiche se entrega con una URL firmada de lectura (se calcula localmente, sin viaje de red).
   const withImages = await Promise.all(
-    classes.map(async (cls) => ({
-      ...cls,
-      imageUrl: cls.imageKey ? await createPresignedDownloadUrl(cls.imageKey).catch(() => null) : null,
-    })),
+    classes.map(async (cls) => {
+      const imageKeys = classImageKeys(cls);
+      const signed = await Promise.all(imageKeys.map((key) => createPresignedDownloadUrl(key).catch(() => null)));
+      const imageUrls = signed.filter((url): url is string => Boolean(url));
+      // `imageUrl` (la primera foto) se mantiene para quien aún lo lea.
+      return { ...cls, imageKeys, imageUrls, imageUrl: imageUrls[0] ?? null };
+    }),
   );
 
   return NextResponse.json({ classes: withImages });
 });
 
-/** Valida un afiche nuevo: debe ser propio, existir en el almacenamiento y ser una imagen permitida. */
+/** Valida una foto nueva: debe ser propia, existir en el almacenamiento y ser una imagen permitida (JPG, PNG o WebP). */
 async function assertValidImage(imageKey: string, ownerId: string) {
   if (!keyBelongsTo(imageKey, 'classImage', ownerId) || !(await verifyUploadedObject(imageKey, 'classImage'))) {
     throw new HttpError(400, 'La imagen no es válida. Sube una foto JPG, PNG o WebP de hasta 5 MB.');
   }
+}
+
+const cleanKeys = (keys: readonly string[]) => Array.from(new Set(keys.map((key) => key.trim()).filter(Boolean)));
+
+/** Fotos que dejará una edición: la lista nueva o, con el campo anterior de una sola foto, solo se cambia la primera. */
+function resolveImageKeys(existing: string[], requested: { imageKeys?: string[]; imageKey?: string | null }): string[] {
+  if (requested.imageKeys !== undefined) return cleanKeys(requested.imageKeys);
+  if (requested.imageKey === undefined) return existing;
+  const legacy = requested.imageKey?.trim() || null;
+  return legacy ? cleanKeys([legacy, ...existing.slice(1)]) : existing.slice(1);
+}
+
+async function assertValidImages(keys: readonly string[], ownerId: string) {
+  if (keys.length > MAX_CLASS_IMAGES) throw new HttpError(400, `Puedes subir hasta ${MAX_CLASS_IMAGES} fotos.`);
+  for (const key of keys) await assertValidImage(key, ownerId);
 }
 
 async function resolveStudentIds(ids: readonly string[] | null | undefined): Promise<string[]> {
@@ -83,8 +102,8 @@ async function assertValidMentor(mentorId: string) {
 
 export const POST = withAuth('classes POST', ['ADMIN'], async (req, user) => {
   const body = await parseBody(req, createClassSchema);
-  const imageKey = body.imageKey?.trim() || null;
-  if (imageKey) await assertValidImage(imageKey, user.id);
+  const imageKeys = resolveImageKeys([], { imageKeys: body.imageKeys, imageKey: body.imageKey });
+  await assertValidImages(imageKeys, user.id);
   if (body.dateEnd <= body.dateStart) {
     throw new HttpError(400, 'La fecha de fin debe ser posterior a la de inicio.');
   }
@@ -103,7 +122,8 @@ export const POST = withAuth('classes POST', ['ADMIN'], async (req, user) => {
       youtubeUrl: body.youtubeUrl,
       recordingNotes: cleanText(body.recordingNotes ?? '', 1000),
       status: body.status ?? 'PROGRAMADA',
-      imageKey,
+      imageKey: imageKeys[0] ?? null,
+      imageKeys,
       monthKey: monthKeyOf(body.dateStart),
       enrollments: studentIds.length > 0 ? { create: studentIds.map((studentId) => ({ studentId })) } : undefined,
     },
@@ -128,13 +148,16 @@ export const PUT = withAuth('classes PUT', ['ADMIN', 'MENTOR'], async (req, user
   const newNotes =
     body.recordingNotes === undefined ? existing.recordingNotes : cleanText(body.recordingNotes ?? '', 1000);
 
-  // Afiche: si no viene se conserva; si viene vacío se quita; si es nuevo se valida y se borra el anterior.
-  let newImageKey = existing.imageKey;
-  if (body.imageKey !== undefined) {
-    newImageKey = body.imageKey?.trim() || null;
-    if (newImageKey && newImageKey !== existing.imageKey) await assertValidImage(newImageKey, user.id);
-  }
-  const replacedImage = existing.imageKey && existing.imageKey !== newImageKey ? existing.imageKey : null;
+  // Fotos: si no vienen se conservan; las nuevas se validan y las que ya no están se borran del almacenamiento.
+  const existingKeys = classImageKeys(existing);
+  const newKeys = resolveImageKeys(existingKeys, { imageKeys: body.imageKeys, imageKey: body.imageKey });
+  await assertValidImages(
+    newKeys.filter((key) => !existingKeys.includes(key)),
+    user.id,
+  );
+  if (newKeys.length > MAX_CLASS_IMAGES) throw new HttpError(400, `Puedes subir hasta ${MAX_CLASS_IMAGES} fotos.`);
+  const replacedImages = existingKeys.filter((key) => !newKeys.includes(key));
+  const imageData = { imageKeys: newKeys, imageKey: newKeys[0] ?? null };
 
   // Una mentora solo puede editar sus propias clases y únicamente los enlaces y las notas de la grabación.
   if (user.role === 'MENTOR') {
@@ -142,9 +165,9 @@ export const PUT = withAuth('classes PUT', ['ADMIN', 'MENTOR'], async (req, user
 
     const updated = await prisma.classSession.update({
       where: { id: body.id },
-      data: { meetLink: newMeetLink, youtubeUrl: newYoutubeUrl, recordingNotes: newNotes, imageKey: newImageKey },
+      data: { meetLink: newMeetLink, youtubeUrl: newYoutubeUrl, recordingNotes: newNotes, ...imageData },
     });
-    if (replacedImage) await deleteObject(replacedImage).catch(() => undefined);
+    await Promise.all(replacedImages.map((key) => deleteObject(key).catch(() => undefined)));
     return NextResponse.json({ success: true, classSession: updated });
   }
 
@@ -175,7 +198,7 @@ export const PUT = withAuth('classes PUT', ['ADMIN', 'MENTOR'], async (req, user
       meetLink: newMeetLink,
       youtubeUrl: newYoutubeUrl,
       recordingNotes: newNotes,
-      imageKey: newImageKey,
+      ...imageData,
       status: body.status ?? existing.status,
       monthKey: monthKeyOf(start),
     },
@@ -185,7 +208,7 @@ export const PUT = withAuth('classes PUT', ['ADMIN', 'MENTOR'], async (req, user
     },
   });
 
-  if (replacedImage) await deleteObject(replacedImage).catch(() => undefined);
+  await Promise.all(replacedImages.map((key) => deleteObject(key).catch(() => undefined)));
   return NextResponse.json({ success: true, classSession: updated });
 });
 
@@ -193,8 +216,8 @@ export const DELETE = withAuth('classes DELETE', ['ADMIN'], async (req) => {
   const id = new URL(req.url).searchParams.get('id');
   if (!id) throw new HttpError(400, 'ID de clase requerido.');
 
-  const existing = await prisma.classSession.findUnique({ where: { id }, select: { imageKey: true } });
+  const existing = await prisma.classSession.findUnique({ where: { id }, select: { imageKey: true, imageKeys: true } });
   await prisma.classSession.delete({ where: { id } });
-  if (existing?.imageKey) await deleteObject(existing.imageKey).catch(() => undefined);
+  if (existing) await Promise.all(classImageKeys(existing).map((key) => deleteObject(key).catch(() => undefined)));
   return NextResponse.json({ success: true, message: 'Clase eliminada con éxito.' });
 });

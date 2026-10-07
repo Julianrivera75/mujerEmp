@@ -12,6 +12,9 @@ export interface ClassItem {
   imageKey?: string | null;
   /** URL firmada de lectura del afiche (vence en 1 hora). */
   imageUrl?: string | null;
+  /** Hasta tres fotos de la clase, en orden (claves y URLs firmadas). */
+  imageKeys?: string[];
+  imageUrls?: string[];
   mentor: { id: string; name: string; email: string };
   enrollments: { student: { id: string; name: string; email: string } }[];
   attendances: { student: { id: string; name: string } }[];

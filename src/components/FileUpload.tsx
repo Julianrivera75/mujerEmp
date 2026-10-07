@@ -12,12 +12,14 @@ interface FileUploadProps {
   category: UploadCategory;
   accept: string;
   /** Se llama con el "key" de S3 una vez subido el archivo. */
-  onUploaded: (key: string, fileName: string) => void;
+  onUploaded: (key: string, fileName: string, file: File) => void;
   label?: string;
   /** Avisa si hay una subida en curso (para bloquear el envío del formulario mientras tanto). */
   onBusyChange?: (busy: boolean) => void;
   /** Muestra la vista previa en un marco 16:9 (para afiches), sin recortar la imagen. */
   previewFrame?: boolean;
+  /** Tras subir, vuelve al estado inicial (sin vista previa) para poder subir otro archivo. */
+  resetOnUploaded?: boolean;
 }
 
 type Phase = 'idle' | 'preparing' | 'uploading' | 'done';
@@ -29,6 +31,7 @@ export default function FileUpload({
   label,
   onBusyChange,
   previewFrame,
+  resetOnUploaded,
 }: FileUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const handleRef = useRef<UploadHandle | null>(null);
@@ -78,9 +81,15 @@ export default function FileUpload({
       handleRef.current = uploadWithProgress(presignData.uploadUrl, file, setPercent);
       await handleRef.current.promise;
 
-      setPreviewUrl(file.type.startsWith('image/') ? URL.createObjectURL(file) : null);
-      setPhase('done');
-      onUploaded(presignData.key, file.name);
+      if (resetOnUploaded) {
+        setPreviewUrl(null);
+        setFileInfo(null);
+        setPhase('idle');
+      } else {
+        setPreviewUrl(file.type.startsWith('image/') ? URL.createObjectURL(file) : null);
+        setPhase('done');
+      }
+      onUploaded(presignData.key, file.name, file);
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') {
         setPhase('idle');

@@ -6,12 +6,11 @@ import { Modal } from '@/components/ui/Modal';
 import { Input, Select, Textarea } from '@/components/ui/Field';
 import { DateField } from '@/components/ui/DateField';
 import { ProgressBar } from '@/components/ui/ProgressBar';
-import FileUpload from '@/components/FileUpload';
-import { ClassPoster, POSTER_RECOMMENDATION } from '@/components/ClassPoster';
 import { Button } from '@/components/ui/Button';
 import { Tip } from '@/components/ui/Tip';
 import { localInputValue } from '@/lib/months';
 import type { ClassItem, SimpleUser } from '../types';
+import { ClassImagesField, type ClassImageItem } from './ClassImagesField';
 
 export interface ClassFormData {
   title: string;
@@ -23,7 +22,6 @@ export interface ClassFormData {
   youtubeUrl: string;
   recordingNotes: string;
   status: string;
-  imageKey: string | null;
   studentIds: string[];
 }
 
@@ -36,6 +34,14 @@ interface ClassFormModalProps {
   onClose: () => void;
   /** Recibe la clase guardada para que la página muestre su mes de inmediato. */
   onSaved: (saved?: { id: string; monthKey: string; dateStart: string }) => void;
+}
+
+/** Fotos actuales de la clase, con su dirección firmada para la vista previa (acepta clases con una sola foto antigua). */
+function initialImages(mode: 'create' | 'edit', cls: ClassItem | null): ClassImageItem[] {
+  if (mode !== 'edit' || !cls) return [];
+  const keys = cls.imageKeys?.length ? cls.imageKeys : cls.imageKey ? [cls.imageKey] : [];
+  const urls = cls.imageUrls?.length ? cls.imageUrls : cls.imageUrl ? [cls.imageUrl] : [];
+  return keys.map((key, i) => ({ key, url: urls[i] ?? '' }));
 }
 
 function buildInitialForm(
@@ -55,7 +61,6 @@ function buildInitialForm(
       youtubeUrl: cls.youtubeUrl || '',
       recordingNotes: cls.recordingNotes || '',
       status: cls.status,
-      imageKey: cls.imageKey ?? null,
       studentIds: cls.enrollments.map((e) => e.student.id),
     };
   }
@@ -71,7 +76,6 @@ function buildInitialForm(
     youtubeUrl: '',
     recordingNotes: '',
     status: 'PROGRAMADA',
-    imageKey: null,
     studentIds: students.map((s) => s.id),
   };
 }
@@ -82,7 +86,7 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
   );
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [removedImage, setRemovedImage] = useState(false);
+  const [images, setImages] = useState<ClassImageItem[]>(() => initialImages(mode, editingClass));
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
@@ -90,7 +94,7 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
       setFormData(buildInitialForm(mode, editingClass, mentors, students));
       setErrorMsg('');
       setSubmitting(false);
-      setRemovedImage(false);
+      setImages(initialImages(mode, editingClass));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, mode, editingClass]);
@@ -111,7 +115,7 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
       return;
     }
     if (uploading) {
-      setErrorMsg('Espera a que termine la subida del afiche.');
+      setErrorMsg('Espera a que termine la subida de la foto.');
       return;
     }
     setSubmitting(true);
@@ -124,7 +128,8 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
         dateStart: new Date(formData.dateStart).toISOString(),
         dateEnd: new Date(formData.dateEnd).toISOString(),
       };
-      const payload = mode === 'create' ? { ...formData, ...dates } : { ...formData, ...dates, id: editingClass?.id };
+      const body = { ...formData, ...dates, imageKeys: images.map((i) => i.key) };
+      const payload = mode === 'create' ? body : { ...body, id: editingClass?.id };
 
       const res = await fetch(url, {
         method,
@@ -257,39 +262,7 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
           />
         </div>
 
-        <div className="space-y-2">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-700">Afiche de la clase (JPG o PNG)</p>
-          {editingClass?.imageUrl && formData.imageKey === editingClass.imageKey && !removedImage && (
-            <div className="space-y-1.5">
-              <ClassPoster
-                url={editingClass.imageUrl}
-                title={formData.title || editingClass.title}
-                className="max-w-sm"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  setRemovedImage(true);
-                  setFormData({ ...formData, imageKey: null });
-                }}
-                className="text-xs font-bold text-red-600 hover:underline"
-              >
-                Quitar afiche
-              </button>
-            </div>
-          )}
-          <p className="text-xs text-slate-500">
-            {POSTER_RECOMMENDATION} Si es de otra forma, se muestra completa sobre un fondo difuminado.
-          </p>
-          <FileUpload
-            category="classImage"
-            previewFrame
-            accept=".jpg,.jpeg,.png,image/jpeg,image/png"
-            label={formData.imageKey ? 'Cambiar afiche' : 'Subir afiche de la clase'}
-            onBusyChange={setUploading}
-            onUploaded={(key) => setFormData((prev) => ({ ...prev, imageKey: key }))}
-          />
-        </div>
+        <ClassImagesField images={images} onChange={setImages} onBusyChange={setUploading} />
 
         <div>
           <div className="mb-2 flex items-center justify-between">

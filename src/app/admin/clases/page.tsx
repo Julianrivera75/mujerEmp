@@ -19,7 +19,7 @@ import { ClassFormModal } from './_components/ClassFormModal';
 import { EnrollmentsModal } from './_components/EnrollmentsModal';
 import type { ClassItem, ManagedUser, SimpleUser } from './types';
 import { logClientError } from '@/lib/client-log';
-import { ClassPoster } from '@/components/ClassPoster';
+import { ClassGallery } from '@/components/ClassGallery';
 
 export default function AdminClassesPage() {
   const [classes, setClasses] = useState<ClassItem[]>([]);
@@ -187,7 +187,11 @@ export default function AdminClassesPage() {
             return (
               <Card key={cls.id} variant="interactive" className="flex cursor-default flex-col justify-between p-6">
                 <div>
-                  <ClassPoster url={cls.imageUrl} title={cls.title} className="mb-4" />
+                  <ClassGallery
+                    urls={cls.imageUrls ?? (cls.imageUrl ? [cls.imageUrl] : [])}
+                    title={cls.title}
+                    className="mb-4"
+                  />
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <StatusPill
                       label={cls.status}

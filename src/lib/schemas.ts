@@ -1,3 +1,4 @@
+import { MAX_CLASS_IMAGES } from './class-images';
 import { z } from 'zod';
 import {
   CLASS_STATUSES,
@@ -180,6 +181,10 @@ const classBase = {
   meetLink: meetLink,
   youtubeUrl: youtubeLink,
   imageKey: z.string().max(300).nullish(),
+  imageKeys: z
+    .array(z.string().min(1).max(300))
+    .max(MAX_CLASS_IMAGES, `Puedes subir hasta ${MAX_CLASS_IMAGES} fotos.`)
+    .optional(),
 };
 
 export const createClassSchema = z.object({
@@ -205,6 +210,10 @@ export const updateClassSchema = z.object({
   meetLink: z.string().nullish(),
   youtubeUrl: z.string().nullish(),
   imageKey: z.string().max(300).nullish(),
+  imageKeys: z
+    .array(z.string().min(1).max(300))
+    .max(MAX_CLASS_IMAGES, `Puedes subir hasta ${MAX_CLASS_IMAGES} fotos.`)
+    .optional(),
 });
 
 export const updateAssignmentSchema = z.object({

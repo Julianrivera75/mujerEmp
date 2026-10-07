@@ -27,7 +27,7 @@ import { ResourcesModal } from './_components/ResourcesModal';
 import type { MentorClass } from './types';
 import { formatTimeRange, formatWeekdayDateLong } from '@/lib/format';
 import { logClientError } from '@/lib/client-log';
-import { ClassPoster } from '@/components/ClassPoster';
+import { ClassGallery } from '@/components/ClassGallery';
 import { RoleSwitchBanner } from '@/components/RoleSwitchBanner';
 
 export default function MentorDashboardPage() {
@@ -165,7 +165,11 @@ export default function MentorDashboardPage() {
 
             return (
               <Card key={cls.id} variant="glass" className="p-6 sm:p-8">
-                <ClassPoster url={cls.imageUrl} title={cls.title} className="mb-5" />
+                <ClassGallery
+                  urls={cls.imageUrls ?? (cls.imageUrl ? [cls.imageUrl] : [])}
+                  title={cls.title}
+                  className="mb-5"
+                />
                 <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-start">
                   <div className="flex-1 space-y-3">
                     <div className="flex flex-wrap items-center gap-2">

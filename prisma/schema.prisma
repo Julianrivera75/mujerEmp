@@ -114,6 +114,8 @@ model ClassSession {
   recordingNotes String?
   // Afiche o imagen de la clase (clave del archivo en el almacenamiento)
   imageKey       String?
+  // Hasta 3 fotos de la clase, en orden (la primera es la principal). `imageKey` se mantiene igual a la primera.
+  imageKeys      String[]    @default([])
   status         ClassStatus @default(PROGRAMADA)
   monthKey       String // Formato YYYY-MM para agrupamiento mensual
 

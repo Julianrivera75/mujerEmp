@@ -9,6 +9,8 @@ export interface MentorClass {
   recordingNotes: string | null;
   imageKey?: string | null;
   imageUrl?: string | null;
+  imageKeys?: string[];
+  imageUrls?: string[];
   status: string;
   enrollments: { student: { id: string; name: string; email: string; memberNumber: string | null } }[];
   attendances: { studentId: string; joinedAt: string; student: { name: string } }[];

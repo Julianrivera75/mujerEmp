@@ -267,3 +267,93 @@ describe('afiche de la clase', () => {
     expect(res.status).toBe(403);
   });
 });
+
+describe('hasta tres fotos por clase', () => {
+  const body = (extra: Record<string, unknown> = {}) => ({
+    title: 'Con fotos',
+    dateStart: new Date(2026, 9, 6, 15).toISOString(),
+    dateEnd: new Date(2026, 9, 6, 17).toISOString(),
+    mentorId: w.carolina.id,
+    ...extra,
+  });
+  const keysOf = (n: number) => Array.from({ length: n }, (_, i) => `clases/${w.admin.id}/foto${i + 1}.png`);
+
+  it('crea la clase con tres fotos y la lista las devuelve en orden con URL firmada', async () => {
+    actAs(w.admin);
+    const keys = keysOf(3);
+    const created = await read(
+      await POST(request('/api/classes', { method: 'POST', body: body({ imageKeys: keys }) })),
+    );
+    expect(created.status).toBe(200);
+    const saved = await prisma.classSession.findUniqueOrThrow({ where: { id: created.body.classSession.id } });
+    expect(saved.imageKeys).toEqual(keys);
+    expect(saved.imageKey).toBe(keys[0]);
+
+    const list = await read(await GET(request('/api/classes')));
+    const cls = list.body.classes.find((c: { id: string }) => c.id === created.body.classSession.id);
+    expect(cls.imageUrls).toEqual(keys.map((k) => `https://firmada.test/${k}`));
+    expect(cls.imageUrl).toBe(`https://firmada.test/${keys[0]}`);
+  });
+
+  it('rechaza más de tres fotos y fotos que no son de quien las sube', async () => {
+    actAs(w.admin);
+    const tooMany = await read(
+      await POST(request('/api/classes', { method: 'POST', body: body({ imageKeys: keysOf(4) }) })),
+    );
+    expect(tooMany.status).toBe(400);
+
+    const foreign = await read(
+      await POST(
+        request('/api/classes', {
+          method: 'POST',
+          body: body({ imageKeys: [keysOf(1)[0], `clases/${w.lucia.id}/ajena.png`] }),
+        }),
+      ),
+    );
+    expect(foreign.status).toBe(400);
+  });
+
+  it('al editar, reordenar conserva las fotos y quitar una la elimina del almacenamiento', async () => {
+    const { deleteObject } = await import('@/lib/s3');
+    const [a, b, c] = keysOf(3);
+    await prisma.classSession.update({
+      where: { id: w.claseCarolina.id },
+      data: { imageKeys: [a, b, c], imageKey: a },
+    });
+
+    actAs(w.admin);
+    const put = (imageKeys: string[]) =>
+      PUT(request('/api/classes', { method: 'PUT', body: { id: w.claseCarolina.id, imageKeys } }));
+    const read1 = async () => prisma.classSession.findUniqueOrThrow({ where: { id: w.claseCarolina.id } });
+
+    expect((await read(await put([c, a, b]))).status).toBe(200);
+    expect((await read1()).imageKeys).toEqual([c, a, b]);
+    expect((await read1()).imageKey).toBe(c);
+
+    expect((await read(await put([c, b]))).status).toBe(200);
+    expect((await read1()).imageKeys).toEqual([c, b]);
+    expect(deleteObject).toHaveBeenCalledWith(a);
+  });
+
+  it('una clase con una sola foto antigua se lee como lista de una', async () => {
+    const old = `clases/${w.admin.id}/antigua.png`;
+    await prisma.classSession.update({ where: { id: w.claseCarolina.id }, data: { imageKey: old } });
+    actAs(w.carolina);
+    const list = await read(await GET(request('/api/classes')));
+    expect(list.body.classes[0].imageUrls).toEqual([`https://firmada.test/${old}`]);
+  });
+
+  it('eliminar la clase borra todas sus fotos del almacenamiento', async () => {
+    const { deleteObject } = await import('@/lib/s3');
+    const keys = keysOf(3);
+    await prisma.classSession.update({
+      where: { id: w.claseCarolina.id },
+      data: { imageKeys: keys, imageKey: keys[0] },
+    });
+    actAs(w.admin);
+    expect(
+      (await read(await DELETE(request(`/api/classes?id=${w.claseCarolina.id}`, { method: 'DELETE' })))).status,
+    ).toBe(200);
+    for (const k of keys) expect(deleteObject).toHaveBeenCalledWith(k);
+  });
+});
