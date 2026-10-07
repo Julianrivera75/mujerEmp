@@ -127,6 +127,11 @@ export default function MentorTasksPage() {
                     <span className="mb-1 block text-xs font-bold uppercase tracking-wider text-role-ink">
                       Clase: {ass.classSession.title}
                     </span>
+                    {ass.creator && (
+                      <span className="mb-1 block text-[11px] font-semibold text-slate-500">
+                        Creada por {ass.creator.name}
+                      </span>
+                    )}
                     <h2 className="text-xl font-bold text-slate-800">{ass.title}</h2>
                     <p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-600">{ass.description}</p>
                   </div>
@@ -261,7 +266,7 @@ export default function MentorTasksPage() {
         title="¿Eliminar esta tarea?"
         description={
           deleteTarget
-            ? `Se eliminará "${deleteTarget.title}" junto con ${deleteTarget.submissions.length} entrega${deleteTarget.submissions.length === 1 ? '' : 's'} y los archivos que las estudiantes subieron. Esta acción no se puede deshacer.`
+            ? `Se eliminará "${deleteTarget.title}"${deleteTarget.creator ? ` (creada por ${deleteTarget.creator.name})` : ''} junto con ${deleteTarget.submissions.length} entrega${deleteTarget.submissions.length === 1 ? '' : 's'}, los archivos que las estudiantes subieron y los avisos que recibieron. Esta acción no se puede deshacer.`
             : undefined
         }
         confirmLabel="Eliminar tarea"

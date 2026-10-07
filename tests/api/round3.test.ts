@@ -157,6 +157,45 @@ describe('tareas: la mentora edita y elimina', () => {
     expect((await edit({ id: w.tarea.id, title: '', description: 'x', dueDate: 'no-es-fecha' })).status).toBe(400);
   });
 
+  it('la administración puede eliminar cualquier tarea y se borran también los avisos que generó', async () => {
+    await prisma.notification.createMany({
+      data: [
+        {
+          userId: w.sofia.id,
+          type: 'NEW_ASSIGNMENT',
+          title: 'Nueva tarea',
+          body: 'Ensayo',
+          href: `/estudiante/tareas?tarea=${w.tarea.id}`,
+          dedupeKey: `new:${w.tarea.id}`,
+        },
+        {
+          userId: w.carolina.id,
+          type: 'SUBMISSION_RECEIVED',
+          title: 'Entrega recibida',
+          body: 'Ensayo',
+          href: `/mentor/tareas?tarea=${w.tarea.id}`,
+          dedupeKey: `sub:${w.entrega.id}:1`,
+        },
+        {
+          userId: w.sofia.id,
+          type: 'NEW_ASSIGNMENT',
+          title: 'Otra tarea',
+          body: 'Sin relación',
+          href: '/estudiante/tareas?tarea=otra-tarea',
+          dedupeKey: 'new:otra-tarea',
+        },
+      ],
+    });
+
+    // La tarea es de la clase de Carolina: una administradora que no la creó puede borrarla.
+    actAs(w.admin);
+    expect((await read(await remove(w.tarea.id))).status).toBe(200);
+    expect(await prisma.assignment.count({ where: { id: w.tarea.id } })).toBe(0);
+    expect(await prisma.notification.count({ where: { href: { contains: w.tarea.id } } })).toBe(0);
+    // Los avisos de otras tareas no se tocan.
+    expect(await prisma.notification.count()).toBe(1);
+  });
+
   it('eliminar borra la tarea, sus entregas y los archivos subidos', async () => {
     await prisma.submission.update({
       where: { id: w.entrega.id },

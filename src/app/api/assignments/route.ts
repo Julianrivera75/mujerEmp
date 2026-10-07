@@ -89,7 +89,7 @@ export const PUT = withAuth('assignments PUT', ['MENTOR', 'ADMIN'], async (req, 
   return NextResponse.json({ success: true, assignment });
 });
 
-/** Elimina la tarea con sus entregas y los archivos entregados. */
+/** Elimina la tarea con sus entregas, los avisos que generó y los archivos entregados. */
 export const DELETE = withAuth('assignments DELETE', ['MENTOR', 'ADMIN'], async (req, user) => {
   const id = new URL(req.url).searchParams.get('id');
   if (!id) throw new HttpError(400, 'ID de tarea requerido.');
@@ -106,7 +106,11 @@ export const DELETE = withAuth('assignments DELETE', ['MENTOR', 'ADMIN'], async 
     throw new HttpError(403, 'No puedes eliminar tareas de clases que no dictas.');
   }
 
-  await prisma.assignment.delete({ where: { id } });
+  // Las entregas se borran en cascada. Los avisos no tienen relación con la tarea: se identifican por su enlace.
+  await prisma.$transaction([
+    prisma.assignment.delete({ where: { id } }),
+    prisma.notification.deleteMany({ where: { href: { contains: id } } }),
+  ]);
 
   // Los archivos subidos (no los enlaces) se eliminan del almacenamiento.
   const files = existing.submissions

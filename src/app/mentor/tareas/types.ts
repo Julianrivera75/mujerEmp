@@ -15,5 +15,6 @@ export interface Assignment {
   description: string;
   dueDate: string;
   classSession: { id: string; title: string };
+  creator?: { id: string; name: string };
   submissions: Submission[];
 }
