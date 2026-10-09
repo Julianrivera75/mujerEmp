@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type { NotificationType } from '@prisma/client';
 import { unreadByConversation } from './chat-db';
 import prisma from './prisma';
@@ -16,6 +17,41 @@ export interface NotificationInput {
   href: string;
   /** Identifica el evento para no repetir el mismo aviso a la misma persona. */
   dedupeKey: string;
+}
+
+/** Largo máximo de la vista previa del mensaje en el aviso. */
+const MESSAGE_PREVIEW_LENGTH = 80;
+
+/**
+ * Avisa de un mensaje nuevo a cada destinataria. Hay un solo aviso por conversación: si ya existe, se actualiza con el
+ * mensaje más reciente y vuelve a quedar sin leer, para no llenar la campana con un aviso por mensaje.
+ */
+export async function notifyNewMessage(
+  recipients: readonly { userId: string; conversationId: string }[],
+  senderName: string,
+  body: string,
+) {
+  if (recipients.length === 0) return;
+  const preview = body.length > MESSAGE_PREVIEW_LENGTH ? `${body.slice(0, MESSAGE_PREVIEW_LENGTH)}…` : body;
+  const title = `Mensaje de ${senderName}`;
+  const ids = recipients.map(() => randomUUID());
+  const userIds = recipients.map((r) => r.userId);
+  const hrefs = recipients.map((r) => `/chat?c=${r.conversationId}`);
+  const keys = recipients.map((r) => `msg:${r.conversationId}`);
+  await prisma.$executeRaw`
+    INSERT INTO "Notification" (id, "userId", type, title, body, href, "dedupeKey", "createdAt")
+    SELECT t.id, t.uid, 'NEW_MESSAGE'::"NotificationType", ${title}, ${preview}, t.href, t.key, NOW()
+    FROM unnest(${ids}::text[], ${userIds}::text[], ${hrefs}::text[], ${keys}::text[]) AS t(id, uid, href, key)
+    ON CONFLICT ("userId", "dedupeKey") DO UPDATE
+    SET title = EXCLUDED.title, body = EXCLUDED.body, href = EXCLUDED.href, "createdAt" = EXCLUDED."createdAt", "readAt" = NULL`;
+}
+
+/** Marca como leído el aviso de mensaje nuevo de una conversación (al abrirla). */
+export async function markMessageNoticeRead(userId: string, conversationId: string) {
+  await prisma.notification.updateMany({
+    where: { userId, dedupeKey: `msg:${conversationId}`, readAt: null },
+    data: { readAt: new Date() },
+  });
 }
 
 /** Crea el aviso para cada persona indicada, sin repetir los que ya existen. */

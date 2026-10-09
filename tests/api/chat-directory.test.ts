@@ -197,3 +197,53 @@ describe('mensaje a varias personas', () => {
     expect(empty.status).toBe(400);
   });
 });
+
+describe('aviso de mensaje nuevo en la campana', () => {
+  it('un solo aviso por conversación, con el último mensaje; se marca leído al abrirla', async () => {
+    const { POST: sendMessage } = await import('@/app/api/chat/messages/route');
+    const { POST: markRead } = await import('@/app/api/chat/read/route');
+    const [userAId, userBId] = w.sofia.id < w.carolina.id ? [w.sofia.id, w.carolina.id] : [w.carolina.id, w.sofia.id];
+    const conv = await prisma.conversation.create({ data: { userAId, userBId } });
+
+    actAs(w.carolina);
+    for (const text of ['Primero', 'Segundo mensaje']) {
+      expect(
+        (await read(await post(sendMessage, '/api/chat/messages', { conversationId: conv.id, body: text }))).status,
+      ).toBe(200);
+    }
+    const rows = await prisma.notification.findMany({ where: { userId: w.sofia.id } });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      type: 'NEW_MESSAGE',
+      title: 'Mensaje de Carolina',
+      body: 'Segundo mensaje',
+      href: `/chat?c=${conv.id}`,
+      readAt: null,
+    });
+    expect(await prisma.notification.count({ where: { userId: w.carolina.id } })).toBe(0);
+
+    actAs(w.sofia);
+    expect((await read(await post(markRead, '/api/chat/read', { conversationId: conv.id }))).status).toBe(200);
+    expect((await prisma.notification.findFirstOrThrow({ where: { userId: w.sofia.id } })).readAt).not.toBeNull();
+
+    // Un mensaje nuevo vuelve a dejarlo sin leer.
+    actAs(w.carolina);
+    await post(sendMessage, '/api/chat/messages', { conversationId: conv.id, body: 'Otro más' });
+    const again = await prisma.notification.findFirstOrThrow({ where: { userId: w.sofia.id } });
+    expect(again.readAt).toBeNull();
+    expect(again.body).toBe('Otro más');
+  });
+
+  it('el mensaje a varias genera un aviso para cada destinataria', async () => {
+    const otra = await addUser('Otra');
+    await prisma.classEnrollment.create({ data: { classId: w.claseCarolina.id, studentId: otra.id } });
+    actAs(w.carolina);
+    const sent = await read(
+      await post(broadcast, '/api/chat/broadcast', { audience: { type: 'myStudents' }, body: 'Aviso general' }),
+    );
+    expect(sent.body.sent).toBe(2);
+    const notices = await prisma.notification.findMany({ where: { type: 'NEW_MESSAGE' } });
+    expect(notices.map((n) => n.userId).sort()).toEqual([w.sofia.id, otra.id].sort());
+    expect(notices.every((n) => n.body === 'Aviso general' && n.href.startsWith('/chat?c='))).toBe(true);
+  });
+});

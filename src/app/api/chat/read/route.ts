@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { HttpError, parseBody, withAuth } from '@/lib/api';
+import { markMessageNoticeRead } from '@/lib/notifications';
 import prisma from '@/lib/prisma';
 import { markConversationReadSchema } from '@/lib/schemas';
 
@@ -19,5 +20,6 @@ export const POST = withAuth('chat read', 'any', async (req, user) => {
     where: { id: conversationId },
     data: conversation.userAId === user.id ? { lastReadAtA: now } : { lastReadAtB: now },
   });
+  await markMessageNoticeRead(user.id, conversationId);
   return NextResponse.json({ success: true });
 });

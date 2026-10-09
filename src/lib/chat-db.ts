@@ -1,6 +1,7 @@
 import type { Prisma, Role } from '@prisma/client';
 import { HttpError } from './api';
 import { canChat, pairIds, type ChatParty } from './chat';
+import { notifyNewMessage } from './notifications';
 import prisma from './prisma';
 import { rolesOf } from './roles';
 
@@ -173,37 +174,48 @@ export async function resolveBroadcast(sender: Sender, audience: BroadcastAudien
  * Entrega el mismo mensaje a cada persona en su conversación 1 a 1 con quien escribe (se crea si no existe),
  * para que pueda responder en privado. Todo ocurre en una sola transacción.
  */
-export async function deliverBroadcast(senderId: string, recipientIds: readonly string[], body: string) {
+export async function deliverBroadcast(
+  senderId: string,
+  senderName: string,
+  recipientIds: readonly string[],
+  body: string,
+) {
   if (recipientIds.length === 0) return 0;
   const now = new Date();
   const pairs = recipientIds.map((id) => pairIds(senderId, id));
 
-  await prisma.$transaction(async (tx) => {
+  const conversations = await prisma.$transaction(async (tx) => {
     await tx.conversation.createMany({
       data: pairs.map(([userAId, userBId]) => ({ userAId, userBId })),
       skipDuplicates: true,
     });
-    const conversations = await tx.conversation.findMany({
+    const rows = await tx.conversation.findMany({
       where: {
         OR: [
           { userAId: senderId, userBId: { in: [...recipientIds] } },
           { userBId: senderId, userAId: { in: [...recipientIds] } },
         ],
       },
-      select: { id: true, userAId: true },
+      select: { id: true, userAId: true, userBId: true },
     });
     await tx.message.createMany({
-      data: conversations.map((c) => ({ conversationId: c.id, senderId, body, createdAt: now })),
+      data: rows.map((c) => ({ conversationId: c.id, senderId, body, createdAt: now })),
     });
     // Quien escribe tiene sus conversaciones al día.
-    const asA = conversations.filter((c) => c.userAId === senderId).map((c) => c.id);
-    const asB = conversations.filter((c) => c.userAId !== senderId).map((c) => c.id);
+    const asA = rows.filter((c) => c.userAId === senderId).map((c) => c.id);
+    const asB = rows.filter((c) => c.userAId !== senderId).map((c) => c.id);
     if (asA.length) {
       await tx.conversation.updateMany({ where: { id: { in: asA } }, data: { lastMessageAt: now, lastReadAtA: now } });
     }
     if (asB.length) {
       await tx.conversation.updateMany({ where: { id: { in: asB } }, data: { lastMessageAt: now, lastReadAtB: now } });
     }
+    return rows;
   });
+  await notifyNewMessage(
+    conversations.map((c) => ({ userId: c.userAId === senderId ? c.userBId : c.userAId, conversationId: c.id })),
+    senderName,
+    body,
+  );
   return recipientIds.length;
 }

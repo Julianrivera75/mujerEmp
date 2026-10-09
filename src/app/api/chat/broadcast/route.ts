@@ -48,6 +48,7 @@ export const POST = withAuth('chat broadcast POST', 'any', async (req, user) => 
 
   const sent = await deliverBroadcast(
     user.id,
+    user.name,
     finalRecipients.map((r) => r.id),
     text,
   );

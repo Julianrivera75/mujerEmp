@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { HttpError, parseBody, withAuth } from '@/lib/api';
 import { canChat, MESSAGE_MAX_LENGTH, MESSAGES_PER_MINUTE } from '@/lib/chat';
+import { notifyNewMessage } from '@/lib/notifications';
 import prisma from '@/lib/prisma';
 import { rateLimit } from '@/lib/rate-limit';
 import { sendMessageSchema } from '@/lib/schemas';
@@ -63,7 +64,10 @@ export const POST = withAuth('chat messages POST', 'any', async (req, user) => {
   const otherId = conversation.userAId === user.id ? conversation.userBId : conversation.userAId;
 
   const [me, other] = await Promise.all([
-    prisma.user.findUnique({ where: { id: user.id }, select: { isMinor: true, role: true, extraRoles: true } }),
+    prisma.user.findUnique({
+      where: { id: user.id },
+      select: { name: true, isMinor: true, role: true, extraRoles: true },
+    }),
     prisma.user.findUnique({
       where: { id: otherId },
       select: { isMinor: true, role: true, extraRoles: true, status: true, anonymizedAt: true },
@@ -93,5 +97,6 @@ export const POST = withAuth('chat messages POST', 'any', async (req, user) => {
     }),
   ]);
 
+  await notifyNewMessage([{ userId: otherId, conversationId }], me.name, text);
   return NextResponse.json({ message: { ...message, mine: true } });
 });

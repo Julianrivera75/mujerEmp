@@ -245,6 +245,7 @@ enum NotificationType {
   ASSIGNMENT_DUE_SOON
   SUBMISSION_RECEIVED
   SUBMISSION_GRADED
+  NEW_MESSAGE
 }
 
 model Notification {
