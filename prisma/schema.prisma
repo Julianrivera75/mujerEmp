@@ -91,6 +91,10 @@ model User {
   conversationsA     Conversation[]    @relation("ConversationA")
   conversationsB     Conversation[]    @relation("ConversationB")
   messagesSent       Message[]
+  chatBlocksMade     ChatBlock[]       @relation("ChatBlocker")
+  chatBlocksReceived ChatBlock[]       @relation("ChatBlocked")
+  reportsMade        MessageReport[]   @relation("ReportReporter")
+  reportsReceived    MessageReport[]   @relation("ReportReported")
   notifications      Notification[]
 }
 
@@ -233,11 +237,47 @@ model Message {
   conversationId String
   senderId       String
   body           String
+  // Archivo adjunto opcional (clave en el almacenamiento, nombre original, tipo y tamaño en bytes)
+  attachmentKey  String?
+  attachmentName String?
+  attachmentType String?
+  attachmentSize Int?
   createdAt      DateTime     @default(now())
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([conversationId, createdAt])
+}
+
+// Una persona bloquea a otra: ninguna de las dos puede escribirle a la otra mientras dure el bloqueo.
+model ChatBlock {
+  id        String   @id @default(cuid())
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+  blocker   User     @relation("ChatBlocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked   User     @relation("ChatBlocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@index([blockedId])
+}
+
+// Reporte de un mensaje a la administración. Guarda una copia del texto para poder revisarlo aunque se borre la conversación.
+model MessageReport {
+  id             String    @id @default(cuid())
+  messageId      String
+  conversationId String
+  reporterId     String
+  reportedId     String
+  messageBody    String
+  reason         String
+  createdAt      DateTime  @default(now())
+  reviewedAt     DateTime?
+  reporter       User      @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reported       User      @relation("ReportReported", fields: [reportedId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, reporterId])
+  @@index([reviewedAt, createdAt])
 }
 
 enum NotificationType {
@@ -246,6 +286,7 @@ enum NotificationType {
   SUBMISSION_RECEIVED
   SUBMISSION_GRADED
   NEW_MESSAGE
+  CHAT_REPORT
 }
 
 model Notification {

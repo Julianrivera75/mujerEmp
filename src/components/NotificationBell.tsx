@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Bell, CheckCheck, ClipboardCheck, ClipboardList, Clock, Inbox, MessageCircle } from 'lucide-react';
+import { Bell, CheckCheck, ClipboardCheck, ClipboardList, Clock, Flag, Inbox, MessageCircle } from 'lucide-react';
 import { useActivity } from '@/components/ActivityProvider';
 import { useNotificationOpener } from '@/components/useNotificationOpener';
 import { formatDayMonthTime } from '@/lib/format';
@@ -11,7 +11,13 @@ import { cn } from '@/lib/cn';
 
 export interface NotificationItem {
   id: string;
-  type: 'NEW_ASSIGNMENT' | 'ASSIGNMENT_DUE_SOON' | 'SUBMISSION_RECEIVED' | 'SUBMISSION_GRADED' | 'NEW_MESSAGE';
+  type:
+    | 'NEW_ASSIGNMENT'
+    | 'ASSIGNMENT_DUE_SOON'
+    | 'SUBMISSION_RECEIVED'
+    | 'SUBMISSION_GRADED'
+    | 'NEW_MESSAGE'
+    | 'CHAT_REPORT';
   title: string;
   body: string;
   href: string;
@@ -25,6 +31,7 @@ const ICONS = {
   SUBMISSION_RECEIVED: Inbox,
   SUBMISSION_GRADED: ClipboardCheck,
   NEW_MESSAGE: MessageCircle,
+  CHAT_REPORT: Flag,
 } as const;
 
 export function NotificationIcon({ type, className }: { type: NotificationItem['type']; className?: string }) {

@@ -298,11 +298,32 @@ export const broadcastSendSchema = z.object({
 
 export const sendMessageSchema = z.object({
   conversationId: requiredId('Falta la conversación.'),
-  body: z
-    .string({ error: 'Escribe un mensaje.' })
-    .min(1, 'Escribe un mensaje.')
-    .max(4000, 'El mensaje es demasiado largo.'),
+  body: z.string({ error: 'Escribe un mensaje.' }).max(4000, 'El mensaje es demasiado largo.').default(''),
+  attachment: z
+    .object({
+      key: z.string().min(1).max(300),
+      name: z.string().min(1).max(120),
+      type: z.string().min(1).max(100),
+      size: z
+        .number()
+        .int()
+        .positive()
+        .max(50 * 1024 * 1024),
+    })
+    .optional(),
 });
+
+export const blockUserSchema = z.object({ userId: requiredId('Falta la persona.'), blocked: z.boolean() });
+
+export const reportMessageSchema = z.object({
+  messageId: requiredId('Falta el mensaje.'),
+  reason: z
+    .string({ error: 'Cuéntanos el motivo.' })
+    .min(3, 'Cuéntanos el motivo.')
+    .max(500, 'El motivo es demasiado largo.'),
+});
+
+export const reviewReportSchema = z.object({ id: requiredId('Falta el reporte.') });
 
 export const markConversationReadSchema = z.object({ conversationId: requiredId('Falta la conversación.') });
 

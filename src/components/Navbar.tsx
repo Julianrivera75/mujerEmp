@@ -21,6 +21,7 @@ import {
   ChevronDown,
   Repeat,
   MessageCircle,
+  Flag,
 } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { useActivity } from '@/components/ActivityProvider';
@@ -52,6 +53,7 @@ const adminLinks = [
   { href: '/admin/asistencias', label: 'Asistencias', icon: CheckCircle2 },
   { href: '/admin/tareas', label: 'Tareas', icon: ClipboardList },
   { href: '/chat', label: 'Chat', icon: MessageCircle },
+  { href: '/admin/reportes', label: 'Reportes', icon: Flag },
 ];
 
 const mentorLinks = [

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { HttpError, parseBody, withAuth } from '@/lib/api';
 import { canChat, pairIds } from '@/lib/chat';
-import { unreadByConversation } from '@/lib/chat-db';
+import { isBlockedBetween, unreadByConversation } from '@/lib/chat-db';
 import { presenceForViewer } from '@/lib/presence';
 import prisma from '@/lib/prisma';
 import { rolesOf } from '@/lib/roles';
@@ -24,7 +24,7 @@ const PEOPLE_SELECT = {
 
 /** Conversaciones de la persona, con el último mensaje, los mensajes sin leer y la presencia de la otra persona. */
 export const GET = withAuth('chat conversations GET', 'any', async (_req, user) => {
-  const [me, conversations, unreadMap] = await Promise.all([
+  const [me, conversations, unreadMap, blocks] = await Promise.all([
     prisma.user.findUnique({ where: { id: user.id }, select: { showOnlineStatus: true } }),
     prisma.conversation.findMany({
       where: { OR: [{ userAId: user.id }, { userBId: user.id }] },
@@ -33,13 +33,24 @@ export const GET = withAuth('chat conversations GET', 'any', async (_req, user) 
       include: {
         userA: { select: PEOPLE_SELECT },
         userB: { select: PEOPLE_SELECT },
-        messages: { orderBy: { createdAt: 'desc' }, take: 1, select: { body: true, createdAt: true, senderId: true } },
+        messages: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          select: { body: true, createdAt: true, senderId: true, attachmentName: true },
+        },
       },
     }),
     unreadByConversation(user.id),
+    prisma.chatBlock.findMany({
+      where: { OR: [{ blockerId: user.id }, { blockedId: user.id }] },
+      select: { blockerId: true, blockedId: true },
+    }),
   ]);
 
   const viewer = { isAdmin: user.roles.includes('ADMIN'), showOnlineStatus: me?.showOnlineStatus ?? true };
+
+  const blockedByMe = new Set(blocks.filter((b) => b.blockerId === user.id).map((b) => b.blockedId));
+  const blockedMe = new Set(blocks.filter((b) => b.blockedId === user.id).map((b) => b.blockerId));
 
   const result = conversations.map((c) => {
     const isA = c.userAId === user.id;
@@ -54,7 +65,15 @@ export const GET = withAuth('chat conversations GET', 'any', async (_req, user) 
         roles: rolesOf(other),
         presence: other.anonymizedAt ? { online: false, label: null } : presenceForViewer(viewer, other),
       },
-      lastMessage: last ? { body: last.body, createdAt: last.createdAt, mine: last.senderId === user.id } : null,
+      lastMessage: last
+        ? {
+            body: last.body || (last.attachmentName ? `Archivo: ${last.attachmentName}` : ''),
+            createdAt: last.createdAt,
+            mine: last.senderId === user.id,
+          }
+        : null,
+      blockedByMe: blockedByMe.has(other.id),
+      canSend: !blockedByMe.has(other.id) && !blockedMe.has(other.id),
       lastMessageAt: c.lastMessageAt,
       unread: unreadMap.get(c.id) ?? 0,
     };
@@ -81,6 +100,8 @@ export const POST = withAuth('chat conversations POST', 'any', async (req, user)
       'Por protección de menores de edad, solo pueden conversar con mentores o con la administración.',
     );
   }
+
+  if (await isBlockedBetween(user.id, userId)) throw new HttpError(403, 'No puedes escribirle a esta persona.');
 
   const [userAId, userBId] = pairIds(user.id, userId);
   const conversation = await prisma.conversation.upsert({

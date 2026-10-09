@@ -53,6 +53,11 @@ export const UPLOAD_CATEGORIES = {
     maxSizeBytes: 3 * 1024 * 1024, // 3 MB
     allowedTypes: ['image/png', 'image/jpeg', 'image/webp'],
   },
+  chat: {
+    prefix: 'chat',
+    maxSizeBytes: 10 * 1024 * 1024, // 10 MB
+    allowedTypes: ['application/pdf', 'image/png', 'image/jpeg', 'image/webp'],
+  },
   certificate: {
     prefix: 'certificados',
     maxSizeBytes: 10 * 1024 * 1024, // 10 MB

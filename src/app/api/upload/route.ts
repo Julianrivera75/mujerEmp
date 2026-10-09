@@ -18,6 +18,7 @@ function canUpload(category: UploadCategory, role: string): boolean {
     case 'certificate':
       return role === 'MENTOR' || role === 'ADMIN';
     case 'avatar':
+    case 'chat':
       return true; // cualquier usuaria con sesión sube su propia foto
   }
 }
@@ -48,6 +49,9 @@ export const GET = withAuth('upload GET', 'any', async (req, user) => {
 
   // La clave tiene forma "<categoría>/<idDueña>/<archivo>": se valida que sea un formato conocido.
   const [prefix, ownerId] = key.split('/');
+  // Los archivos del chat solo se leen desde la conversación (la URL firmada la entrega el propio chat).
+  if (prefix === UPLOAD_CATEGORIES.chat.prefix)
+    throw new HttpError(403, 'No tienes permiso para acceder a este archivo.');
   const category = (Object.entries(UPLOAD_CATEGORIES).find(([, c]) => c.prefix === prefix)?.[0] ??
     null) as UploadCategory | null;
   if (!category) throw new HttpError(404, 'Archivo no encontrado.');

@@ -32,6 +32,12 @@ export const POST = withAuth('admin/users anonymize', ['ADMIN'], async (req, cur
   for (const sub of target.submissions) {
     if (sub.fileUrl && (sub.fileType === 'PDF' || sub.fileType === 'IMAGE')) keys.push(sub.fileUrl);
   }
+  // Archivos adjuntos de sus conversaciones.
+  const attachments = await prisma.message.findMany({
+    where: { attachmentKey: { not: null }, conversation: { OR: [{ userAId: id }, { userBId: id }] } },
+    select: { attachmentKey: true },
+  });
+  for (const a of attachments) if (a.attachmentKey) keys.push(a.attachmentKey);
   let filesFailed = 0;
   for (const key of keys) {
     try {
@@ -48,6 +54,8 @@ export const POST = withAuth('admin/users anonymize', ['ADMIN'], async (req, cur
     // Los mensajes y avisos de la cuenta se eliminan junto con sus datos personales.
     prisma.conversation.deleteMany({ where: { OR: [{ userAId: id }, { userBId: id }] } }),
     prisma.notification.deleteMany({ where: { userId: id } }),
+    prisma.chatBlock.deleteMany({ where: { OR: [{ blockerId: id }, { blockedId: id }] } }),
+    prisma.messageReport.deleteMany({ where: { OR: [{ reporterId: id }, { reportedId: id }] } }),
     prisma.user.update({
       where: { id },
       data: {

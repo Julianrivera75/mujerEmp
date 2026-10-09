@@ -53,6 +53,20 @@ export function reachableUsersFilter(me: ChatParty): Prisma.UserWhereInput {
   return supervises ? {} : { isMinor: false };
 }
 
+/** Si hay un bloqueo entre las dos personas, en cualquier sentido. */
+export async function isBlockedBetween(a: string, b: string): Promise<boolean> {
+  const found = await prisma.chatBlock.findFirst({
+    where: {
+      OR: [
+        { blockerId: a, blockedId: b },
+        { blockerId: b, blockedId: a },
+      ],
+    },
+    select: { id: true },
+  });
+  return Boolean(found);
+}
+
 /** Mensajes sin leer por conversación de una persona, en una sola consulta. */
 export async function unreadByConversation(userId: string): Promise<Map<string, number>> {
   const rows = await prisma.$queryRaw<{ id: string; n: number }[]>`
@@ -159,11 +173,24 @@ export async function resolveBroadcast(sender: Sender, audience: BroadcastAudien
     throw new HttpError(400, `Elige un grupo de hasta ${BROADCAST_MAX_RECIPIENTS} personas.`);
   }
 
+  const blocks = await prisma.chatBlock.findMany({
+    where: {
+      OR: [
+        { blockerId: sender.id, blockedId: { in: people.map((p) => p.id) } },
+        { blockedId: sender.id, blockerId: { in: people.map((p) => p.id) } },
+      ],
+    },
+    select: { blockerId: true, blockedId: true },
+  });
+  const blockedIds = new Set(blocks.flatMap((b) => [b.blockerId, b.blockedId]));
+  blockedIds.delete(sender.id);
+
   const recipients: BroadcastRecipient[] = [];
   const skipped: BroadcastSkipped[] = [];
   for (const p of people) {
     if (p.anonymizedAt) skipped.push({ name: 'Usuaria anonimizada', reason: 'cuenta anonimizada' });
     else if (p.status !== 'ACTIVO') skipped.push({ name: p.name, reason: 'cuenta inactiva' });
+    else if (blockedIds.has(p.id)) skipped.push({ name: p.name, reason: 'no está disponible para recibir mensajes' });
     else if (!canChat(me, p)) skipped.push({ name: p.name, reason: 'protección de menores de edad' });
     else recipients.push({ id: p.id, name: p.name, avatar: p.avatar, roles: rolesOf(p) });
   }

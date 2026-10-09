@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Megaphone, MessageCircle, Send, UserRound } from 'lucide-react';
+import { ArrowLeft, Ban, Megaphone, MessageCircle, Send, UserRound } from 'lucide-react';
 import { useActivity } from '@/components/ActivityProvider';
 import { PresenceDot } from '@/components/PresenceDot';
 import { Avatar } from '@/components/ui/Avatar';
@@ -12,10 +12,14 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/lib/cn';
 import { logClientError } from '@/lib/client-log';
-import { formatDayMonthShort, formatTime } from '@/lib/format';
+import { formatDayMonthShort } from '@/lib/format';
 import { useSessionUser } from '@/lib/user-context';
 import { ROLE_META, type Role } from '@/lib/roles';
+import { AttachButton, type ChatAttachment } from './AttachButton';
 import { BroadcastModal } from './BroadcastModal';
+import { ChatSearch } from './ChatSearch';
+import { MessageBubble, type MessageItem } from './MessageBubble';
+import { ReportModal } from './ReportModal';
 import { ContactPicker, type Person } from './ContactPicker';
 
 interface ConversationItem {
@@ -24,13 +28,8 @@ interface ConversationItem {
   lastMessage: { body: string; createdAt: string; mine: boolean } | null;
   lastMessageAt: string | null;
   unread: number;
-}
-
-interface MessageItem {
-  id: string;
-  body: string;
-  createdAt: string;
-  mine: boolean;
+  blockedByMe?: boolean;
+  canSend?: boolean;
 }
 
 const LIST_POLL_MS = 10_000;
@@ -57,6 +56,9 @@ export default function ChatClient() {
   const [sending, setSending] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showBroadcast, setShowBroadcast] = useState(false);
+  const [attachment, setAttachment] = useState<ChatAttachment | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [reportId, setReportId] = useState<string | null>(null);
   const user = useSessionUser();
   const canBroadcast = user.roles.includes('MENTOR') || user.roles.includes('ADMIN');
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -178,16 +180,35 @@ export default function ChatClient() {
     }
   };
 
+  const toggleBlock = async (person: Person, blocked: boolean) => {
+    try {
+      const res = await fetch('/api/chat/block', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: person.id, blocked }),
+      });
+      if (!res.ok) {
+        show('error', 'No se pudo actualizar el bloqueo.');
+        return;
+      }
+      show('success', blocked ? `Bloqueaste a ${person.name}.` : `Desbloqueaste a ${person.name}.`);
+      await loadConversations();
+    } catch (err) {
+      logClientError('Error al bloquear:', err);
+      show('error', 'Error de conexión.');
+    }
+  };
+
   const send = async (e: React.FormEvent) => {
     e.preventDefault();
     const text = draft.trim();
-    if (!text || !selectedId || sending) return;
+    if ((!text && !attachment) || !selectedId || sending) return;
     setSending(true);
     try {
       const res = await fetch('/api/chat/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversationId: selectedId, body: text }),
+        body: JSON.stringify({ conversationId: selectedId, body: text, ...(attachment ? { attachment } : {}) }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -195,6 +216,7 @@ export default function ChatClient() {
         return;
       }
       setDraft('');
+      setAttachment(null);
       setMessages((prev) => [...prev, data.message]);
       lastMessageAt.current = data.message.createdAt;
       void loadConversations();
@@ -234,8 +256,9 @@ export default function ChatClient() {
         {/* Lista de conversaciones y búsqueda */}
         <aside className={cn('flex min-h-0 flex-col border-slate-100 md:border-r', selectedId && 'hidden md:flex')}>
           {showNew && <ContactPicker onSelect={startWith} />}
+          <ChatSearch onOpen={openConversation} onActiveChange={setSearching} />
 
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className={cn('min-h-0 flex-1 overflow-y-auto', searching && 'hidden')}>
             {loadingList ? (
               <p className="p-4 text-center text-xs text-slate-500">Cargando conversaciones...</p>
             ) : conversations.length === 0 ? (
@@ -322,6 +345,14 @@ export default function ChatClient() {
                     <PresenceDot online={selected.other.presence.online} label={selected.other.presence.label} />
                   </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => void toggleBlock(selected.other, !selected.blockedByMe)}
+                  className="tap-target flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-600 hover:bg-rose-50 hover:text-rose-700"
+                >
+                  <Ban className="h-4 w-4" />
+                  <span className="hidden sm:inline">{selected.blockedByMe ? 'Desbloquear' : 'Bloquear'}</span>
+                </button>
                 <Link
                   href={`/perfil/${selected.other.id}`}
                   className="tap-target flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-bold text-role-ink hover:bg-role-soft"
@@ -348,26 +379,7 @@ export default function ChatClient() {
                             {formatDayMonthShort(date)}
                           </p>
                         )}
-                        <div className={cn('flex', m.mine ? 'justify-end' : 'justify-start')}>
-                          <div
-                            className={cn(
-                              'max-w-[80%] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-sm',
-                              m.mine
-                                ? 'rounded-br-md bg-gradient-to-r from-role-from to-role-to text-white'
-                                : 'rounded-bl-md bg-slate-100 text-slate-800',
-                            )}
-                          >
-                            {m.body}
-                            <span
-                              className={cn(
-                                'mt-0.5 block text-right text-[10px]',
-                                m.mine ? 'text-white/80' : 'text-slate-500',
-                              )}
-                            >
-                              {formatTime(date)}
-                            </span>
-                          </div>
-                        </div>
+                        <MessageBubble message={m} onReport={setReportId} />
                       </React.Fragment>
                     );
                   })
@@ -375,34 +387,54 @@ export default function ChatClient() {
                 <div ref={bottomRef} />
               </div>
 
-              <form onSubmit={send} className="flex items-end gap-2 border-t border-slate-100 p-3">
-                <label htmlFor="chat-draft" className="sr-only">
-                  Escribe un mensaje
-                </label>
-                <textarea
-                  id="chat-draft"
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onKeyDown={(e) => {
-                    // En pantallas táctiles Enter salta de línea (hay un botón de enviar); con teclado, Enter envía.
-                    if (e.key === 'Enter' && !e.shiftKey && window.matchMedia('(pointer: fine)').matches) {
-                      e.preventDefault();
-                      e.currentTarget.form?.requestSubmit();
-                    }
-                  }}
-                  rows={1}
-                  maxLength={2000}
-                  placeholder="Escribe un mensaje..."
-                  className="max-h-32 min-h-11 flex-1 resize-none rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-base text-slate-800 focus:border-role-accent focus:outline-none focus:ring-2 focus:ring-role-accent/20"
-                />
-                <Button type="submit" loading={sending} disabled={!draft.trim()} aria-label="Enviar mensaje">
-                  <Send className="h-4 w-4" />
-                </Button>
-              </form>
+              {selected.canSend === false ? (
+                <p className="border-t border-slate-100 p-4 text-center text-xs font-semibold text-slate-500">
+                  {selected.blockedByMe
+                    ? 'Bloqueaste a esta persona. Desbloquéala para volver a escribirle.'
+                    : 'No puedes enviar mensajes a esta persona.'}
+                </p>
+              ) : (
+                <form onSubmit={send} className="flex items-end gap-2 border-t border-slate-100 p-3">
+                  <AttachButton
+                    value={attachment}
+                    onChange={setAttachment}
+                    onError={(msg) => show('error', msg)}
+                    disabled={sending}
+                  />
+                  <label htmlFor="chat-draft" className="sr-only">
+                    Escribe un mensaje
+                  </label>
+                  <textarea
+                    id="chat-draft"
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      // En pantallas táctiles Enter salta de línea (hay un botón de enviar); con teclado, Enter envía.
+                      if (e.key === 'Enter' && !e.shiftKey && window.matchMedia('(pointer: fine)').matches) {
+                        e.preventDefault();
+                        e.currentTarget.form?.requestSubmit();
+                      }
+                    }}
+                    rows={1}
+                    maxLength={2000}
+                    placeholder="Escribe un mensaje..."
+                    className="max-h-32 min-h-11 flex-1 resize-none rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-base text-slate-800 focus:border-role-accent focus:outline-none focus:ring-2 focus:ring-role-accent/20"
+                  />
+                  <Button
+                    type="submit"
+                    loading={sending}
+                    disabled={!draft.trim() && !attachment}
+                    aria-label="Enviar mensaje"
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </form>
+              )}
             </>
           )}
         </section>
       </div>
+      <ReportModal messageId={reportId} onClose={() => setReportId(null)} />
       <BroadcastModal
         open={showBroadcast}
         onClose={() => setShowBroadcast(false)}
