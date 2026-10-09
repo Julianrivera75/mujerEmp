@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { HttpError, parseBody, withAuth } from '@/lib/api';
 import { canChat, pairIds } from '@/lib/chat';
+import { unreadByConversation } from '@/lib/chat-db';
 import { presenceForViewer } from '@/lib/presence';
 import prisma from '@/lib/prisma';
 import { rolesOf } from '@/lib/roles';
@@ -23,7 +24,7 @@ const PEOPLE_SELECT = {
 
 /** Conversaciones de la persona, con el último mensaje, los mensajes sin leer y la presencia de la otra persona. */
 export const GET = withAuth('chat conversations GET', 'any', async (_req, user) => {
-  const [me, conversations] = await Promise.all([
+  const [me, conversations, unreadMap] = await Promise.all([
     prisma.user.findUnique({ where: { id: user.id }, select: { showOnlineStatus: true } }),
     prisma.conversation.findMany({
       where: { OR: [{ userAId: user.id }, { userBId: user.id }] },
@@ -35,38 +36,29 @@ export const GET = withAuth('chat conversations GET', 'any', async (_req, user) 
         messages: { orderBy: { createdAt: 'desc' }, take: 1, select: { body: true, createdAt: true, senderId: true } },
       },
     }),
+    unreadByConversation(user.id),
   ]);
 
   const viewer = { isAdmin: user.roles.includes('ADMIN'), showOnlineStatus: me?.showOnlineStatus ?? true };
 
-  const result = await Promise.all(
-    conversations.map(async (c) => {
-      const isA = c.userAId === user.id;
-      const other = isA ? c.userB : c.userA;
-      const lastRead = isA ? c.lastReadAtA : c.lastReadAtB;
-      const unread = await prisma.message.count({
-        where: {
-          conversationId: c.id,
-          senderId: { not: user.id },
-          ...(lastRead ? { createdAt: { gt: lastRead } } : {}),
-        },
-      });
-      const last = c.messages[0];
-      return {
-        id: c.id,
-        other: {
-          id: other.id,
-          name: other.anonymizedAt ? 'Usuaria anonimizada' : other.name,
-          avatar: other.anonymizedAt ? null : other.avatar,
-          roles: rolesOf(other),
-          presence: other.anonymizedAt ? { online: false, label: null } : presenceForViewer(viewer, other),
-        },
-        lastMessage: last ? { body: last.body, createdAt: last.createdAt, mine: last.senderId === user.id } : null,
-        lastMessageAt: c.lastMessageAt,
-        unread,
-      };
-    }),
-  );
+  const result = conversations.map((c) => {
+    const isA = c.userAId === user.id;
+    const other = isA ? c.userB : c.userA;
+    const last = c.messages[0];
+    return {
+      id: c.id,
+      other: {
+        id: other.id,
+        name: other.anonymizedAt ? 'Usuaria anonimizada' : other.name,
+        avatar: other.anonymizedAt ? null : other.avatar,
+        roles: rolesOf(other),
+        presence: other.anonymizedAt ? { online: false, label: null } : presenceForViewer(viewer, other),
+      },
+      lastMessage: last ? { body: last.body, createdAt: last.createdAt, mine: last.senderId === user.id } : null,
+      lastMessageAt: c.lastMessageAt,
+      unread: unreadMap.get(c.id) ?? 0,
+    };
+  });
 
   return NextResponse.json({ conversations: result });
 });

@@ -3,31 +3,20 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, MessageCircle, Search, Send, UserRound } from 'lucide-react';
+import { ArrowLeft, Megaphone, MessageCircle, Send, UserRound } from 'lucide-react';
 import { useActivity } from '@/components/ActivityProvider';
 import { PresenceDot } from '@/components/PresenceDot';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Input } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/lib/cn';
 import { logClientError } from '@/lib/client-log';
 import { formatDayMonthShort, formatTime } from '@/lib/format';
+import { useSessionUser } from '@/lib/user-context';
 import { ROLE_META, type Role } from '@/lib/roles';
-
-interface Presence {
-  online: boolean;
-  label: string | null;
-}
-
-interface Person {
-  id: string;
-  name: string;
-  avatar: string | null;
-  roles: Role[];
-  presence: Presence;
-}
+import { BroadcastModal } from './BroadcastModal';
+import { ContactPicker, type Person } from './ContactPicker';
 
 interface ConversationItem {
   id: string;
@@ -66,9 +55,10 @@ export default function ChatClient() {
   const [loadingThread, setLoadingThread] = useState(false);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
-  const [search, setSearch] = useState('');
-  const [contacts, setContacts] = useState<Person[]>([]);
   const [showNew, setShowNew] = useState(false);
+  const [showBroadcast, setShowBroadcast] = useState(false);
+  const user = useSessionUser();
+  const canBroadcast = user.roles.includes('MENTOR') || user.roles.includes('ADMIN');
   const bottomRef = useRef<HTMLDivElement>(null);
   const lastMessageAt = useRef<string | null>(null);
 
@@ -160,24 +150,14 @@ export default function ChatClient() {
     bottomRef.current?.scrollIntoView({ block: 'end' });
   }, [messages]);
 
-  // Búsqueda de personas para iniciar una conversación.
-  useEffect(() => {
-    if (!showNew) return;
-    const timer = window.setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/chat/contacts?q=${encodeURIComponent(search)}`);
-        const data = await res.json();
-        setContacts(data.contacts ?? []);
-      } catch (err) {
-        logClientError('Error buscando personas:', err);
-      }
-    }, 250);
-    return () => window.clearTimeout(timer);
-  }, [showNew, search]);
-
   const openConversation = (id: string) => router.push(`/chat?c=${id}`);
 
   const startWith = async (person: Person) => {
+    if (person.conversationId) {
+      setShowNew(false);
+      openConversation(person.conversationId);
+      return;
+    }
     try {
       const res = await fetch('/api/chat/conversations', {
         method: 'POST',
@@ -190,7 +170,6 @@ export default function ChatClient() {
         return;
       }
       setShowNew(false);
-      setSearch('');
       await loadConversations();
       openConversation(data.conversation.id);
     } catch (err) {
@@ -234,47 +213,27 @@ export default function ChatClient() {
           <MessageCircle className="h-6 w-6 text-role-ink" />
           <span>Chat</span>
         </h1>
-        <Button size="sm" onClick={() => setShowNew((v) => !v)}>
-          {showNew ? 'Cerrar búsqueda' : 'Nueva conversación'}
-        </Button>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {canBroadcast && (
+            <Button
+              size="sm"
+              variant="secondary"
+              leftIcon={<Megaphone className="h-4 w-4" />}
+              onClick={() => setShowBroadcast(true)}
+            >
+              Mensaje a varias
+            </Button>
+          )}
+          <Button size="sm" onClick={() => setShowNew((v) => !v)}>
+            {showNew ? 'Cerrar búsqueda' : 'Nueva conversación'}
+          </Button>
+        </div>
       </div>
 
       <div className="grid h-[calc(100dvh-10rem)] min-h-[28rem] grid-cols-1 overflow-hidden rounded-3xl border border-white/70 bg-white/80 shadow-soft md:h-[calc(100dvh-14rem)] md:grid-cols-[320px_1fr]">
         {/* Lista de conversaciones y búsqueda */}
         <aside className={cn('flex min-h-0 flex-col border-slate-100 md:border-r', selectedId && 'hidden md:flex')}>
-          {showNew && (
-            <div className="space-y-2 border-b border-slate-100 p-3">
-              <Input
-                aria-label="Buscar personas"
-                placeholder="Buscar a una persona por nombre..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                leftIcon={<Search className="h-4 w-4" />}
-              />
-              <ul className="max-h-56 overflow-y-auto">
-                {contacts.length === 0 ? (
-                  <li className="p-2 text-xs text-slate-500">No se encontraron personas.</li>
-                ) : (
-                  contacts.map((p) => (
-                    <li key={p.id}>
-                      <button
-                        type="button"
-                        onClick={() => startWith(p)}
-                        className="flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left hover:bg-role-soft"
-                      >
-                        <Avatar avatarKey={p.avatar} fallbackInitial={p.name.charAt(0)} size="sm" />
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-semibold text-slate-800">{p.name}</span>
-                          <span className="block truncate text-[11px] text-slate-500">{roleLabels(p.roles)}</span>
-                        </span>
-                        <PresenceDot online={p.presence.online} label={p.presence.label} dotOnly />
-                      </button>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </div>
-          )}
+          {showNew && <ContactPicker onSelect={startWith} />}
 
           <div className="min-h-0 flex-1 overflow-y-auto">
             {loadingList ? (
@@ -444,6 +403,11 @@ export default function ChatClient() {
           )}
         </section>
       </div>
+      <BroadcastModal
+        open={showBroadcast}
+        onClose={() => setShowBroadcast(false)}
+        onSent={() => void loadConversations()}
+      />
     </div>
   );
 }

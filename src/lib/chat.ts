@@ -8,7 +8,7 @@ export function pairIds(a: string, b: string): [string, string] {
   return a < b ? [a, b] : [b, a];
 }
 
-interface ChatParty {
+export interface ChatParty {
   isMinor: boolean;
   role: Role;
   extraRoles: readonly Role[];

@@ -1,4 +1,5 @@
 import type { NotificationType } from '@prisma/client';
+import { unreadByConversation } from './chat-db';
 import prisma from './prisma';
 
 /** Aviso "por vencer" para las tareas que vencen dentro de este margen. */
@@ -66,22 +67,8 @@ export function resetDueSoonThrottle() {
 
 /** Cantidad de mensajes sin leer de una persona en todas sus conversaciones. */
 export async function countUnreadMessages(userId: string): Promise<number> {
-  const conversations = await prisma.conversation.findMany({
-    where: { OR: [{ userAId: userId }, { userBId: userId }] },
-    select: { id: true, userAId: true, lastReadAtA: true, lastReadAtB: true },
-    take: 200,
-  });
-  const counts = await Promise.all(
-    conversations.map((c) => {
-      const lastRead = c.userAId === userId ? c.lastReadAtA : c.lastReadAtB;
-      return prisma.message.count({
-        where: {
-          conversationId: c.id,
-          senderId: { not: userId },
-          ...(lastRead ? { createdAt: { gt: lastRead } } : {}),
-        },
-      });
-    }),
-  );
-  return counts.reduce((sum, n) => sum + n, 0);
+  const counts = await unreadByConversation(userId);
+  let total = 0;
+  for (const n of counts.values()) total += n;
+  return total;
 }

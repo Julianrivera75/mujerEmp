@@ -270,6 +270,32 @@ export const uploadRequestSchema = z.object({
 
 export const startConversationSchema = z.object({ userId: requiredId('Falta la persona.') });
 
+const broadcastAudienceSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('myStudents') }),
+  z.object({ type: z.literal('class'), classId: requiredId('Falta la clase.') }),
+  z.object({ type: z.literal('role'), role: z.enum(ROLES, { error: 'Rol inválido.' }) }),
+  z.object({ type: z.literal('everyone') }),
+  z.object({
+    type: z.literal('custom'),
+    userIds: z
+      .array(requiredId('Persona inválida.'))
+      .min(1, 'Elige al menos una persona.')
+      .max(500, 'Elige hasta 500 personas.'),
+  }),
+]);
+
+export const broadcastPreviewSchema = z.object({ audience: broadcastAudienceSchema });
+
+export const broadcastSendSchema = z.object({
+  audience: broadcastAudienceSchema,
+  body: z
+    .string({ error: 'Escribe un mensaje.' })
+    .min(1, 'Escribe un mensaje.')
+    .max(4000, 'El mensaje es demasiado largo.'),
+  /** Personas que quien escribe quitó de la lista antes de enviar. */
+  excludeIds: z.array(requiredId('Persona inválida.')).max(500).optional(),
+});
+
 export const sendMessageSchema = z.object({
   conversationId: requiredId('Falta la conversación.'),
   body: z
