@@ -147,6 +147,9 @@ El formulario de usuarios ofrece: Estudiante, Mentor / Mentora, Mentor / Mentora
 
 - La mentora de la clase (o la administración) puede editar el título, la descripción y la fecha límite de una tarea, y eliminarla. Eliminar borra también las entregas y los archivos subidos por las estudiantes.
 - La estudiante puede modificar o quitar su entrega. Quitarla deja la tarea como no entregada y elimina su archivo. Una entrega calificada queda bloqueada: la mentora la reabre quitando la nota (calificación vacía).
+- Al crear una tarea la mentora elige qué debe entregar la estudiante (`deliveryType`): un archivo, un enlace, texto escrito, archivo o enlace, o lo que prefiera; si el comentario es obligatorio (`notesRequired`) y si se aceptan entregas después de la fecha límite (`allowLate`). El servidor y la pantalla de entrega aplican las mismas reglas (`src/lib/delivery.ts`). Las tareas anteriores a este cambio quedan como "archivo o enlace, con comentario, con entregas tardías", igual que antes. Una entrega posterior a la fecha límite se marca "Con retraso" (se calcula, no se guarda).
+- Las instrucciones pueden ir escritas, en un archivo adjunto (PDF o imagen, hasta 15 MB, carpeta `tareas/`) o ambas; hace falta una de las dos. La dirección del archivo es firmada y temporal y solo la entrega la lista de tareas a la mentora de la clase, a las inscritas y a la administración. Al reemplazarlo, quitarlo o eliminar la tarea, el archivo se borra del almacenamiento.
+- Al crear o editar, el servidor devuelve `assignedTo` (estudiantes inscritas) y `notified` (avisos creados), y los rechazos (4xx) quedan en los registros como `[assignments POST]`. Las llamadas a `/api/*` sin sesión responden 401 en JSON (no redirigen al login). Las estudiantes inscritas después de crear la tarea la ven al entrar, pero no reciben aviso.
 
 ## Perfil
 

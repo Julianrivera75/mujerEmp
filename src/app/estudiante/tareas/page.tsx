@@ -1,7 +1,18 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { ClipboardList, Upload, CheckCircle, Clock, MessageSquare, Star, Trash2, Lock } from 'lucide-react';
+import {
+  ClipboardList,
+  ExternalLink,
+  FileText,
+  Upload,
+  CheckCircle,
+  Clock,
+  MessageSquare,
+  Star,
+  Trash2,
+  Lock,
+} from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -16,10 +27,12 @@ import { formatDate, formatDue } from '@/lib/format';
 import { logClientError } from '@/lib/client-log';
 import { cn } from '@/lib/cn';
 import { useHighlight } from '@/lib/use-highlight';
+import { describeDelivery, isLateSubmission } from '@/lib/delivery';
 
 export default function StudentTasksPage() {
   const [assignments, setAssignments] = useState<StudentAssignment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [submittingAssignment, setSubmittingAssignment] = useState<StudentAssignment | null>(null);
   const [removeTarget, setRemoveTarget] = useState<StudentAssignment | null>(null);
   const [removing, setRemoving] = useState(false);
@@ -29,11 +42,21 @@ export default function StudentTasksPage() {
   const loadData = async () => {
     try {
       setLoading(true);
+      setLoadError('');
       const res = await fetch('/api/assignments');
+      if (!res.ok) {
+        setLoadError(
+          res.status === 401
+            ? 'Tu sesión venció. Entra de nuevo para ver tus tareas.'
+            : 'No pudimos cargar tus tareas. Revisa tu conexión e inténtalo de nuevo.',
+        );
+        return;
+      }
       const data = await res.json();
       setAssignments(data.assignments || []);
     } catch (err) {
       logClientError('Error al cargar tareas del estudiante:', err);
+      setLoadError('No pudimos cargar tus tareas. Revisa tu conexión e inténtalo de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -78,6 +101,13 @@ export default function StudentTasksPage() {
           <SkeletonCard />
           <SkeletonCard />
         </div>
+      ) : loadError ? (
+        <Card variant="glass" className="space-y-3 p-6 text-center">
+          <p role="alert" className="text-sm font-semibold text-red-700">
+            {loadError}
+          </p>
+          <Button onClick={() => void loadData()}>Reintentar</Button>
+        </Card>
       ) : assignments.length === 0 ? (
         <Card variant="glass" className="p-0">
           <EmptyState
@@ -118,9 +148,30 @@ export default function StudentTasksPage() {
                     </div>
 
                     <h2 className="text-xl font-bold text-slate-800">{ass.title}</h2>
-                    <p className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 text-xs leading-relaxed text-slate-600">
-                      {ass.description}
-                    </p>
+                    {ass.description && (
+                      <p className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 text-xs leading-relaxed text-slate-600">
+                        {ass.description}
+                      </p>
+                    )}
+                    {ass.attachmentName &&
+                      (ass.attachmentUrl ? (
+                        <a
+                          href={ass.attachmentUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-role-accent/30 bg-role-soft px-3 py-2 text-xs font-bold text-role-ink hover:brightness-95"
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                          <span>Instrucciones en archivo: {ass.attachmentName}</span>
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      ) : (
+                        <p className="text-xs italic text-slate-500">
+                          Instrucciones en archivo: {ass.attachmentName} (no disponible ahora)
+                        </p>
+                      ))}
+
+                    <p className="text-xs font-semibold text-role-ink">Debes entregar: {describeDelivery(ass)}.</p>
 
                     <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500">
                       <span className="flex items-center gap-1">
@@ -164,6 +215,11 @@ export default function StudentTasksPage() {
                         <p className="mb-1 flex items-center gap-1 font-bold">
                           <CheckCircle className="h-4 w-4 text-emerald-600" />
                           Entregaste esta tarea el {formatDate(mySub.submittedAt)}
+                          {isLateSubmission(mySub.submittedAt, ass.dueDate) && (
+                            <span className="ml-1.5 rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-bold text-rose-700">
+                              Con retraso
+                            </span>
+                          )}
                         </p>
                         {mySub.notes && <p className="italic text-slate-600">&ldquo;{mySub.notes}&rdquo;</p>}
                       </div>

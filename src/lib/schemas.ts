@@ -1,4 +1,5 @@
 import { MAX_CLASS_IMAGES } from './class-images';
+import { DELIVERY_TYPES } from './delivery';
 import { z } from 'zod';
 import {
   CLASS_STATUSES,
@@ -216,19 +217,69 @@ export const updateClassSchema = z.object({
     .optional(),
 });
 
-export const updateAssignmentSchema = z.object({
-  id: requiredId('ID de tarea requerido.'),
-  title: requiredText('Todos los campos son obligatorios y deben ser válidos.', 200),
-  description: requiredText('Todos los campos son obligatorios y deben ser válidos.', 4000),
-  dueDate: dateField('Todos los campos son obligatorios y deben ser válidos.'),
-});
+const assignmentText = (missing: string, tooShort: string, min: number, max: number) =>
+  z
+    .string({ error: missing })
+    .transform((v) => cleanText(v, max))
+    .refine((v): v is string => v !== null && v.length >= min, { message: tooShort });
 
-export const createAssignmentSchema = z.object({
-  classId: requiredId('Todos los campos son obligatorios y deben ser válidos.'),
-  title: requiredText('Todos los campos son obligatorios y deben ser válidos.', 200),
-  description: requiredText('Todos los campos son obligatorios y deben ser válidos.', 4000),
-  dueDate: dateField('Todos los campos son obligatorios y deben ser válidos.'),
-});
+/** Archivo con las instrucciones de la tarea (ya subido al almacenamiento). `null` lo quita al editar. */
+const assignmentAttachment = z
+  .object({
+    key: z.string().min(1).max(300),
+    name: z.string().min(1).max(120),
+  })
+  .nullable()
+  .optional();
+
+const assignmentContent = {
+  title: assignmentText('Escribe el título de la tarea.', 'Escribe un título de al menos 3 letras.', 3, 200),
+  // Las instrucciones escritas son opcionales si se adjunta un archivo (se comprueba más abajo).
+  description: z
+    .string()
+    .transform((v) => cleanText(v, 4000) ?? '')
+    .optional(),
+  attachment: assignmentAttachment,
+  dueDate: dateField('Elige la fecha y la hora límite de entrega.'),
+  deliveryType: z.enum(DELIVERY_TYPES, { error: 'Elige qué deben entregar las estudiantes.' }),
+  notesRequired: z.boolean({ error: 'Indica si el comentario es obligatorio.' }),
+  allowLate: z.boolean({ error: 'Indica si se aceptan entregas tardías.' }),
+};
+
+const INSTRUCTIONS_REQUIRED = 'Escribe las instrucciones (mínimo 10 caracteres) o adjunta un archivo con ellas.';
+
+/** Hacen falta instrucciones escritas o un archivo con ellas. En la edición, `attachment` ausente conserva el actual. */
+const needsInstructions = (
+  value: { description?: string; attachment?: { key: string } | null },
+  ctx: z.RefinementCtx,
+  hasExistingAttachment: boolean,
+) => {
+  const written = (value.description ?? '').length >= 10;
+  const attached = value.attachment ? true : value.attachment === undefined && hasExistingAttachment;
+  if (!written && !attached) ctx.addIssue({ code: 'custom', path: ['description'], message: INSTRUCTIONS_REQUIRED });
+};
+
+export const updateAssignmentSchema = z
+  .object({
+    id: requiredId('ID de tarea requerido.'),
+    ...assignmentContent,
+    deliveryType: assignmentContent.deliveryType.optional(),
+    notesRequired: assignmentContent.notesRequired.optional(),
+    allowLate: assignmentContent.allowLate.optional(),
+  })
+  // En la edición, si no se envía `attachment` se conserva el archivo que ya tenía; el servidor lo comprueba.
+  .superRefine((v, ctx) => needsInstructions(v, ctx, v.attachment === undefined));
+
+export const createAssignmentSchema = z
+  .object({
+    classId: requiredId('Elige la clase de la tarea.'),
+    ...assignmentContent,
+    // Las pestañas abiertas antes de esta versión no envían estos campos: se usa lo de siempre.
+    deliveryType: assignmentContent.deliveryType.default('FILE_OR_LINK'),
+    notesRequired: assignmentContent.notesRequired.default(true),
+    allowLate: assignmentContent.allowLate.default(true),
+  })
+  .superRefine((v, ctx) => needsInstructions(v, ctx, false));
 
 export const createResourceSchema = z.object({
   classId: requiredId('Todos los campos son obligatorios y deben ser válidos.'),

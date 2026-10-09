@@ -15,6 +15,7 @@ function canUpload(category: UploadCategory, role: string): boolean {
       return role === 'STUDENT';
     case 'resource':
     case 'classImage':
+    case 'assignment':
     case 'certificate':
       return role === 'MENTOR' || role === 'ADMIN';
     case 'avatar':

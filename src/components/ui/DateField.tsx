@@ -14,6 +14,8 @@ interface DateFieldProps {
   required?: boolean;
   /** Texto de ayuda que se muestra cuando aún no hay una fecha completa. */
   help?: string;
+  /** Mensaje de error de la validación del formulario; reemplaza a la ayuda. */
+  error?: string;
 }
 
 const MONTHS = [
@@ -75,7 +77,7 @@ const daysInMonth = (year: string, month: string) => new Date(Number(year) || 20
  * Fecha (y hora) elegida con listas de Mes, Día y Año, sin depender del formato del navegador:
  * nadie tiene que adivinar si el primer número es el mes o el día. Confirma la elección en palabras.
  */
-export function DateField({ label, kind = 'date', value, onChange, required, help }: DateFieldProps) {
+export function DateField({ label, kind = 'date', value, onChange, required, help, error }: DateFieldProps) {
   const withTime = kind === 'datetime';
   const legendId = useId();
   const [parts, setParts] = useState<Parts>(() => partsFromValue(value) ?? EMPTY);
@@ -199,9 +201,17 @@ export function DateField({ label, kind = 'date', value, onChange, required, hel
         </div>
       )}
 
-      <p className="text-xs text-slate-500" aria-live="polite">
-        {described ? `Elegiste: ${described}` : (help ?? 'Elige el mes, el día y el año.')}
-      </p>
+      {error ? (
+        <p role="alert" className="text-xs font-semibold text-rose-600">
+          {error}
+        </p>
+      ) : (
+        <p className="text-xs text-slate-500" aria-live="polite">
+          {described
+            ? `Elegiste: ${described}`
+            : (help ?? (withTime ? 'Elige el mes, el día, el año y la hora.' : 'Elige el mes, el día y el año.'))}
+        </p>
+      )}
     </fieldset>
   );
 }

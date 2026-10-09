@@ -1,12 +1,36 @@
 import type { Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
-import { HttpError, MAX_ROWS, parseBody, withAuth } from '@/lib/api';
+import type { ZodType } from 'zod';
+import { HttpError, MAX_ROWS, withAuth } from '@/lib/api';
+import { logError, logWarn } from '@/lib/log';
 import prisma from '@/lib/prisma';
 import { notifyMany } from '@/lib/notifications';
-import { deleteObject } from '@/lib/s3';
+import { createPresignedDownloadUrl, deleteObject, keyBelongsTo, verifyUploadedObject } from '@/lib/s3';
 import { createAssignmentSchema, updateAssignmentSchema } from '@/lib/schemas';
 
 export const dynamic = 'force-dynamic';
+
+/**
+ * Cambia la clave del archivo de instrucciones por una dirección firmada y temporal. Solo llega a quien ya puede ver
+ * la tarea (la mentora de la clase, las inscritas y la administración), porque la lista ya está filtrada así.
+ */
+async function withAttachmentUrl<T extends { attachmentKey: string | null }>(assignment: T) {
+  const { attachmentKey, ...rest } = assignment;
+  const attachmentUrl = attachmentKey ? await createPresignedDownloadUrl(attachmentKey, 3600).catch(() => null) : null;
+  return { ...rest, attachmentUrl };
+}
+
+/** El archivo debe ser de quien lo sube, existir en el almacenamiento y ser de un tipo permitido. */
+async function assertValidAttachment(attachment: { key: string }, userId: string) {
+  if (
+    !keyBelongsTo(attachment.key, 'assignment', userId) ||
+    !(await verifyUploadedObject(attachment.key, 'assignment'))
+  ) {
+    throw new HttpError(400, 'El archivo no es válido. Adjunta un PDF o una imagen de hasta 15 MB.', undefined, {
+      fields: { attachment: 'El archivo no es válido. Adjunta un PDF o una imagen de hasta 15 MB.' },
+    });
+  }
+}
 
 export const GET = withAuth('assignments GET', 'any', async (req, user) => {
   const classId = new URL(req.url).searchParams.get('classId');
@@ -24,7 +48,7 @@ export const GET = withAuth('assignments GET', 'any', async (req, user) => {
   const assignments = await prisma.assignment.findMany({
     where,
     include: {
-      classSession: { select: { id: true, title: true, dateStart: true } },
+      classSession: { select: { id: true, title: true, dateStart: true, _count: { select: { enrollments: true } } } },
       creator: { select: { id: true, name: true } },
       submissions: {
         where: user.role === 'STUDENT' ? { studentId: user.id } : undefined,
@@ -35,42 +59,101 @@ export const GET = withAuth('assignments GET', 'any', async (req, user) => {
     take: MAX_ROWS,
   });
 
-  return NextResponse.json({ assignments });
+  return NextResponse.json({ assignments: await Promise.all(assignments.map(withAttachmentUrl)) });
 });
 
-export const POST = withAuth('assignments POST', ['MENTOR', 'ADMIN'], async (req, user) => {
-  const { classId, title, description, dueDate } = await parseBody(req, createAssignmentSchema);
+/** Margen para aceptar una fecha límite "de ahora" (por diferencias de reloj entre el navegador y el servidor). */
+const PAST_DUE_TOLERANCE_MS = 5 * 60 * 1000;
 
-  const classSession = await prisma.classSession.findUnique({ where: { id: classId }, select: { mentorId: true } });
-  if (!classSession) throw new HttpError(404, 'Clase no encontrada.');
-  if (user.role === 'MENTOR' && classSession.mentorId !== user.id) {
-    throw new HttpError(403, 'No puedes crear tareas en clases que no dictas.');
+/** Lee y valida el cuerpo; si algo falla, el error indica qué campo (`fields`) para pintarlo junto al campo. */
+async function parseAssignmentBody<T>(req: Request, schema: ZodType<T>): Promise<T> {
+  let raw: unknown;
+  try {
+    raw = await req.json();
+  } catch {
+    throw new HttpError(400, 'Solicitud inválida.');
   }
+  const result = schema.safeParse(raw);
+  if (result.success) return result.data;
+  const fields: Record<string, string> = {};
+  for (const issue of result.error.issues) {
+    const key = String(issue.path[0] ?? 'form');
+    fields[key] ??= issue.message;
+  }
+  throw new HttpError(400, result.error.issues[0]?.message ?? 'Datos inválidos.', undefined, { fields });
+}
 
-  const assignment = await prisma.assignment.create({
-    data: { classId, creatorId: user.id, title, description, dueDate },
-    include: { classSession: { select: { id: true, title: true } } },
-  });
+const mustBeFuture = (dueDate: Date) => {
+  if (dueDate.getTime() < Date.now() - PAST_DUE_TOLERANCE_MS) {
+    throw new HttpError(400, 'La fecha límite debe ser futura.', undefined, {
+      fields: { dueDate: 'La fecha límite debe ser futura.' },
+    });
+  }
+};
 
-  // Aviso a las estudiantes inscritas en la clase.
-  const enrolled = await prisma.classEnrollment.findMany({ where: { classId }, select: { studentId: true } });
-  await notifyMany(
-    enrolled.map((e) => e.studentId),
-    {
-      type: 'NEW_ASSIGNMENT',
-      title: 'Nueva tarea',
-      body: `${assignment.title} — ${assignment.classSession.title}`,
-      href: `/estudiante/tareas?tarea=${assignment.id}`,
-      dedupeKey: `new:${assignment.id}`,
-    },
-  ).catch(() => undefined);
+export const POST = withAuth('assignments POST', ['MENTOR', 'ADMIN'], async (req, user) => {
+  try {
+    const { classId, title, description, attachment, dueDate, deliveryType, notesRequired, allowLate } =
+      await parseAssignmentBody(req, createAssignmentSchema);
+    mustBeFuture(dueDate);
 
-  return NextResponse.json({ success: true, assignment });
+    const classSession = await prisma.classSession.findUnique({ where: { id: classId }, select: { mentorId: true } });
+    if (!classSession) throw new HttpError(404, 'Clase no encontrada.');
+    if (user.role === 'MENTOR' && classSession.mentorId !== user.id) {
+      throw new HttpError(403, 'No puedes crear tareas en clases que no dictas.');
+    }
+
+    if (attachment) await assertValidAttachment(attachment, user.id);
+
+    const created = await prisma.assignment.create({
+      data: {
+        classId,
+        creatorId: user.id,
+        title,
+        description: description ?? '',
+        dueDate,
+        deliveryType,
+        notesRequired,
+        allowLate,
+        attachmentKey: attachment?.key ?? null,
+        attachmentName: attachment?.name ?? null,
+      },
+      include: { classSession: { select: { id: true, title: true } } },
+    });
+    const assignment = await withAttachmentUrl(created);
+
+    // Aviso a las estudiantes inscritas en la clase.
+    const enrolled = await prisma.classEnrollment.findMany({ where: { classId }, select: { studentId: true } });
+    let notified = 0;
+    try {
+      await notifyMany(
+        enrolled.map((e) => e.studentId),
+        {
+          type: 'NEW_ASSIGNMENT',
+          title: 'Nueva tarea',
+          body: `${assignment.title} — ${assignment.classSession.title}`,
+          href: `/estudiante/tareas?tarea=${assignment.id}`,
+          dedupeKey: `new:${assignment.id}`,
+        },
+      );
+      notified = enrolled.length;
+    } catch (error) {
+      // La tarea ya quedó guardada: se informa que los avisos fallaron en vez de ocultarlo.
+      logError('assignments POST notify', error);
+    }
+
+    return NextResponse.json({ success: true, assignment, assignedTo: enrolled.length, notified });
+  } catch (error) {
+    if (error instanceof HttpError)
+      logWarn('assignments POST', `persona=${user.id} estado=${error.status} ${error.message}`);
+    throw error;
+  }
 });
 
 /** La mentora de la clase (o la administración) puede corregir el título, la descripción y la fecha límite. */
 export const PUT = withAuth('assignments PUT', ['MENTOR', 'ADMIN'], async (req, user) => {
-  const { id, title, description, dueDate } = await parseBody(req, updateAssignmentSchema);
+  const { id, title, description, attachment, dueDate, deliveryType, notesRequired, allowLate } =
+    await parseAssignmentBody(req, updateAssignmentSchema);
 
   const existing = await prisma.assignment.findUnique({
     where: { id },
@@ -80,13 +163,40 @@ export const PUT = withAuth('assignments PUT', ['MENTOR', 'ADMIN'], async (req, 
   if (user.role === 'MENTOR' && existing.classSession.mentorId !== user.id) {
     throw new HttpError(403, 'No puedes modificar tareas de clases que no dictas.');
   }
+  // Al editar se puede conservar una fecha ya pasada; si se cambia, debe ser futura.
+  if (dueDate.getTime() !== existing.dueDate.getTime()) mustBeFuture(dueDate);
 
-  const assignment = await prisma.assignment.update({
+  // Archivo de instrucciones: sin `attachment` se conserva; `null` lo quita; un archivo nuevo lo reemplaza.
+  const keepsAttachment = attachment === undefined ? Boolean(existing.attachmentKey) : attachment !== null;
+  if ((description ?? '').length < 10 && !keepsAttachment) {
+    throw new HttpError(
+      400,
+      'Escribe las instrucciones (mínimo 10 caracteres) o adjunta un archivo con ellas.',
+      undefined,
+      { fields: { description: 'Escribe las instrucciones (mínimo 10 caracteres) o adjunta un archivo con ellas.' } },
+    );
+  }
+  const replacesAttachment = attachment !== undefined && attachment?.key !== existing.attachmentKey;
+  if (attachment && replacesAttachment) await assertValidAttachment(attachment, user.id);
+
+  const updated = await prisma.assignment.update({
     where: { id },
-    data: { title, description, dueDate },
+    data: {
+      title,
+      description: description ?? '',
+      dueDate,
+      ...(attachment !== undefined
+        ? { attachmentKey: attachment?.key ?? null, attachmentName: attachment?.name ?? null }
+        : {}),
+      ...(deliveryType !== undefined ? { deliveryType } : {}),
+      ...(notesRequired !== undefined ? { notesRequired } : {}),
+      ...(allowLate !== undefined ? { allowLate } : {}),
+    },
     include: { classSession: { select: { id: true, title: true } } },
   });
-  return NextResponse.json({ success: true, assignment });
+  // El archivo anterior ya no se usa: se elimina del almacenamiento.
+  if (replacesAttachment && existing.attachmentKey) await deleteObject(existing.attachmentKey).catch(() => undefined);
+  return NextResponse.json({ success: true, assignment: await withAttachmentUrl(updated) });
 });
 
 /** Elimina la tarea con sus entregas, los avisos que generó y los archivos entregados. */
@@ -116,6 +226,7 @@ export const DELETE = withAuth('assignments DELETE', ['MENTOR', 'ADMIN'], async 
   const files = existing.submissions
     .filter((s) => s.fileUrl && (s.fileType === 'PDF' || s.fileType === 'IMAGE'))
     .map((s) => s.fileUrl as string);
+  if (existing.attachmentKey) files.push(existing.attachmentKey);
   await Promise.all(files.map((key) => deleteObject(key).catch(() => undefined)));
 
   return NextResponse.json({ success: true, deletedSubmissions: existing.submissions.length });

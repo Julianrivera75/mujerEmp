@@ -6,7 +6,7 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { logClientError } from '@/lib/client-log';
 import { formatFileSize, uploadWithProgress, type UploadHandle } from '@/lib/upload';
 
-type UploadCategory = 'submission' | 'resource' | 'avatar' | 'certificate' | 'classImage';
+type UploadCategory = 'submission' | 'resource' | 'avatar' | 'certificate' | 'classImage' | 'assignment';
 
 interface FileUploadProps {
   category: UploadCategory;

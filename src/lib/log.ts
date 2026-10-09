@@ -4,3 +4,8 @@ export function logError(scope: string, error: unknown) {
   const firstLine = typeof e?.message === 'string' ? e.message.split('\n')[0].slice(0, 200) : '';
   console.error(`[${scope}]`, e?.name ?? 'Error', e?.code ?? '', firstLine);
 }
+
+/** Registra un intento rechazado (datos inválidos, sin permiso...) para poder diagnosticarlo después. */
+export function logWarn(scope: string, detail: string) {
+  console.warn(`[${scope}]`, detail.slice(0, 300));
+}

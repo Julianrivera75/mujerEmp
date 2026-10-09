@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import { notifyMany } from '@/lib/notifications';
 import { deleteObject, keyBelongsTo, verifyUploadedObject } from '@/lib/s3';
 import { createSubmissionSchema, gradeSubmissionSchema } from '@/lib/schemas';
+import { isLateSubmission, NOTES_MAX_LENGTH, validateDelivery } from '@/lib/delivery';
 import { cleanText, parseHttpsUrl } from '@/lib/validators';
 
 export const POST = withAuth('submissions POST', ['STUDENT'], async (req, user) => {
@@ -11,7 +12,15 @@ export const POST = withAuth('submissions POST', ['STUDENT'], async (req, user) 
 
   const assignment = await prisma.assignment.findUnique({
     where: { id: assignmentId },
-    select: { classId: true, title: true, classSession: { select: { mentorId: true } } },
+    select: {
+      classId: true,
+      title: true,
+      dueDate: true,
+      deliveryType: true,
+      notesRequired: true,
+      allowLate: true,
+      classSession: { select: { mentorId: true } },
+    },
   });
   if (!assignment) throw new HttpError(404, 'Tarea no encontrada.');
 
@@ -22,21 +31,34 @@ export const POST = withAuth('submissions POST', ['STUDENT'], async (req, user) 
   });
   if (!enrollment) throw new HttpError(403, 'No estás inscrita en la clase de esta tarea.');
 
-  const type = fileType ?? 'LINK';
-  let storedFile: string | null = null;
-  if (type === 'LINK') {
-    if (fileUrl && fileUrl.trim() !== '') {
-      storedFile = parseHttpsUrl(fileUrl);
-      if (!storedFile) throw new HttpError(400, 'El enlace debe ser una URL https válida.');
-    }
-  } else {
-    if (!keyBelongsTo(fileUrl, 'submission', user.id) || !(await verifyUploadedObject(fileUrl, 'submission'))) {
-      throw new HttpError(400, 'El archivo no es válido. Sube un PDF o una imagen de hasta 15 MB.');
-    }
-    storedFile = fileUrl;
+  const now = new Date();
+  if (!assignment.allowLate && isLateSubmission(now, assignment.dueDate)) {
+    throw new HttpError(403, 'La fecha límite ya pasó y esta tarea no recibe entregas tardías.');
   }
 
-  const cleanNotes = cleanText(notes ?? '', 5000) ?? '';
+  // Qué entregó: un archivo subido (PDF o imagen), un enlace, y/o texto. Después se compara con lo que pide la tarea.
+  const cleanNotes = cleanText(notes ?? '', NOTES_MAX_LENGTH) ?? '';
+  const rawFile = fileUrl?.trim() ? fileUrl.trim() : null;
+  const isUpload = fileType === 'PDF' || fileType === 'IMAGE';
+  let link: string | null = null;
+  if (rawFile && !isUpload) {
+    link = parseHttpsUrl(rawFile);
+    if (!link) throw new HttpError(400, 'El enlace debe ser una URL https válida.');
+  }
+  const fileKey = isUpload && rawFile ? rawFile : null;
+  if (isUpload && !rawFile) throw new HttpError(400, 'Sube un PDF o una imagen de tu trabajo.');
+
+  const deliveryError = validateDelivery(assignment, { notes: cleanNotes, fileKey, link });
+  if (deliveryError) throw new HttpError(400, deliveryError);
+
+  if (
+    fileKey &&
+    (!keyBelongsTo(fileKey, 'submission', user.id) || !(await verifyUploadedObject(fileKey, 'submission')))
+  ) {
+    throw new HttpError(400, 'El archivo no es válido. Sube un PDF o una imagen de hasta 15 MB.');
+  }
+  const storedFile = fileKey ?? link;
+  const type = fileKey ? fileType : link ? 'LINK' : null;
 
   // Una entrega calificada queda cerrada: la mentora debe reabrirla quitando la nota.
   const previous = await prisma.submission.findUnique({
@@ -49,14 +71,14 @@ export const POST = withAuth('submissions POST', ['STUDENT'], async (req, user) 
 
   const submission = await prisma.submission.upsert({
     where: { assignmentId_studentId: { assignmentId, studentId: user.id } },
-    update: { notes: cleanNotes, fileUrl: storedFile, fileType: type, submittedAt: new Date() },
+    update: { notes: cleanNotes, fileUrl: storedFile, fileType: type, submittedAt: now },
     create: {
       assignmentId,
       studentId: user.id,
       notes: cleanNotes,
       fileUrl: storedFile,
       fileType: type,
-      submittedAt: new Date(),
+      submittedAt: now,
     },
   });
 
@@ -79,7 +101,11 @@ export const POST = withAuth('submissions POST', ['STUDENT'], async (req, user) 
     dedupeKey: `sub:${submission.id}:${submission.submittedAt.getTime()}`,
   }).catch(() => undefined);
 
-  return NextResponse.json({ success: true, submission });
+  return NextResponse.json({
+    success: true,
+    submission,
+    late: isLateSubmission(submission.submittedAt, assignment.dueDate),
+  });
 });
 
 /** La estudiante quita su entrega: la tarea vuelve a quedar sin entregar. */

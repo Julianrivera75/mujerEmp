@@ -231,9 +231,18 @@ describe('entregas: la estudiante edita y quita', () => {
     expect(deleteObject).toHaveBeenCalledWith(key);
 
     // vuelve a poder entregar
-    expect((await read(await submit({ assignmentId: w.tarea.id, notes: 'Otra vez', fileType: 'LINK' }))).status).toBe(
-      200,
-    );
+    expect(
+      (
+        await read(
+          await submit({
+            assignmentId: w.tarea.id,
+            notes: 'Otra vez',
+            fileType: 'LINK',
+            fileUrl: 'https://ejemplo.com/trabajo',
+          }),
+        )
+      ).status,
+    ).toBe(200);
     expect((await remove(w.tarea.id)).status).toBe(200);
     expect((await remove(w.tarea.id)).status).toBe(404);
   });
@@ -255,16 +264,34 @@ describe('entregas: la estudiante edita y quita', () => {
 
     actAs(w.sofia);
     expect((await read(await remove(w.tarea.id))).status).toBe(409);
-    expect((await read(await submit({ assignmentId: w.tarea.id, notes: 'Cambio', fileType: 'LINK' }))).status).toBe(
-      409,
-    );
+    expect(
+      (
+        await read(
+          await submit({
+            assignmentId: w.tarea.id,
+            notes: 'Cambio',
+            fileType: 'LINK',
+            fileUrl: 'https://ejemplo.com/trabajo',
+          }),
+        )
+      ).status,
+    ).toBe(409);
 
     actAs(w.carolina);
     await send(gradeSubmission, 'PUT', '/api/submissions', { submissionId: w.entrega.id, grade: '' });
     actAs(w.sofia);
-    expect((await read(await submit({ assignmentId: w.tarea.id, notes: 'Cambio', fileType: 'LINK' }))).status).toBe(
-      200,
-    );
+    expect(
+      (
+        await read(
+          await submit({
+            assignmentId: w.tarea.id,
+            notes: 'Cambio',
+            fileType: 'LINK',
+            fileUrl: 'https://ejemplo.com/trabajo',
+          }),
+        )
+      ).status,
+    ).toBe(200);
   });
 
   it('al reemplazar un archivo subido, el anterior se elimina', async () => {

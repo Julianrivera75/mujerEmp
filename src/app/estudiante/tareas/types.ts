@@ -1,3 +1,5 @@
+import type { DeliveryType } from '@/lib/delivery';
+
 interface Submission {
   id: string;
   submittedAt: string;
@@ -14,6 +16,11 @@ export interface StudentAssignment {
   title: string;
   description: string;
   dueDate: string;
+  deliveryType: DeliveryType;
+  notesRequired: boolean;
+  allowLate: boolean;
+  attachmentName?: string | null;
+  attachmentUrl?: string | null;
   classSession: { id: string; title: string };
   creator: { name: string };
   submissions: Submission[];

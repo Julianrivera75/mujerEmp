@@ -47,10 +47,17 @@ async function route(request: NextRequest, requestHeaders: Headers) {
     return next();
   }
 
+  // Las llamadas a la API sin sesión válida reciben un 401 en JSON: una redirección al login (HTML) haría que la
+  // pantalla creyera que el guardado salió bien.
+  const isApi = pathname.startsWith('/api/');
+  const unauthorized = () =>
+    NextResponse.json({ error: 'Tu sesión venció. Entra de nuevo para continuar.' }, { status: 401 });
+
   const sessionCookie = request.cookies.get(SESSION_COOKIE)?.value;
 
   // Si no hay cookie de sesión y se intenta acceder a una ruta protegida
   if (!sessionCookie) {
+    if (isApi) return unauthorized();
     if (pathname === '/') {
       return NextResponse.redirect(new URL('/login', request.url));
     }
@@ -63,7 +70,7 @@ async function route(request: NextRequest, requestHeaders: Headers) {
 
     // Validar si el usuario está inactivo
     if (payload.status === 'INACTIVO') {
-      const response = NextResponse.redirect(new URL('/login?error=inactive', request.url));
+      const response = isApi ? unauthorized() : NextResponse.redirect(new URL('/login?error=inactive', request.url));
       response.cookies.delete(SESSION_COOKIE);
       return response;
     }
@@ -98,7 +105,7 @@ async function route(request: NextRequest, requestHeaders: Headers) {
     return next();
   } catch (err) {
     // Firma inválida, token expirado o cookie corrupta.
-    const response = NextResponse.redirect(new URL('/login', request.url));
+    const response = isApi ? unauthorized() : NextResponse.redirect(new URL('/login', request.url));
     response.cookies.delete(SESSION_COOKIE);
     return response;
   }

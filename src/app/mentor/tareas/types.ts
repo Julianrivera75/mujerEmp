@@ -1,3 +1,5 @@
+import type { DeliveryType } from '@/lib/delivery';
+
 export interface Submission {
   id: string;
   submittedAt: string;
@@ -14,7 +16,13 @@ export interface Assignment {
   title: string;
   description: string;
   dueDate: string;
-  classSession: { id: string; title: string };
+  deliveryType: DeliveryType;
+  notesRequired: boolean;
+  allowLate: boolean;
+  /** Archivo con las instrucciones (nombre y dirección firmada temporal), si la mentora lo adjuntó. */
+  attachmentName?: string | null;
+  attachmentUrl?: string | null;
+  classSession: { id: string; title: string; _count?: { enrollments: number } };
   creator?: { id: string; name: string };
   submissions: Submission[];
 }

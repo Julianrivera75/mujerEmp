@@ -168,17 +168,33 @@ model Attendance {
   @@index([joinedAt])
 }
 
+// Qué debe entregar la estudiante en una tarea.
+enum DeliveryType {
+  FILE
+  LINK
+  TEXT
+  FILE_OR_LINK
+  ANY
+}
+
 model Assignment {
-  id           String       @id @default(cuid())
-  classId      String
-  creatorId    String
-  title        String
-  description  String
-  dueDate      DateTime
-  classSession ClassSession @relation(fields: [classId], references: [id], onDelete: Cascade)
-  creator      User         @relation("MentorAssignments", fields: [creatorId], references: [id], onDelete: Restrict)
-  submissions  Submission[]
-  createdAt    DateTime     @default(now())
+  id             String       @id @default(cuid())
+  classId        String
+  creatorId      String
+  title          String
+  description    String
+  dueDate        DateTime
+  // Qué se pide entregar, si el comentario es obligatorio y si se aceptan entregas después de la fecha límite
+  deliveryType   DeliveryType @default(FILE_OR_LINK)
+  notesRequired  Boolean      @default(true)
+  allowLate      Boolean      @default(true)
+  // Archivo opcional con las instrucciones de la tarea (clave en el almacenamiento y nombre original)
+  attachmentKey  String?
+  attachmentName String?
+  classSession   ClassSession @relation(fields: [classId], references: [id], onDelete: Cascade)
+  creator        User         @relation("MentorAssignments", fields: [creatorId], references: [id], onDelete: Restrict)
+  submissions    Submission[]
+  createdAt      DateTime     @default(now())
 
   @@index([classId])
   @@index([creatorId])

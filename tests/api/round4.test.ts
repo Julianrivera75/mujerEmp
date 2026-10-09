@@ -246,7 +246,7 @@ describe('notificaciones', () => {
       await post(postAssignment, '/api/assignments', {
         classId: w.claseCarolina.id,
         title: 'Ensayo final',
-        description: 'Escribe',
+        description: 'Escribe el ensayo final',
         dueDate: new Date(Date.now() + 10 * 86400000).toISOString(),
       }),
     );
@@ -264,7 +264,12 @@ describe('notificaciones', () => {
 
   it('una entrega avisa a la mentora y la calificación avisa a la estudiante', async () => {
     actAs(w.sofia);
-    await post(postSubmission, '/api/submissions', { assignmentId: w.tarea.id, notes: 'Listo', fileType: 'LINK' });
+    await post(postSubmission, '/api/submissions', {
+      assignmentId: w.tarea.id,
+      notes: 'Listo',
+      fileType: 'LINK',
+      fileUrl: 'https://ejemplo.com/trabajo',
+    });
 
     actAs(w.carolina);
     const carolina = await mine();
