@@ -1,5 +1,6 @@
 'use client';
 
+import { resetNotificationPopups } from '@/components/NotificationPopups';
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -26,6 +27,7 @@ export default function AcceptTermsForm({ userName, version, blockedMinor, homeH
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
+    resetNotificationPopups();
     router.push('/login');
     router.refresh();
   };

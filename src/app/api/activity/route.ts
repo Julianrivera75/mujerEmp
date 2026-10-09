@@ -22,10 +22,16 @@ export const POST = withAuth('activity', 'any', async (_req, user) => {
 
   if (user.roles.includes('STUDENT')) await syncDueSoon(user.id, now);
 
-  const [unreadNotifications, unreadMessages] = await Promise.all([
+  const [unreadNotifications, unreadMessages, latest] = await Promise.all([
     prisma.notification.count({ where: { userId: user.id, readAt: null } }),
     countUnreadMessages(user.id),
+    // La notificación sin leer más reciente: la usan los avisos emergentes.
+    prisma.notification.findFirst({
+      where: { userId: user.id, readAt: null },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, type: true, title: true, body: true },
+    }),
   ]);
 
-  return NextResponse.json({ unreadNotifications, unreadMessages });
+  return NextResponse.json({ userId: user.id, unreadNotifications, unreadMessages, latest });
 });

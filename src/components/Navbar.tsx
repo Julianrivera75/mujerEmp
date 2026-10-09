@@ -1,5 +1,6 @@
 'use client';
 
+import { resetNotificationPopups } from '@/components/NotificationPopups';
 import React, { useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
 import { createPortal } from 'react-dom';
@@ -115,6 +116,7 @@ export default function Navbar({ user }: NavbarProps) {
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
+      resetNotificationPopups();
       router.push('/login');
       router.refresh();
     } catch (err) {

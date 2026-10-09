@@ -1,5 +1,6 @@
 'use client';
 
+import { resetNotificationPopups } from '@/components/NotificationPopups';
 import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -52,6 +53,7 @@ function LoginFormContent() {
         return;
       }
 
+      resetNotificationPopups();
       router.push(data.redirectUrl || '/');
       router.refresh();
     } catch (err) {

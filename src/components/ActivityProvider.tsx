@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { NotificationPopups, type LatestNotification } from '@/components/NotificationPopups';
 
 interface ActivityState {
   unreadNotifications: number;
@@ -23,6 +24,8 @@ const HEARTBEAT_MS = 30_000;
  */
 export function ActivityProvider({ children }: { children: React.ReactNode }) {
   const [counts, setCounts] = useState({ unreadNotifications: 0, unreadMessages: 0 });
+  const [userId, setUserId] = useState<string | null>(null);
+  const [latest, setLatest] = useState<LatestNotification | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -30,6 +33,8 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
       if (!res.ok) return;
       const data = await res.json();
       setCounts({ unreadNotifications: data.unreadNotifications ?? 0, unreadMessages: data.unreadMessages ?? 0 });
+      setUserId(data.userId ?? null);
+      setLatest(data.latest ?? null);
     } catch {
       // Sin conexión: se reintenta en el siguiente latido.
     }
@@ -51,7 +56,12 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
   }, [refresh]);
 
   const value = useMemo(() => ({ ...counts, refresh }), [counts, refresh]);
-  return <ActivityContext.Provider value={value}>{children}</ActivityContext.Provider>;
+  return (
+    <ActivityContext.Provider value={value}>
+      {children}
+      <NotificationPopups userId={userId} unread={counts.unreadNotifications} latest={latest} />
+    </ActivityContext.Provider>
+  );
 }
 
 export const useActivity = () => useContext(ActivityContext);
