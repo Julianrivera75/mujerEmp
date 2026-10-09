@@ -26,7 +26,7 @@ import type { Assignment, Submission } from './types';
 import { formatDate, formatDue, formatTime } from '@/lib/format';
 import { logClientError } from '@/lib/client-log';
 import { cn } from '@/lib/cn';
-import { describeDelivery, isLateSubmission, taskStatus } from '@/lib/delivery';
+import { describeDelivery, isLateSubmission, submissionFiles, submissionLink, taskStatus } from '@/lib/delivery';
 import { useHighlight } from '@/lib/use-highlight';
 
 const STATUS_LABEL = { ACTIVE: 'Activa', DUE_SOON: 'Vence pronto', OVERDUE: 'Vencida' } as const;
@@ -291,17 +291,30 @@ export default function MentorTasksPage() {
                               </p>
                             )}
 
-                            {sub.fileUrl && (
-                              <FileLink
-                                fileUrl={sub.fileUrl}
-                                isStoredFile={sub.fileType === 'PDF' || sub.fileType === 'IMAGE'}
-                                className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold text-role-ink hover:brightness-90"
-                              >
-                                <FileText className="h-3.5 w-3.5" />
-                                <span>Ver archivo / enlace entregado</span>
-                                <ExternalLink className="h-3 w-3" />
-                              </FileLink>
-                            )}
+                            <div className="mb-3 flex flex-col items-start gap-1">
+                              {submissionFiles(sub).map((file) => (
+                                <FileLink
+                                  key={file.key}
+                                  fileUrl={file.key}
+                                  isStoredFile
+                                  className="inline-flex items-center gap-1.5 text-left text-xs font-bold text-role-ink hover:brightness-90"
+                                >
+                                  <FileText className="h-3.5 w-3.5 flex-shrink-0" />
+                                  <span className="break-all">{file.name}</span>
+                                  <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                                </FileLink>
+                              ))}
+                              {submissionLink(sub) && (
+                                <FileLink
+                                  fileUrl={submissionLink(sub) as string}
+                                  isStoredFile={false}
+                                  className="inline-flex items-center gap-1.5 text-xs font-bold text-role-ink hover:brightness-90"
+                                >
+                                  <ExternalLink className="h-3.5 w-3.5" />
+                                  <span>Abrir el enlace entregado</span>
+                                </FileLink>
+                              )}
+                            </div>
 
                             {sub.feedback && (
                               <div className="mt-2 rounded-xl border border-role-accent/15 bg-role-soft p-2.5 text-xs">

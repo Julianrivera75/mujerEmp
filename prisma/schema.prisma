@@ -177,24 +177,36 @@ enum DeliveryType {
   ANY
 }
 
+// Cuánto se pide de cada tipo de entrega: no se acepta, es opcional u obligatorio.
+enum DeliveryRequirement {
+  NONE
+  OPTIONAL
+  REQUIRED
+}
+
 model Assignment {
-  id             String       @id @default(cuid())
-  classId        String
-  creatorId      String
-  title          String
-  description    String
-  dueDate        DateTime
+  id              String              @id @default(cuid())
+  classId         String
+  creatorId       String
+  title           String
+  description     String
+  dueDate         DateTime
   // Qué se pide entregar, si el comentario es obligatorio y si se aceptan entregas después de la fecha límite
-  deliveryType   DeliveryType @default(FILE_OR_LINK)
-  notesRequired  Boolean      @default(true)
-  allowLate      Boolean      @default(true)
+  deliveryType    DeliveryType        @default(FILE_OR_LINK)
+  notesRequired   Boolean             @default(true)
+  allowLate       Boolean             @default(true)
+  // Qué se pide entregar (reemplaza a deliveryType/notesRequired, que se conservan por compatibilidad)
+  fileRequirement DeliveryRequirement @default(OPTIONAL)
+  linkRequirement DeliveryRequirement @default(OPTIONAL)
+  textRequirement DeliveryRequirement @default(REQUIRED)
+  maxFiles        Int                 @default(1)
   // Archivo opcional con las instrucciones de la tarea (clave en el almacenamiento y nombre original)
-  attachmentKey  String?
-  attachmentName String?
-  classSession   ClassSession @relation(fields: [classId], references: [id], onDelete: Cascade)
-  creator        User         @relation("MentorAssignments", fields: [creatorId], references: [id], onDelete: Restrict)
-  submissions    Submission[]
-  createdAt      DateTime     @default(now())
+  attachmentKey   String?
+  attachmentName  String?
+  classSession    ClassSession        @relation(fields: [classId], references: [id], onDelete: Cascade)
+  creator         User                @relation("MentorAssignments", fields: [creatorId], references: [id], onDelete: Restrict)
+  submissions     Submission[]
+  createdAt       DateTime            @default(now())
 
   @@index([classId])
   @@index([creatorId])
@@ -207,6 +219,10 @@ model Submission {
   submittedAt  DateTime   @default(now())
   fileUrl      String?
   fileType     FileType?
+  // Entrega con varios archivos y/o un enlace (las entregas anteriores usan fileUrl y fileType)
+  fileKeys     String[]   @default([])
+  fileNames    String[]   @default([])
+  linkUrl      String?
   notes        String?
   grade        Float? // Calificación otorgada
   feedback     String? // Comentarios de retroalimentación

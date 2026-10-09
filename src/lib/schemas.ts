@@ -1,5 +1,5 @@
 import { MAX_CLASS_IMAGES } from './class-images';
-import { DELIVERY_TYPES } from './delivery';
+import { DELIVERY_TYPES, MAX_FILES_LIMIT, REQUIREMENTS } from './delivery';
 import { z } from 'zod';
 import {
   CLASS_STATUSES,
@@ -241,9 +241,20 @@ const assignmentContent = {
     .optional(),
   attachment: assignmentAttachment,
   dueDate: dateField('Elige la fecha y la hora límite de entrega.'),
-  deliveryType: z.enum(DELIVERY_TYPES, { error: 'Elige qué deben entregar las estudiantes.' }),
-  notesRequired: z.boolean({ error: 'Indica si el comentario es obligatorio.' }),
-  allowLate: z.boolean({ error: 'Indica si se aceptan entregas tardías.' }),
+  // Qué se pide entregar: un requisito por tipo. Sin ellos se usa lo de siempre (o lo que ya tenía la tarea).
+  fileRequirement: z.enum(REQUIREMENTS, { error: 'Elige si se pide un archivo.' }).optional(),
+  linkRequirement: z.enum(REQUIREMENTS, { error: 'Elige si se pide un enlace.' }).optional(),
+  textRequirement: z.enum(REQUIREMENTS, { error: 'Elige si se pide un texto.' }).optional(),
+  maxFiles: z
+    .number({ error: 'Indica cuántos archivos como máximo.' })
+    .int()
+    .min(1, 'Como mínimo 1 archivo.')
+    .max(MAX_FILES_LIMIT, `Como máximo ${MAX_FILES_LIMIT} archivos.`)
+    .optional(),
+  // Forma antigua, que todavía envían las pestañas abiertas antes del cambio.
+  deliveryType: z.enum(DELIVERY_TYPES).optional(),
+  notesRequired: z.boolean().optional(),
+  allowLate: z.boolean({ error: 'Indica si se aceptan entregas tardías.' }).optional(),
 };
 
 const INSTRUCTIONS_REQUIRED = 'Escribe las instrucciones (mínimo 10 caracteres) o adjunta un archivo con ellas.';
@@ -263,9 +274,6 @@ export const updateAssignmentSchema = z
   .object({
     id: requiredId('ID de tarea requerido.'),
     ...assignmentContent,
-    deliveryType: assignmentContent.deliveryType.optional(),
-    notesRequired: assignmentContent.notesRequired.optional(),
-    allowLate: assignmentContent.allowLate.optional(),
   })
   // En la edición, si no se envía `attachment` se conserva el archivo que ya tenía; el servidor lo comprueba.
   .superRefine((v, ctx) => needsInstructions(v, ctx, v.attachment === undefined));
@@ -274,10 +282,6 @@ export const createAssignmentSchema = z
   .object({
     classId: requiredId('Elige la clase de la tarea.'),
     ...assignmentContent,
-    // Las pestañas abiertas antes de esta versión no envían estos campos: se usa lo de siempre.
-    deliveryType: assignmentContent.deliveryType.default('FILE_OR_LINK'),
-    notesRequired: assignmentContent.notesRequired.default(true),
-    allowLate: assignmentContent.allowLate.default(true),
   })
   .superRefine((v, ctx) => needsInstructions(v, ctx, false));
 
@@ -293,6 +297,13 @@ export const createResourceSchema = z.object({
 export const createSubmissionSchema = z.object({
   assignmentId: requiredId('ID de tarea requerido.'),
   notes: z.string().nullish(),
+  /** Archivos ya subidos al almacenamiento (hasta 3). */
+  files: z
+    .array(z.object({ key: z.string().min(1).max(300), name: z.string().min(1).max(120) }))
+    .max(MAX_FILES_LIMIT, `Puedes entregar hasta ${MAX_FILES_LIMIT} archivos.`)
+    .optional(),
+  link: z.string().nullish(),
+  // Forma antigua (un solo archivo o enlace), que todavía envían las pestañas abiertas antes del cambio.
   fileUrl: z.string().nullish(),
   fileType: z.enum(SUBMISSION_FILE_TYPES, { error: 'Tipo de entrega inválido.' }).optional(),
 });

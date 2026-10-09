@@ -1,4 +1,4 @@
-import type { DeliveryType } from '@/lib/delivery';
+import type { Requirement } from '@/lib/delivery';
 
 interface Submission {
   id: string;
@@ -6,6 +6,9 @@ interface Submission {
   notes: string | null;
   fileUrl: string | null;
   fileType: string | null;
+  fileKeys?: string[];
+  fileNames?: string[];
+  linkUrl?: string | null;
   grade: number | null;
   feedback: string | null;
   gradedAt: string | null;
@@ -16,8 +19,10 @@ export interface StudentAssignment {
   title: string;
   description: string;
   dueDate: string;
-  deliveryType: DeliveryType;
-  notesRequired: boolean;
+  fileRequirement: Requirement;
+  linkRequirement: Requirement;
+  textRequirement: Requirement;
+  maxFiles: number;
   allowLate: boolean;
   attachmentName?: string | null;
   attachmentUrl?: string | null;

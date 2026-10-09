@@ -7,11 +7,17 @@ export interface UploadHandle {
  * Sube un archivo a una URL firmada con PUT informando el avance (0 a 100).
  * `fetch` no expone el progreso de subida, por eso se usa XMLHttpRequest.
  */
-export function uploadWithProgress(url: string, file: File, onProgress: (percent: number) => void): UploadHandle {
+export function uploadWithProgress(
+  url: string,
+  file: File,
+  onProgress: (percent: number) => void,
+  /** Tipo de contenido firmado en la URL (por defecto, el del archivo). */
+  contentType: string = file.type,
+): UploadHandle {
   const xhr = new XMLHttpRequest();
   const promise = new Promise<void>((resolve, reject) => {
     xhr.open('PUT', url);
-    xhr.setRequestHeader('Content-Type', file.type);
+    xhr.setRequestHeader('Content-Type', contentType);
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable && event.total > 0) onProgress(Math.round((event.loaded / event.total) * 100));
     };

@@ -1,3 +1,4 @@
+import { submissionFiles } from '@/lib/delivery';
 import bcrypt from 'bcryptjs';
 import { randomBytes } from 'crypto';
 import { NextResponse } from 'next/server';
@@ -20,7 +21,7 @@ export const POST = withAuth('admin/users anonymize', ['ADMIN'], async (req, cur
       id: true,
       avatar: true,
       anonymizedAt: true,
-      submissions: { select: { id: true, fileUrl: true, fileType: true } },
+      submissions: { select: { id: true, fileUrl: true, fileType: true, fileKeys: true, fileNames: true } },
     },
   });
   if (!target) throw new HttpError(404, 'Usuario no encontrado.');
@@ -29,9 +30,7 @@ export const POST = withAuth('admin/users anonymize', ['ADMIN'], async (req, cur
   // Archivos almacenados (avatar y entregas): se eliminan del almacenamiento.
   const keys: string[] = [];
   if (target.avatar) keys.push(target.avatar);
-  for (const sub of target.submissions) {
-    if (sub.fileUrl && (sub.fileType === 'PDF' || sub.fileType === 'IMAGE')) keys.push(sub.fileUrl);
-  }
+  for (const sub of target.submissions) keys.push(...submissionFiles(sub).map((f) => f.key));
   // Archivos adjuntos de sus conversaciones.
   const attachments = await prisma.message.findMany({
     where: { attachmentKey: { not: null }, conversation: { OR: [{ userAId: id }, { userBId: id }] } },
@@ -50,7 +49,10 @@ export const POST = withAuth('admin/users anonymize', ['ADMIN'], async (req, cur
   const randomPasswordHash = await bcrypt.hash(randomBytes(32).toString('hex'), 12);
 
   await prisma.$transaction([
-    prisma.submission.updateMany({ where: { studentId: id }, data: { notes: null, fileUrl: null } }),
+    prisma.submission.updateMany({
+      where: { studentId: id },
+      data: { notes: null, fileUrl: null, fileKeys: [], fileNames: [], linkUrl: null },
+    }),
     // Los mensajes y avisos de la cuenta se eliminan junto con sus datos personales.
     prisma.conversation.deleteMany({ where: { OR: [{ userAId: id }, { userBId: id }] } }),
     prisma.notification.deleteMany({ where: { userId: id } }),

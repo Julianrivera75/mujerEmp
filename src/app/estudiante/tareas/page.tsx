@@ -27,7 +27,7 @@ import { formatDate, formatDue } from '@/lib/format';
 import { logClientError } from '@/lib/client-log';
 import { cn } from '@/lib/cn';
 import { useHighlight } from '@/lib/use-highlight';
-import { describeDelivery, isLateSubmission } from '@/lib/delivery';
+import { describeDelivery, isLateSubmission, submissionFiles, submissionLink } from '@/lib/delivery';
 
 export default function StudentTasksPage() {
   const [assignments, setAssignments] = useState<StudentAssignment[]>([]);
@@ -222,6 +222,17 @@ export default function StudentTasksPage() {
                           )}
                         </p>
                         {mySub.notes && <p className="italic text-slate-600">&ldquo;{mySub.notes}&rdquo;</p>}
+                        {submissionFiles(mySub).length > 0 && (
+                          <p className="mt-1 text-slate-700">
+                            Archivos:{' '}
+                            {submissionFiles(mySub)
+                              .map((f) => f.name)
+                              .join(', ')}
+                          </p>
+                        )}
+                        {submissionLink(mySub) && (
+                          <p className="mt-1 break-all text-slate-700">Enlace: {submissionLink(mySub)}</p>
+                        )}
                       </div>
                     )}
                   </div>

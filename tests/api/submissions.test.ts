@@ -61,7 +61,7 @@ describe('POST /api/submissions', () => {
     const all = await prisma.submission.findMany({ where: { studentId: w.sofia.id } });
     expect(all).toHaveLength(1);
     expect(all[0].notes).toBe('Nueva versión');
-    expect(all[0].fileType).toBe('LINK');
+    expect(all[0].linkUrl).toBe('https://docs.google.com/document/d/1');
   });
 
   it('un archivo debe estar en la carpeta de la propia estudiante', async () => {

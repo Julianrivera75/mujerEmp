@@ -40,6 +40,8 @@ export const GET = withAuth('auth/export', 'any', async (_req, user) => {
           notes: true,
           fileUrl: true,
           fileType: true,
+          fileNames: true,
+          linkUrl: true,
           grade: true,
           feedback: true,
           gradedAt: true,

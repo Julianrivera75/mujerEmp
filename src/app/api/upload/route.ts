@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { HttpError, parseBody, withAuth } from '@/lib/api';
 import prisma from '@/lib/prisma';
+import { nameFromKey, opensInBrowser } from '@/lib/file-types';
 import { createPresignedDownloadUrl, createPresignedUploadUrl, UPLOAD_CATEGORIES, type UploadCategory } from '@/lib/s3';
 import { uploadRequestSchema } from '@/lib/schemas';
 
@@ -68,7 +69,10 @@ export const GET = withAuth('upload GET', 'any', async (req, user) => {
   if (!allowed && user.role === 'MENTOR') {
     if (category === 'submission') {
       const own = await prisma.submission.findFirst({
-        where: { fileUrl: key, assignment: { classSession: { mentorId: user.id } } },
+        where: {
+          OR: [{ fileUrl: key }, { fileKeys: { has: key } }],
+          assignment: { classSession: { mentorId: user.id } },
+        },
         select: { id: true },
       });
       allowed = Boolean(own);
@@ -83,5 +87,9 @@ export const GET = withAuth('upload GET', 'any', async (req, user) => {
 
   if (!allowed) throw new HttpError(403, 'No tienes permiso para acceder a este archivo.');
 
-  return NextResponse.json({ url: await createPresignedDownloadUrl(key) });
+  // Los PDF y las imágenes se abren en el navegador; los documentos de Office se descargan con su nombre.
+  const fileName = nameFromKey(key);
+  return NextResponse.json({
+    url: await createPresignedDownloadUrl(key, 3600, opensInBrowser(fileName) ? undefined : fileName),
+  });
 });

@@ -2,7 +2,7 @@ export const ROLES = ['ADMIN', 'MENTOR', 'STUDENT'] as const;
 export const USER_STATUSES = ['ACTIVO', 'INACTIVO'] as const;
 export const CLASS_STATUSES = ['PROGRAMADA', 'FINALIZADA', 'CANCELADA'] as const;
 export const RESOURCE_TYPES = ['YOUTUBE', 'DOCUMENT', 'LINK'] as const;
-export const SUBMISSION_FILE_TYPES = ['PDF', 'IMAGE', 'LINK'] as const;
+export const SUBMISSION_FILE_TYPES = ['PDF', 'IMAGE', 'DOC', 'LINK'] as const;
 
 export const MEET_HOSTS = ['meet.google.com'];
 export const YOUTUBE_HOSTS = ['youtube.com', 'youtu.be', 'youtube-nocookie.com'];

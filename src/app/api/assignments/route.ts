@@ -7,6 +7,8 @@ import prisma from '@/lib/prisma';
 import { notifyMany } from '@/lib/notifications';
 import { createPresignedDownloadUrl, deleteObject, keyBelongsTo, verifyUploadedObject } from '@/lib/s3';
 import { createAssignmentSchema, updateAssignmentSchema } from '@/lib/schemas';
+import { opensInBrowser } from '@/lib/file-types';
+import { type DeliveryConfig, hasDeliveryChoice, legacyRequirements, submissionFiles } from '@/lib/delivery';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,9 +16,15 @@ export const dynamic = 'force-dynamic';
  * Cambia la clave del archivo de instrucciones por una dirección firmada y temporal. Solo llega a quien ya puede ver
  * la tarea (la mentora de la clase, las inscritas y la administración), porque la lista ya está filtrada así.
  */
-async function withAttachmentUrl<T extends { attachmentKey: string | null }>(assignment: T) {
+async function withAttachmentUrl<T extends { attachmentKey: string | null; attachmentName: string | null }>(
+  assignment: T,
+) {
   const { attachmentKey, ...rest } = assignment;
-  const attachmentUrl = attachmentKey ? await createPresignedDownloadUrl(attachmentKey, 3600).catch(() => null) : null;
+  // Los PDF y las imágenes se abren en el navegador; los documentos de Office se descargan con su nombre.
+  const downloadName = rest.attachmentName && !opensInBrowser(rest.attachmentName) ? rest.attachmentName : undefined;
+  const attachmentUrl = attachmentKey
+    ? await createPresignedDownloadUrl(attachmentKey, 3600, downloadName).catch(() => null)
+    : null;
   return { ...rest, attachmentUrl };
 }
 
@@ -83,6 +91,51 @@ async function parseAssignmentBody<T>(req: Request, schema: ZodType<T>): Promise
   throw new HttpError(400, result.error.issues[0]?.message ?? 'Datos inválidos.', undefined, { fields });
 }
 
+/** Qué se pide entregar: los requisitos nuevos, o lo que traduce la forma antigua, o lo que ya tenía la tarea. */
+function resolveDelivery(
+  body: {
+    fileRequirement?: DeliveryConfig['fileRequirement'];
+    linkRequirement?: DeliveryConfig['linkRequirement'];
+    textRequirement?: DeliveryConfig['textRequirement'];
+    maxFiles?: number;
+    deliveryType?: Parameters<typeof legacyRequirements>[0];
+    notesRequired?: boolean;
+  },
+  current: DeliveryConfig,
+): DeliveryConfig {
+  const usesNew =
+    body.fileRequirement !== undefined ||
+    body.linkRequirement !== undefined ||
+    body.textRequirement !== undefined ||
+    body.maxFiles !== undefined;
+  let config: DeliveryConfig;
+  if (usesNew) {
+    config = {
+      fileRequirement: body.fileRequirement ?? current.fileRequirement,
+      linkRequirement: body.linkRequirement ?? current.linkRequirement,
+      textRequirement: body.textRequirement ?? current.textRequirement,
+      maxFiles: body.maxFiles ?? current.maxFiles,
+    };
+  } else if (body.deliveryType !== undefined) {
+    config = { ...legacyRequirements(body.deliveryType, body.notesRequired ?? true), maxFiles: current.maxFiles };
+  } else {
+    config = current;
+  }
+  if (!hasDeliveryChoice(config)) {
+    const message = 'Elige al menos una forma de entrega: archivo, enlace o texto.';
+    throw new HttpError(400, message, undefined, { fields: { delivery: message } });
+  }
+  return config;
+}
+
+/** Lo que pide una tarea nueva si no se indica nada (como siempre: archivo o enlace, con comentario). */
+const DEFAULT_DELIVERY: DeliveryConfig = {
+  fileRequirement: 'OPTIONAL',
+  linkRequirement: 'OPTIONAL',
+  textRequirement: 'REQUIRED',
+  maxFiles: 1,
+};
+
 const mustBeFuture = (dueDate: Date) => {
   if (dueDate.getTime() < Date.now() - PAST_DUE_TOLERANCE_MS) {
     throw new HttpError(400, 'La fecha límite debe ser futura.', undefined, {
@@ -93,8 +146,9 @@ const mustBeFuture = (dueDate: Date) => {
 
 export const POST = withAuth('assignments POST', ['MENTOR', 'ADMIN'], async (req, user) => {
   try {
-    const { classId, title, description, attachment, dueDate, deliveryType, notesRequired, allowLate } =
-      await parseAssignmentBody(req, createAssignmentSchema);
+    const body = await parseAssignmentBody(req, createAssignmentSchema);
+    const { classId, title, description, attachment, dueDate } = body;
+    const delivery = resolveDelivery(body, DEFAULT_DELIVERY);
     mustBeFuture(dueDate);
 
     const classSession = await prisma.classSession.findUnique({ where: { id: classId }, select: { mentorId: true } });
@@ -112,9 +166,8 @@ export const POST = withAuth('assignments POST', ['MENTOR', 'ADMIN'], async (req
         title,
         description: description ?? '',
         dueDate,
-        deliveryType,
-        notesRequired,
-        allowLate,
+        ...delivery,
+        allowLate: body.allowLate ?? true,
         attachmentKey: attachment?.key ?? null,
         attachmentName: attachment?.name ?? null,
       },
@@ -152,8 +205,8 @@ export const POST = withAuth('assignments POST', ['MENTOR', 'ADMIN'], async (req
 
 /** La mentora de la clase (o la administración) puede corregir el título, la descripción y la fecha límite. */
 export const PUT = withAuth('assignments PUT', ['MENTOR', 'ADMIN'], async (req, user) => {
-  const { id, title, description, attachment, dueDate, deliveryType, notesRequired, allowLate } =
-    await parseAssignmentBody(req, updateAssignmentSchema);
+  const body = await parseAssignmentBody(req, updateAssignmentSchema);
+  const { id, title, description, attachment, dueDate, allowLate } = body;
 
   const existing = await prisma.assignment.findUnique({
     where: { id },
@@ -163,6 +216,12 @@ export const PUT = withAuth('assignments PUT', ['MENTOR', 'ADMIN'], async (req, 
   if (user.role === 'MENTOR' && existing.classSession.mentorId !== user.id) {
     throw new HttpError(403, 'No puedes modificar tareas de clases que no dictas.');
   }
+  const delivery = resolveDelivery(body, existing);
+  const deliveryChanged =
+    delivery.fileRequirement !== existing.fileRequirement ||
+    delivery.linkRequirement !== existing.linkRequirement ||
+    delivery.textRequirement !== existing.textRequirement ||
+    delivery.maxFiles !== existing.maxFiles;
   // Al editar se puede conservar una fecha ya pasada; si se cambia, debe ser futura.
   if (dueDate.getTime() !== existing.dueDate.getTime()) mustBeFuture(dueDate);
 
@@ -188,8 +247,7 @@ export const PUT = withAuth('assignments PUT', ['MENTOR', 'ADMIN'], async (req, 
       ...(attachment !== undefined
         ? { attachmentKey: attachment?.key ?? null, attachmentName: attachment?.name ?? null }
         : {}),
-      ...(deliveryType !== undefined ? { deliveryType } : {}),
-      ...(notesRequired !== undefined ? { notesRequired } : {}),
+      ...(deliveryChanged ? delivery : {}),
       ...(allowLate !== undefined ? { allowLate } : {}),
     },
     include: { classSession: { select: { id: true, title: true } } },
@@ -208,7 +266,7 @@ export const DELETE = withAuth('assignments DELETE', ['MENTOR', 'ADMIN'], async 
     where: { id },
     include: {
       classSession: { select: { mentorId: true } },
-      submissions: { select: { fileUrl: true, fileType: true } },
+      submissions: { select: { fileUrl: true, fileType: true, fileKeys: true, fileNames: true } },
     },
   });
   if (!existing) throw new HttpError(404, 'Tarea no encontrada.');
@@ -223,9 +281,7 @@ export const DELETE = withAuth('assignments DELETE', ['MENTOR', 'ADMIN'], async 
   ]);
 
   // Los archivos subidos (no los enlaces) se eliminan del almacenamiento.
-  const files = existing.submissions
-    .filter((s) => s.fileUrl && (s.fileType === 'PDF' || s.fileType === 'IMAGE'))
-    .map((s) => s.fileUrl as string);
+  const files = existing.submissions.flatMap((s) => submissionFiles(s).map((f) => f.key));
   if (existing.attachmentKey) files.push(existing.attachmentKey);
   await Promise.all(files.map((key) => deleteObject(key).catch(() => undefined)));
 

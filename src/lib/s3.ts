@@ -6,6 +6,7 @@ import {
   HeadObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { ATTACHMENT_MIME_TYPES } from './file-types';
 
 function getS3Client(): S3Client {
   const endpoint = process.env.S3_ENDPOINT;
@@ -36,7 +37,7 @@ export const UPLOAD_CATEGORIES = {
   submission: {
     prefix: 'entregas',
     maxSizeBytes: 15 * 1024 * 1024, // 15 MB
-    allowedTypes: ['application/pdf', 'image/png', 'image/jpeg', 'image/webp'],
+    allowedTypes: ATTACHMENT_MIME_TYPES,
   },
   resource: {
     prefix: 'recursos',
@@ -56,7 +57,7 @@ export const UPLOAD_CATEGORIES = {
   assignment: {
     prefix: 'tareas',
     maxSizeBytes: 15 * 1024 * 1024, // 15 MB
-    allowedTypes: ['application/pdf', 'image/png', 'image/jpeg', 'image/webp'],
+    allowedTypes: ATTACHMENT_MIME_TYPES,
   },
   chat: {
     prefix: 'chat',
@@ -95,9 +96,20 @@ export async function createPresignedUploadUrl(
 }
 
 /** Genera una URL firmada (GET) de corta duración para leer/descargar un archivo privado. */
-export async function createPresignedDownloadUrl(key: string, expiresInSeconds = 3600): Promise<string> {
+export async function createPresignedDownloadUrl(
+  key: string,
+  expiresInSeconds = 3600,
+  /** Si se indica, el navegador descarga el archivo con este nombre en vez de abrirlo (documentos de Office). */
+  downloadName?: string,
+): Promise<string> {
   const client = getS3Client();
-  const command = new GetObjectCommand({ Bucket: getBucketName(), Key: key });
+  const command = new GetObjectCommand({
+    Bucket: getBucketName(),
+    Key: key,
+    ...(downloadName
+      ? { ResponseContentDisposition: `attachment; filename*=UTF-8''${encodeURIComponent(downloadName)}` }
+      : {}),
+  });
   return getSignedUrl(client, command, { expiresIn: expiresInSeconds });
 }
 
@@ -126,6 +138,16 @@ export function matchesSignature(contentType: string, bytes: Uint8Array): boolea
       return startsWith(bytes, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
     case 'image/webp':
       return startsWith(bytes, [0x52, 0x49, 0x46, 0x46]) && startsWith(bytes, [0x57, 0x45, 0x42, 0x50], 8); // RIFF....WEBP
+    // Formatos modernos de Office (.docx, .pptx, .xlsx): archivos ZIP.
+    case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+    case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+    case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+      return startsWith(bytes, [0x50, 0x4b, 0x03, 0x04]);
+    // Formatos antiguos de Office (.doc, .ppt, .xls): contenedor OLE.
+    case 'application/msword':
+    case 'application/vnd.ms-powerpoint':
+    case 'application/vnd.ms-excel':
+      return startsWith(bytes, [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]);
     default:
       return false;
   }

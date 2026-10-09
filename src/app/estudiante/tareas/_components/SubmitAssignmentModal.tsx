@@ -5,16 +5,17 @@ import confetti from 'canvas-confetti';
 import { Modal } from '@/components/ui/Modal';
 import { Textarea, Input } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
-import FileUpload from '@/components/FileUpload';
+import { FileDropZone, type UploadedFile } from '@/components/FileDropZone';
 import type { StudentAssignment } from '../types';
 import { logClientError } from '@/lib/client-log';
 import {
-  deliveryFields,
   describeDelivery,
   isLateSubmission,
-  SUBMISSION_FILE_LIMIT,
+  submissionFiles,
+  submissionLink,
   TEXT_MIN_LENGTH,
   validateDelivery,
+  type Requirement,
 } from '@/lib/delivery';
 import { formatDue } from '@/lib/format';
 
@@ -24,46 +25,59 @@ interface SubmitAssignmentModalProps {
   onSubmitted: () => void;
 }
 
-const fileTypeOf = (key: string) => (/\.(png|jpe?g|webp)$/i.test(key) ? 'IMAGE' : 'PDF');
+/** Etiqueta "Obligatorio" u "Opcional" junto al título de cada parte de la entrega. */
+function RequirementBadge({ requirement }: { requirement: Requirement }) {
+  if (requirement === 'NONE') return null;
+  return (
+    <span
+      className={
+        requirement === 'REQUIRED'
+          ? 'rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase text-rose-700'
+          : 'rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-600'
+      }
+    >
+      {requirement === 'REQUIRED' ? 'Obligatorio' : 'Opcional'}
+    </span>
+  );
+}
 
 export function SubmitAssignmentModal({ assignment, onClose, onSubmitted }: SubmitAssignmentModalProps) {
   const [notes, setNotes] = useState('');
   const [url, setUrl] = useState('');
-  const [uploadedKey, setUploadedKey] = useState<string | null>(null);
+  const [files, setFiles] = useState<UploadedFile[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (!assignment) return;
     const existing = assignment.submissions[0];
-    const isUploadedFile = existing?.fileType === 'PDF' || existing?.fileType === 'IMAGE';
     setNotes(existing?.notes || '');
-    setUrl(isUploadedFile ? '' : existing?.fileUrl || '');
-    setUploadedKey(isUploadedFile ? existing?.fileUrl || null : null);
+    setUrl(existing ? (submissionLink(existing) ?? '') : '');
+    setFiles(existing ? submissionFiles(existing).map((f) => ({ key: f.key, name: f.name })) : []);
     setError('');
   }, [assignment]);
 
-  const fields = assignment ? deliveryFields(assignment.deliveryType) : { file: true, link: true, text: false };
   const late = assignment ? isLateSubmission(new Date(), assignment.dueDate) : false;
   const existing = assignment?.submissions[0];
-  const notesLabel =
-    assignment?.deliveryType === 'TEXT'
-      ? 'Tu respuesta'
-      : assignment?.deliveryType === 'ANY'
-        ? 'Tu respuesta escrita (opcional si subes un archivo o un enlace)'
-        : assignment?.notesRequired
-          ? 'Comentario o reflexión (obligatorio)'
-          : 'Comentario para tu mentor/a (opcional)';
+  const wantsFile = assignment?.fileRequirement !== 'NONE';
+  const wantsLink = assignment?.linkRequirement !== 'NONE';
+  const wantsText = assignment?.textRequirement !== 'NONE';
+  const textOnly = !wantsFile && !wantsLink;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!assignment) return;
+    if (uploading) {
+      setError('Espera a que termine de subirse el archivo.');
+      return;
+    }
     const link = url.trim();
     if (link && !link.toLowerCase().startsWith('https://')) {
       setError('El enlace debe empezar por https://');
       return;
     }
-    const problem = validateDelivery(assignment, { notes, fileKey: uploadedKey, link: link || null });
+    const problem = validateDelivery(assignment, { notes, fileCount: files.length, link: link || null });
     if (problem) {
       setError(problem);
       return;
@@ -78,15 +92,18 @@ export function SubmitAssignmentModal({ assignment, onClose, onSubmitted }: Subm
       const res = await fetch('/api/submissions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(
-          uploadedKey
-            ? { assignmentId: assignment.id, notes, fileUrl: uploadedKey, fileType: fileTypeOf(uploadedKey) }
-            : link
-              ? { assignmentId: assignment.id, notes, fileUrl: link, fileType: 'LINK' }
-              : { assignmentId: assignment.id, notes },
-        ),
+        body: JSON.stringify({
+          assignmentId: assignment.id,
+          notes,
+          files: files.map((f) => ({ key: f.key, name: f.name })),
+          link: link || null,
+        }),
       });
 
+      if (res.status === 401) {
+        setError('Tu sesión venció y la entrega NO se envió. Entra de nuevo y vuelve a intentarlo.');
+        return;
+      }
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         setError(data.error || 'No se pudo enviar la entrega. Inténtalo de nuevo.');
@@ -122,7 +139,7 @@ export function SubmitAssignmentModal({ assignment, onClose, onSubmitted }: Subm
       title="Enviar entrega de tarea"
       description={assignment ? `Tarea: ${assignment.title}` : undefined}
     >
-      <form id="submission-form" noValidate onSubmit={handleSubmit} className="space-y-4">
+      <form id="submission-form" noValidate onSubmit={handleSubmit} className="space-y-5">
         {error && (
           <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">
             {error}
@@ -150,72 +167,79 @@ export function SubmitAssignmentModal({ assignment, onClose, onSubmitted }: Subm
           </div>
         )}
 
-        {fields.file && (
-          <div className="space-y-2">
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-700">Archivo</p>
-            <p className="text-xs text-slate-500">{SUBMISSION_FILE_LIMIT}. Un solo archivo.</p>
-            <FileUpload
+        {assignment && wantsFile && (
+          <section className="space-y-2">
+            <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700">
+              {assignment.maxFiles > 1 ? `Archivos (hasta ${assignment.maxFiles})` : 'Archivo'}
+              <RequirementBadge requirement={assignment.fileRequirement} />
+            </p>
+            <FileDropZone
+              inputId="submission-files"
               category="submission"
-              accept=".pdf,.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp,application/pdf"
-              label="Subir foto o PDF"
-              onUploaded={(key) => {
-                setUploadedKey(key);
-                setUrl('');
+              value={files}
+              onChange={(next) => {
+                setFiles(next);
                 setError('');
               }}
+              maxFiles={assignment.maxFiles}
+              onBusyChange={setUploading}
             />
-            {uploadedKey && (
-              <p className="text-xs font-semibold text-emerald-700">
-                Archivo listo para enviar. Puedes subir otro para reemplazarlo.
-              </p>
-            )}
-          </div>
+          </section>
         )}
 
-        {fields.link && (
-          <details className="rounded-xl border border-slate-200 p-3 text-xs" open={Boolean(url) || !fields.file}>
-            <summary className="cursor-pointer font-semibold text-slate-600">
-              {fields.file ? '¿Prefieres enviar un enlace (Google Drive, Docs, Canva)?' : 'Enlace de tu trabajo'}
-            </summary>
-            <div className="mt-3">
-              <Input
-                label="Enlace de tu trabajo"
-                type="url"
-                placeholder="https://docs.google.com/..."
-                value={url}
-                disabled={Boolean(uploadedKey)}
-                onChange={(e) => setUrl(e.target.value)}
-                hint={uploadedKey ? 'Ya subiste un archivo; el enlace queda desactivado.' : 'Debe empezar por https://'}
-              />
-            </div>
-          </details>
+        {assignment && wantsLink && (
+          <section className="space-y-2">
+            <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700">
+              Enlace
+              <RequirementBadge requirement={assignment.linkRequirement} />
+            </p>
+            <Input
+              aria-label="Enlace de tu trabajo"
+              type="url"
+              placeholder="https://docs.google.com/..."
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              hint="Google Drive, Docs, Canva, YouTube... Debe empezar por https://"
+            />
+          </section>
         )}
 
-        {
-          <Textarea
-            label={notesLabel}
-            rows={assignment?.deliveryType === 'TEXT' ? 8 : 4}
-            placeholder={
-              assignment?.deliveryType === 'TEXT'
-                ? 'Escribe aquí tu respuesta...'
-                : 'Escribe tu reflexión, comentarios o resumen del trabajo realizado...'
-            }
-            hint={
-              assignment?.deliveryType === 'TEXT' || assignment?.deliveryType === 'ANY'
-                ? `${notes.trim().length} caracteres (mínimo ${TEXT_MIN_LENGTH} si solo respondes con texto).`
-                : undefined
-            }
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
-        }
+        {assignment && wantsText && (
+          <section className="space-y-2">
+            <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700">
+              {textOnly ? 'Tu respuesta' : 'Texto o comentario'}
+              <RequirementBadge requirement={assignment.textRequirement} />
+            </p>
+            <Textarea
+              aria-label={textOnly ? 'Tu respuesta' : 'Texto o comentario para tu mentor/a'}
+              rows={textOnly ? 8 : 4}
+              placeholder={
+                textOnly
+                  ? 'Escribe aquí tu respuesta...'
+                  : 'Escribe tu reflexión, comentarios o resumen del trabajo realizado...'
+              }
+              hint={
+                textOnly
+                  ? `${notes.trim().length} caracteres (mínimo ${TEXT_MIN_LENGTH}).`
+                  : `${notes.trim().length} caracteres.`
+              }
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </section>
+        )}
       </form>
 
       <div className="mt-5 flex items-center justify-end gap-3 border-t border-slate-100 pt-5">
         <Button variant="ghost" onClick={onClose} disabled={sending}>
           Cancelar
         </Button>
-        <Button type="submit" form="submission-form" loading={sending} disabled={late && !assignment?.allowLate}>
+        <Button
+          type="submit"
+          form="submission-form"
+          loading={sending}
+          disabled={(late && !assignment?.allowLate) || uploading}
+        >
           Enviar entrega
         </Button>
       </div>

@@ -4,11 +4,41 @@ import prisma from '@/lib/prisma';
 import { notifyMany } from '@/lib/notifications';
 import { deleteObject, keyBelongsTo, verifyUploadedObject } from '@/lib/s3';
 import { createSubmissionSchema, gradeSubmissionSchema } from '@/lib/schemas';
-import { isLateSubmission, NOTES_MAX_LENGTH, validateDelivery } from '@/lib/delivery';
+import { isLateSubmission, NOTES_MAX_LENGTH, submissionFiles, validateDelivery } from '@/lib/delivery';
+import { ATTACHMENT_MAX_MB, nameFromKey } from '@/lib/file-types';
 import { cleanText, parseHttpsUrl } from '@/lib/validators';
 
+/** Archivos y enlace que llegan en la petición, en la forma nueva o en la antigua (un solo archivo o enlace). */
+function parseDelivered(body: {
+  files?: { key: string; name: string }[];
+  link?: string | null;
+  fileUrl?: string | null;
+  fileType?: string;
+}) {
+  let files = body.files ?? [];
+  let rawLink = body.link?.trim() || null;
+  const legacy = body.fileUrl?.trim() || null;
+  if (legacy && files.length === 0 && !rawLink) {
+    if (body.fileType === 'PDF' || body.fileType === 'IMAGE' || body.fileType === 'DOC') {
+      files = [{ key: legacy, name: nameFromKey(legacy) }];
+    } else {
+      rawLink = legacy;
+    }
+  }
+  if (new Set(files.map((f) => f.key)).size !== files.length) {
+    throw new HttpError(400, 'Hay un archivo repetido en tu entrega.');
+  }
+  let link: string | null = null;
+  if (rawLink) {
+    link = parseHttpsUrl(rawLink);
+    if (!link) throw new HttpError(400, 'El enlace debe ser una URL https válida.');
+  }
+  return { files, link };
+}
+
 export const POST = withAuth('submissions POST', ['STUDENT'], async (req, user) => {
-  const { assignmentId, notes, fileUrl, fileType } = await parseBody(req, createSubmissionSchema);
+  const body = await parseBody(req, createSubmissionSchema);
+  const { assignmentId, notes } = body;
 
   const assignment = await prisma.assignment.findUnique({
     where: { id: assignmentId },
@@ -16,9 +46,11 @@ export const POST = withAuth('submissions POST', ['STUDENT'], async (req, user) 
       classId: true,
       title: true,
       dueDate: true,
-      deliveryType: true,
-      notesRequired: true,
       allowLate: true,
+      fileRequirement: true,
+      linkRequirement: true,
+      textRequirement: true,
+      maxFiles: true,
       classSession: { select: { mentorId: true } },
     },
   });
@@ -36,59 +68,51 @@ export const POST = withAuth('submissions POST', ['STUDENT'], async (req, user) 
     throw new HttpError(403, 'La fecha límite ya pasó y esta tarea no recibe entregas tardías.');
   }
 
-  // Qué entregó: un archivo subido (PDF o imagen), un enlace, y/o texto. Después se compara con lo que pide la tarea.
+  // Qué entregó (archivos subidos, enlace y/o texto) frente a lo que pide la tarea.
   const cleanNotes = cleanText(notes ?? '', NOTES_MAX_LENGTH) ?? '';
-  const rawFile = fileUrl?.trim() ? fileUrl.trim() : null;
-  const isUpload = fileType === 'PDF' || fileType === 'IMAGE';
-  let link: string | null = null;
-  if (rawFile && !isUpload) {
-    link = parseHttpsUrl(rawFile);
-    if (!link) throw new HttpError(400, 'El enlace debe ser una URL https válida.');
-  }
-  const fileKey = isUpload && rawFile ? rawFile : null;
-  if (isUpload && !rawFile) throw new HttpError(400, 'Sube un PDF o una imagen de tu trabajo.');
-
-  const deliveryError = validateDelivery(assignment, { notes: cleanNotes, fileKey, link });
+  const { files, link } = parseDelivered(body);
+  const deliveryError = validateDelivery(assignment, { notes: cleanNotes, fileCount: files.length, link });
   if (deliveryError) throw new HttpError(400, deliveryError);
 
-  if (
-    fileKey &&
-    (!keyBelongsTo(fileKey, 'submission', user.id) || !(await verifyUploadedObject(fileKey, 'submission')))
-  ) {
-    throw new HttpError(400, 'El archivo no es válido. Sube un PDF o una imagen de hasta 15 MB.');
+  for (const file of files) {
+    if (!keyBelongsTo(file.key, 'submission', user.id) || !(await verifyUploadedObject(file.key, 'submission'))) {
+      throw new HttpError(
+        400,
+        `El archivo "${file.name}" no es válido. Sube un PDF, una imagen o un documento de Office de hasta ${ATTACHMENT_MAX_MB} MB.`,
+      );
+    }
   }
-  const storedFile = fileKey ?? link;
-  const type = fileKey ? fileType : link ? 'LINK' : null;
 
   // Una entrega calificada queda cerrada: la mentora debe reabrirla quitando la nota.
   const previous = await prisma.submission.findUnique({
     where: { assignmentId_studentId: { assignmentId, studentId: user.id } },
-    select: { grade: true, fileUrl: true, fileType: true },
+    select: { grade: true, fileUrl: true, fileType: true, fileKeys: true, fileNames: true },
   });
   if (previous && previous.grade !== null) {
     throw new HttpError(409, 'Esta entrega ya fue calificada y no se puede modificar.');
   }
 
+  // La entrega nueva usa las columnas nuevas; las de la forma antigua (fileUrl, fileType) quedan vacías.
+  const data = {
+    notes: cleanNotes,
+    fileKeys: files.map((f) => f.key),
+    fileNames: files.map((f) => cleanText(f.name, 120) ?? nameFromKey(f.key)),
+    linkUrl: link,
+    fileUrl: null,
+    fileType: null,
+    submittedAt: now,
+  };
   const submission = await prisma.submission.upsert({
     where: { assignmentId_studentId: { assignmentId, studentId: user.id } },
-    update: { notes: cleanNotes, fileUrl: storedFile, fileType: type, submittedAt: now },
-    create: {
-      assignmentId,
-      studentId: user.id,
-      notes: cleanNotes,
-      fileUrl: storedFile,
-      fileType: type,
-      submittedAt: now,
-    },
+    update: data,
+    create: { assignmentId, studentId: user.id, ...data },
   });
 
-  // Si se reemplazó el archivo subido, el anterior se elimina del almacenamiento.
-  if (
-    previous?.fileUrl &&
-    previous.fileUrl !== storedFile &&
-    (previous.fileType === 'PDF' || previous.fileType === 'IMAGE')
-  ) {
-    await deleteObject(previous.fileUrl).catch(() => undefined);
+  // Los archivos que ya no forman parte de la entrega se eliminan del almacenamiento.
+  if (previous) {
+    const kept = new Set(files.map((f) => f.key));
+    const replaced = submissionFiles(previous).filter((f) => !kept.has(f.key));
+    await Promise.all(replaced.map((f) => deleteObject(f.key).catch(() => undefined)));
   }
 
   // Aviso a la mentora de la clase.
@@ -115,7 +139,7 @@ export const DELETE = withAuth('submissions DELETE', ['STUDENT'], async (req, us
 
   const submission = await prisma.submission.findUnique({
     where: { assignmentId_studentId: { assignmentId, studentId: user.id } },
-    select: { id: true, grade: true, fileUrl: true, fileType: true },
+    select: { id: true, grade: true, fileUrl: true, fileType: true, fileKeys: true, fileNames: true },
   });
   if (!submission) throw new HttpError(404, 'No has entregado esta tarea.');
   if (submission.grade !== null) {
@@ -123,9 +147,7 @@ export const DELETE = withAuth('submissions DELETE', ['STUDENT'], async (req, us
   }
 
   await prisma.submission.delete({ where: { id: submission.id } });
-  if (submission.fileUrl && (submission.fileType === 'PDF' || submission.fileType === 'IMAGE')) {
-    await deleteObject(submission.fileUrl).catch(() => undefined);
-  }
+  await Promise.all(submissionFiles(submission).map((f) => deleteObject(f.key).catch(() => undefined)));
   return NextResponse.json({ success: true });
 });
 

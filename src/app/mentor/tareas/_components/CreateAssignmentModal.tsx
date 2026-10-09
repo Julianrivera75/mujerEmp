@@ -2,15 +2,22 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, CheckCircle2, FileText, Users, X } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, FileText, Users } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Input, Select, Textarea } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
-import FileUpload from '@/components/FileUpload';
+import { FileDropZone, type UploadedFile } from '@/components/FileDropZone';
 import { DateField } from '@/components/ui/DateField';
 import { cn } from '@/lib/cn';
+import { ATTACHMENT_MAX_MB, ATTACHMENT_TYPES_LABEL } from '@/lib/file-types';
 import { logClientError } from '@/lib/client-log';
-import { DELIVERY_OPTIONS, describeDelivery, TEXT_MIN_LENGTH, type DeliveryType } from '@/lib/delivery';
+import {
+  DELIVERY_PRESETS,
+  describeDelivery,
+  hasDeliveryChoice,
+  MAX_FILES_LIMIT,
+  type Requirement,
+} from '@/lib/delivery';
 import { describeInputDate } from '@/lib/format';
 import { localInputValue } from '@/lib/months';
 import type { Assignment } from '../types';
@@ -31,7 +38,7 @@ interface CreateAssignmentModalProps {
   onSaved: (assignmentId: string) => void;
 }
 
-type FieldKey = 'classId' | 'title' | 'description' | 'dueDate';
+type FieldKey = 'classId' | 'title' | 'description' | 'dueDate' | 'delivery';
 
 /** Archivo con las instrucciones: uno recién subido (con clave) o el que ya tenía la tarea (sin clave). */
 interface Attachment {
@@ -52,18 +59,81 @@ interface Draft {
   title: string;
   description: string;
   dueDate: string;
-  deliveryType: DeliveryType;
-  notesRequired: boolean;
+  fileRequirement: Requirement;
+  linkRequirement: Requirement;
+  textRequirement: Requirement;
+  maxFiles: number;
   allowLate: boolean;
 }
 
 const DRAFT_KEY = 'tarea-borrador';
-const FIELD_ORDER: FieldKey[] = ['classId', 'title', 'description', 'dueDate'];
+const FIELD_ORDER: FieldKey[] = ['classId', 'title', 'description', 'delivery', 'dueDate'];
 const DUE_SHORTCUTS = [
   { label: 'En 3 días', days: 3 },
   { label: 'En 1 semana', days: 7 },
   { label: 'En 2 semanas', days: 14 },
 ];
+
+const EXISTING_KEY = '__existente__';
+
+const REQUIREMENT_LABELS: Record<Requirement, string> = {
+  NONE: 'No pedir',
+  OPTIONAL: 'Opcional',
+  REQUIRED: 'Obligatorio',
+};
+
+/** Una fila de la sección "¿Qué deben entregar?": el tipo y un selector No pedir / Opcional / Obligatorio. */
+function RequirementRow({
+  title,
+  help,
+  value,
+  onChange,
+  children,
+}: {
+  title: string;
+  help: string;
+  value: Requirement;
+  onChange: (value: Requirement) => void;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        'space-y-2 rounded-xl border p-3',
+        value === 'NONE' ? 'border-slate-200' : 'border-role-accent bg-role-soft/60',
+      )}
+    >
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-sm font-bold text-slate-800">{title}</p>
+          <p className="text-xs text-slate-600">{help}</p>
+        </div>
+        <div
+          role="radiogroup"
+          aria-label={title}
+          className="flex flex-shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-white"
+        >
+          {(['NONE', 'OPTIONAL', 'REQUIRED'] as const).map((option) => (
+            <button
+              key={option}
+              type="button"
+              role="radio"
+              aria-checked={value === option}
+              onClick={() => onChange(option)}
+              className={cn(
+                'px-3 py-1.5 text-xs font-bold transition-colors',
+                value === option ? 'bg-role-ink text-white' : 'text-slate-600 hover:bg-slate-50',
+              )}
+            >
+              {REQUIREMENT_LABELS[option]}
+            </button>
+          ))}
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}
 
 const readDraft = (): Draft | null => {
   try {
@@ -98,8 +168,10 @@ export function CreateAssignmentModal({ open, classes, editing, onClose, onSaved
   const [attachment, setAttachment] = useState<Attachment | null>(null);
   const [attachmentTouched, setAttachmentTouched] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
-  const [deliveryType, setDeliveryType] = useState<DeliveryType>('FILE_OR_LINK');
-  const [notesRequired, setNotesRequired] = useState(true);
+  const [fileReq, setFileReq] = useState<Requirement>('OPTIONAL');
+  const [linkReq, setLinkReq] = useState<Requirement>('OPTIONAL');
+  const [textReq, setTextReq] = useState<Requirement>('REQUIRED');
+  const [maxFiles, setMaxFiles] = useState(1);
   const [allowLate, setAllowLate] = useState(true);
   const [errors, setErrors] = useState<Errors>({});
   const [formError, setFormError] = useState('');
@@ -127,8 +199,10 @@ export function CreateAssignmentModal({ open, classes, editing, onClose, onSaved
       setTitle(editing.title);
       setDescription(editing.description);
       setDueDate(localInputValue(new Date(editing.dueDate)));
-      setDeliveryType(editing.deliveryType ?? 'FILE_OR_LINK');
-      setNotesRequired(editing.notesRequired ?? true);
+      setFileReq(editing.fileRequirement ?? 'OPTIONAL');
+      setLinkReq(editing.linkRequirement ?? 'OPTIONAL');
+      setTextReq(editing.textRequirement ?? 'REQUIRED');
+      setMaxFiles(editing.maxFiles ?? 1);
       setAllowLate(editing.allowLate ?? true);
       return;
     }
@@ -138,8 +212,10 @@ export function CreateAssignmentModal({ open, classes, editing, onClose, onSaved
     setTitle(draft?.title ?? '');
     setDescription(draft?.description ?? '');
     setDueDate(draft?.dueDate ?? '');
-    setDeliveryType(draft?.deliveryType ?? 'FILE_OR_LINK');
-    setNotesRequired(draft?.notesRequired ?? true);
+    setFileReq(draft?.fileRequirement ?? 'OPTIONAL');
+    setLinkReq(draft?.linkRequirement ?? 'OPTIONAL');
+    setTextReq(draft?.textRequirement ?? 'REQUIRED');
+    setMaxFiles(draft?.maxFiles ?? 1);
     setAllowLate(draft?.allowLate ?? true);
   }, [open, editing]);
 
@@ -152,14 +228,25 @@ export function CreateAssignmentModal({ open, classes, editing, onClose, onSaved
   useEffect(() => {
     if (!open || editing || phase === 'done') return;
     if (!title && !description && !dueDate) return;
-    writeDraft({ classId, title, description, dueDate, deliveryType, notesRequired, allowLate });
-  }, [open, editing, phase, classId, title, description, dueDate, deliveryType, notesRequired, allowLate]);
+    writeDraft({
+      classId,
+      title,
+      description,
+      dueDate,
+      fileRequirement: fileReq,
+      linkRequirement: linkReq,
+      textRequirement: textReq,
+      maxFiles,
+      allowLate,
+    });
+  }, [open, editing, phase, classId, title, description, dueDate, fileReq, linkReq, textReq, maxFiles, allowLate]);
 
   const selectedClass = useMemo(() => classes.find((c) => c.id === classId) ?? null, [classes, classId]);
   const students = editing ? [] : (selectedClass?.students ?? []);
   const dueText = describeInputDate(dueDate, true);
   const existingSubmissions = editing?.submissions.length ?? 0;
-  const requestText = describeDelivery({ deliveryType, notesRequired });
+  const delivery = { fileRequirement: fileReq, linkRequirement: linkReq, textRequirement: textReq, maxFiles };
+  const requestText = describeDelivery(delivery);
 
   const validate = (): Errors => {
     const next: Errors = {};
@@ -168,6 +255,7 @@ export function CreateAssignmentModal({ open, classes, editing, onClose, onSaved
     if (description.trim().length < 10 && !attachment) {
       next.description = 'Escribe las instrucciones (mínimo 10 caracteres) o adjunta un archivo con ellas.';
     }
+    if (!hasDeliveryChoice(delivery)) next.delivery = 'Elige al menos una forma de entrega: archivo, enlace o texto.';
     if (!dueDate) next.dueDate = 'Elige la fecha y también la hora y los minutos (AM/PM) de entrega.';
     else if (
       new Date(dueDate).getTime() < Date.now() &&
@@ -209,8 +297,7 @@ export function CreateAssignmentModal({ open, classes, editing, onClose, onSaved
         title,
         description,
         dueDate: due,
-        deliveryType,
-        notesRequired,
+        ...delivery,
         allowLate,
         // Al editar, sin cambios en el archivo no se envía (se conserva); `null` lo quita.
         ...(!editing || attachmentTouched
@@ -438,100 +525,98 @@ export function CreateAssignmentModal({ open, classes, editing, onClose, onSaved
               hint={`${description.trim().length} / 4000 caracteres. ${attachment ? 'Opcional: ya adjuntaste un archivo con las instrucciones.' : 'Sé específica: las estudiantes verán esto tal cual.'}`}
             />
 
-            <div className="space-y-2 rounded-xl border border-dashed border-slate-300 p-3">
+            <div className="space-y-2 rounded-xl border border-slate-200 p-3">
               <p className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                ¿Las instrucciones están en un PDF? Adjúntalo aquí
+                ¿Las instrucciones están en un PDF o documento? Súbelo aquí
               </p>
               <p className="text-xs text-slate-500">
-                Opcional si ya escribiste las instrucciones. PDF o imagen (JPG, PNG, WebP) de hasta 15 MB. Las
-                estudiantes inscritas podrán abrirlo desde la tarea.
+                Opcional si ya escribiste las instrucciones. Las estudiantes inscritas podrán abrirlo desde la tarea.
               </p>
-              {attachment && (
-                <div className="flex items-center gap-2 rounded-xl bg-role-soft px-3 py-2 text-xs font-semibold text-role-ink">
-                  <FileText className="h-4 w-4 flex-shrink-0" />
-                  <span className="min-w-0 flex-1 truncate">{attachment.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAttachment(null);
-                      setAttachmentTouched(true);
-                    }}
-                    aria-label="Quitar el archivo de instrucciones"
-                    className="rounded-full p-1 hover:bg-white/70"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              )}
-              <FileUpload
+              <FileDropZone
+                inputId="task-instructions-file"
                 category="assignment"
-                resetOnUploaded
-                accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
-                label={attachment ? 'Reemplazar el archivo' : 'Subir PDF con las instrucciones'}
-                onBusyChange={setUploadingFile}
-                onUploaded={(key, name) => {
-                  setAttachment({ key, name });
+                maxFiles={1}
+                value={attachment ? [{ key: attachment.key ?? EXISTING_KEY, name: attachment.name }] : []}
+                onChange={(next: UploadedFile[]) => {
+                  const file = next[0];
+                  setAttachment(file ? { key: file.key, name: file.name } : null);
                   setAttachmentTouched(true);
-                  setErrors((prev) => ({ ...prev, description: undefined }));
+                  if (file) setErrors((prev) => ({ ...prev, description: undefined }));
                 }}
+                onBusyChange={setUploadingFile}
               />
             </div>
           </section>
 
           <section className="space-y-3">
             <h3 className="text-sm font-black text-slate-800">3. ¿Qué deben entregar?</h3>
-            <fieldset className="space-y-2">
-              <legend className="sr-only">Tipo de entrega</legend>
-              {DELIVERY_OPTIONS.map((o) => (
-                <div
-                  key={o.value}
-                  className={cn(
-                    'flex items-start gap-3 rounded-xl border p-3 text-xs transition-colors',
-                    deliveryType === o.value ? 'border-role-accent bg-role-soft' : 'border-slate-200 hover:bg-slate-50',
-                  )}
+            <p className="text-xs text-slate-600">
+              Combina lo que quieras: para cada tipo elige si no se pide, es opcional u obligatorio.
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold text-slate-500">Atajos:</span>
+              {DELIVERY_PRESETS.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => {
+                    setFileReq(p.config.fileRequirement);
+                    setLinkReq(p.config.linkRequirement);
+                    setTextReq(p.config.textRequirement);
+                    setErrors((prev) => ({ ...prev, delivery: undefined }));
+                  }}
+                  className="rounded-full border border-slate-200 px-3 py-1 text-xs font-bold text-slate-700 hover:bg-role-soft"
                 >
-                  <input
-                    id={`delivery-${o.value}`}
-                    type="radio"
-                    name="deliveryType"
-                    value={o.value}
-                    checked={deliveryType === o.value}
-                    onChange={() => setDeliveryType(o.value)}
-                    aria-describedby={`delivery-${o.value}-help`}
-                    className="mt-0.5 h-4 w-4 text-role-ink"
-                  />
-                  <div>
-                    <label
-                      htmlFor={`delivery-${o.value}`}
-                      className="block cursor-pointer text-sm font-bold text-slate-800"
-                    >
-                      {o.label}
-                    </label>
-                    <p id={`delivery-${o.value}-help`} className="text-slate-600">
-                      {o.help}
-                    </p>
-                  </div>
-                </div>
+                  {p.label}
+                </button>
               ))}
-            </fieldset>
-            {deliveryType === 'TEXT' ? (
-              <p className="text-xs text-slate-500">
-                La respuesta escrita es lo que entregan (mínimo {TEXT_MIN_LENGTH} caracteres).
+            </div>
+
+            <div id="task-delivery" className="space-y-2">
+              <RequirementRow
+                title="Archivo"
+                help={`${ATTACHMENT_TYPES_LABEL}, hasta ${ATTACHMENT_MAX_MB} MB cada uno.`}
+                value={fileReq}
+                onChange={setFileReq}
+              >
+                {fileReq !== 'NONE' && (
+                  <label className="flex items-center gap-2 text-xs text-slate-700">
+                    Máximo de archivos:
+                    <select
+                      value={maxFiles}
+                      onChange={(e) => setMaxFiles(Number(e.target.value))}
+                      className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-bold"
+                    >
+                      {Array.from({ length: MAX_FILES_LIMIT }, (_, i) => i + 1).map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+              </RequirementRow>
+              <RequirementRow
+                title="Enlace"
+                help="Un enlace que empiece por https:// (Drive, Docs, Canva, YouTube...)."
+                value={linkReq}
+                onChange={setLinkReq}
+              />
+              <RequirementRow
+                title="Texto escrito"
+                help="Una respuesta o comentario escrito en la plataforma (si es lo único que se pide, mínimo 20 caracteres)."
+                value={textReq}
+                onChange={setTextReq}
+              />
+            </div>
+            {errors.delivery && (
+              <p role="alert" className="text-xs font-semibold text-rose-600">
+                {errors.delivery}
               </p>
-            ) : (
-              <label className="flex cursor-pointer items-start gap-2.5 text-xs text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={notesRequired}
-                  onChange={(e) => setNotesRequired(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded text-role-ink"
-                />
-                <span>
-                  <strong>Pedir además un comentario o reflexión</strong> (obligatorio): la estudiante debe escribir
-                  unas líneas junto a su entrega.
-                </span>
-              </label>
             )}
+            <p className="rounded-xl bg-role-soft p-3 text-xs text-slate-700" aria-live="polite">
+              <strong>La estudiante deberá entregar:</strong> {requestText}.
+            </p>
           </section>
 
           <section className="space-y-3">
