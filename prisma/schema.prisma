@@ -199,7 +199,7 @@ model Assignment {
   fileRequirement DeliveryRequirement @default(OPTIONAL)
   linkRequirement DeliveryRequirement @default(OPTIONAL)
   textRequirement DeliveryRequirement @default(REQUIRED)
-  maxFiles        Int                 @default(1)
+  maxFiles        Int                 @default(3)
   // Archivo opcional con las instrucciones de la tarea (clave en el almacenamiento y nombre original)
   attachmentKey   String?
   attachmentName  String?

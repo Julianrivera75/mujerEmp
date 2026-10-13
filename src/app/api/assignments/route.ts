@@ -8,7 +8,7 @@ import { notifyMany } from '@/lib/notifications';
 import { createPresignedDownloadUrl, deleteObject, keyBelongsTo, verifyUploadedObject } from '@/lib/s3';
 import { createAssignmentSchema, updateAssignmentSchema } from '@/lib/schemas';
 import { opensInBrowser } from '@/lib/file-types';
-import { type DeliveryConfig, hasDeliveryChoice, legacyRequirements, submissionFiles } from '@/lib/delivery';
+import { type DeliveryConfig, effectiveRequirement, legacyRequirements, submissionFiles } from '@/lib/delivery';
 
 export const dynamic = 'force-dynamic';
 
@@ -121,11 +121,13 @@ function resolveDelivery(
   } else {
     config = current;
   }
-  if (!hasDeliveryChoice(config)) {
-    const message = 'Elige al menos una forma de entrega: archivo, enlace o texto.';
-    throw new HttpError(400, message, undefined, { fields: { delivery: message } });
-  }
-  return config;
+  // La entrega siempre está abierta: "no se pide" se guarda como opcional.
+  return {
+    ...config,
+    fileRequirement: effectiveRequirement(config.fileRequirement),
+    linkRequirement: effectiveRequirement(config.linkRequirement),
+    textRequirement: effectiveRequirement(config.textRequirement),
+  };
 }
 
 /** Lo que pide una tarea nueva si no se indica nada (como siempre: archivo o enlace, con comentario). */
@@ -133,7 +135,7 @@ const DEFAULT_DELIVERY: DeliveryConfig = {
   fileRequirement: 'OPTIONAL',
   linkRequirement: 'OPTIONAL',
   textRequirement: 'REQUIRED',
-  maxFiles: 1,
+  maxFiles: 3,
 };
 
 const mustBeFuture = (dueDate: Date) => {

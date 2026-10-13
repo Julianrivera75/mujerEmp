@@ -17,7 +17,7 @@ import { logClientError } from '@/lib/client-log';
 import {
   DELIVERY_PRESETS,
   describeDelivery,
-  hasDeliveryChoice,
+  effectiveRequirement,
   MAX_FILES_LIMIT,
   type Requirement,
 } from '@/lib/delivery';
@@ -80,12 +80,12 @@ const DUE_SHORTCUTS = [
 const EXISTING_KEY = '__existente__';
 
 const REQUIREMENT_LABELS: Record<Requirement, string> = {
-  NONE: 'No pedir',
+  NONE: 'Opcional',
   OPTIONAL: 'Opcional',
   REQUIRED: 'Obligatorio',
 };
 
-/** Una fila de la sección "¿Qué deben entregar?": el tipo y un selector No pedir / Opcional / Obligatorio. */
+/** Una fila de la sección "¿Qué deben entregar?": el tipo y un selector Opcional / Obligatorio. */
 function RequirementRow({
   title,
   help,
@@ -103,7 +103,7 @@ function RequirementRow({
     <div
       className={cn(
         'space-y-2 rounded-xl border p-3',
-        value === 'NONE' ? 'border-slate-200' : 'border-role-accent bg-role-soft/60',
+        value === 'REQUIRED' ? 'border-role-accent bg-role-soft/60' : 'border-slate-200',
       )}
     >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -116,16 +116,16 @@ function RequirementRow({
           aria-label={title}
           className="flex flex-shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-white"
         >
-          {(['NONE', 'OPTIONAL', 'REQUIRED'] as const).map((option) => (
+          {(['OPTIONAL', 'REQUIRED'] as const).map((option) => (
             <button
               key={option}
               type="button"
               role="radio"
-              aria-checked={value === option}
+              aria-checked={effectiveRequirement(value) === option}
               onClick={() => onChange(option)}
               className={cn(
                 'px-3 py-1.5 text-xs font-bold transition-colors',
-                value === option ? 'bg-role-ink text-white' : 'text-slate-600 hover:bg-slate-50',
+                effectiveRequirement(value) === option ? 'bg-role-ink text-white' : 'text-slate-600 hover:bg-slate-50',
               )}
             >
               {REQUIREMENT_LABELS[option]}
@@ -174,7 +174,7 @@ export function CreateAssignmentModal({ open, classes, editing, onClose, onSaved
   const [fileReq, setFileReq] = useState<Requirement>('OPTIONAL');
   const [linkReq, setLinkReq] = useState<Requirement>('OPTIONAL');
   const [textReq, setTextReq] = useState<Requirement>('REQUIRED');
-  const [maxFiles, setMaxFiles] = useState(1);
+  const [maxFiles, setMaxFiles] = useState(3);
   const [allowLate, setAllowLate] = useState(true);
   const [errors, setErrors] = useState<Errors>({});
   const [formError, setFormError] = useState('');
@@ -205,7 +205,7 @@ export function CreateAssignmentModal({ open, classes, editing, onClose, onSaved
       setFileReq(editing.fileRequirement ?? 'OPTIONAL');
       setLinkReq(editing.linkRequirement ?? 'OPTIONAL');
       setTextReq(editing.textRequirement ?? 'REQUIRED');
-      setMaxFiles(editing.maxFiles ?? 1);
+      setMaxFiles(editing.maxFiles ?? 3);
       setAllowLate(editing.allowLate ?? true);
       return;
     }
@@ -218,7 +218,7 @@ export function CreateAssignmentModal({ open, classes, editing, onClose, onSaved
     setFileReq(draft?.fileRequirement ?? 'OPTIONAL');
     setLinkReq(draft?.linkRequirement ?? 'OPTIONAL');
     setTextReq(draft?.textRequirement ?? 'REQUIRED');
-    setMaxFiles(draft?.maxFiles ?? 1);
+    setMaxFiles(draft?.maxFiles ?? 3);
     setAllowLate(draft?.allowLate ?? true);
   }, [open, editing]);
 
@@ -263,7 +263,6 @@ export function CreateAssignmentModal({ open, classes, editing, onClose, onSaved
     if (description.trim().length < 10 && !attachment) {
       next.description = 'Escribe las instrucciones (mínimo 10 caracteres) o adjunta un archivo con ellas.';
     }
-    if (!hasDeliveryChoice(delivery)) next.delivery = 'Elige al menos una forma de entrega: archivo, enlace o texto.';
     if (!dueDate) next.dueDate = 'Elige la fecha y también la hora y los minutos (AM/PM) de entrega.';
     else if (
       new Date(dueDate).getTime() < Date.now() &&
@@ -572,7 +571,8 @@ export function CreateAssignmentModal({ open, classes, editing, onClose, onSaved
           <section className="space-y-3">
             <h3 className="text-sm font-black text-slate-800">3. ¿Qué deben entregar?</h3>
             <p className="text-xs text-slate-600">
-              Combina lo que quieras: para cada tipo elige si no se pide, es opcional u obligatorio.
+              La estudiante siempre podrá subir archivos, pegar un enlace (por ejemplo, de un video) y escribir un
+              texto. Aquí solo eliges qué es obligatorio.
             </p>
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-semibold text-slate-500">Atajos:</span>
@@ -600,7 +600,7 @@ export function CreateAssignmentModal({ open, classes, editing, onClose, onSaved
                 value={fileReq}
                 onChange={setFileReq}
               >
-                {fileReq !== 'NONE' && (
+                {
                   <label className="flex items-center gap-2 text-xs text-slate-700">
                     Máximo de archivos:
                     <select
@@ -615,17 +615,17 @@ export function CreateAssignmentModal({ open, classes, editing, onClose, onSaved
                       ))}
                     </select>
                   </label>
-                )}
+                }
               </RequirementRow>
               <RequirementRow
                 title="Enlace"
-                help="Un enlace que empiece por https:// (Drive, Docs, Canva, YouTube...)."
+                help="Un enlace que empiece por https:// (video de YouTube, Drive, Docs, Canva...)."
                 value={linkReq}
                 onChange={setLinkReq}
               />
               <RequirementRow
                 title="Texto escrito"
-                help="Una respuesta o comentario escrito en la plataforma (si es lo único que se pide, mínimo 20 caracteres)."
+                help="Una respuesta o comentario escrito en la plataforma (si es lo único obligatorio, mínimo 20 caracteres)."
                 value={textReq}
                 onChange={setTextReq}
               />
@@ -636,7 +636,7 @@ export function CreateAssignmentModal({ open, classes, editing, onClose, onSaved
               </p>
             )}
             <p className="rounded-xl bg-role-soft p-3 text-xs text-slate-700" aria-live="polite">
-              <strong>La estudiante deberá entregar:</strong> {requestText}.
+              <strong>La estudiante entregará:</strong> {requestText}.
             </p>
           </section>
 

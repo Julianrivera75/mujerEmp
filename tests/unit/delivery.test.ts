@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   describeDelivery,
-  hasDeliveryChoice,
   legacyRequirements,
   submissionFiles,
   submissionLink,
@@ -79,33 +78,38 @@ describe('reglas de la entrega', () => {
     expect(validateDelivery(c, { notes: 'x', fileCount: 3, link: null })).toContain('hasta 2');
   });
 
-  it('con todo opcional basta con uno, y lo que no se pide se rechaza', () => {
-    const c = cfg('OPTIONAL', 'OPTIONAL', 'NONE');
+  it('con todo opcional basta con uno', () => {
+    const c = cfg('OPTIONAL', 'OPTIONAL', 'OPTIONAL');
     expect(validateDelivery(c, { notes: '', fileCount: 0, link: null })).toContain('No has entregado nada');
     expect(validateDelivery(c, { notes: '', fileCount: 0, link: 'https://x.co' })).toBeNull();
-    expect(validateDelivery(c, { notes: 'texto', fileCount: 1, link: null })).toContain('no recibe texto');
   });
 
-  it('si solo se pide texto, pide 20 caracteres', () => {
+  it('archivos, enlace y texto se pueden entregar juntos aunque la tarea no los pida', () => {
+    const c = cfg('REQUIRED', 'NONE', 'NONE', 3);
+    expect(validateDelivery(c, { notes: 'mi comentario', fileCount: 2, link: 'https://youtu.be/x' })).toBeNull();
+    expect(validateDelivery(cfg('NONE', 'NONE', 'NONE', 3), { notes: '', fileCount: 3, link: null })).toBeNull();
+    expect(validateDelivery(c, { notes: 'solo texto', fileCount: 0, link: 'https://youtu.be/x' })).toContain('archivo');
+  });
+
+  it('si solo se exige texto y no hay archivo ni enlace, pide 20 caracteres', () => {
     const c = cfg('NONE', 'NONE', 'REQUIRED');
     expect(validateDelivery(c, { notes: 'corto', fileCount: 0, link: null })).toContain('mínimo 20');
     expect(validateDelivery(c, { notes: 'a'.repeat(20), fileCount: 0, link: null })).toBeNull();
+    expect(validateDelivery(c, { notes: 'corto', fileCount: 1, link: null })).toBeNull();
   });
 
   it('describe lo que se pide en una frase', () => {
-    expect(describeDelivery(cfg('REQUIRED', 'NONE', 'NONE'))).toBe('un archivo');
-    expect(describeDelivery(cfg('REQUIRED', 'NONE', 'NONE', 3))).toBe('archivos (hasta 3)');
-    expect(describeDelivery(cfg('OPTIONAL', 'OPTIONAL', 'NONE'))).toContain('al menos una de estas opciones');
-    expect(describeDelivery(cfg('OPTIONAL', 'OPTIONAL', 'REQUIRED'))).toBe(
-      'un texto escrito; también puede agregar un archivo o un enlace (https://...)',
+    expect(describeDelivery(cfg('REQUIRED', 'OPTIONAL', 'OPTIONAL'))).toBe(
+      'un archivo; también puede agregar un enlace (por ejemplo, de un video) o un texto escrito',
     );
-    expect(hasDeliveryChoice(cfg('NONE', 'NONE', 'NONE'))).toBe(false);
+    expect(describeDelivery(cfg('OPTIONAL', 'OPTIONAL', 'OPTIONAL'))).toContain('al menos una de estas opciones');
+    expect(describeDelivery(cfg('NONE', 'NONE', 'NONE', 3))).toContain('archivos (hasta 3)');
   });
 
   it('traduce la forma antigua', () => {
     expect(legacyRequirements('FILE', true)).toEqual({
       fileRequirement: 'REQUIRED',
-      linkRequirement: 'NONE',
+      linkRequirement: 'OPTIONAL',
       textRequirement: 'REQUIRED',
     });
     expect(legacyRequirements('ANY', false)).toEqual({

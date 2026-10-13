@@ -98,7 +98,7 @@ describe('crear una tarea: validación y confirmación', () => {
     expect(res.body.assignment).toMatchObject({
       fileRequirement: 'REQUIRED',
       linkRequirement: 'OPTIONAL',
-      textRequirement: 'NONE',
+      textRequirement: 'OPTIONAL',
       maxFiles: 3,
       allowLate: false,
     });
@@ -107,26 +107,30 @@ describe('crear una tarea: validación y confirmación', () => {
   it('entiende la forma antigua (tipo de entrega + comentario) de una pestaña abierta antes del cambio', async () => {
     const res = await create({ deliveryType: 'LINK', notesRequired: false });
     expect(res.body.assignment).toMatchObject({
-      fileRequirement: 'NONE',
+      fileRequirement: 'OPTIONAL',
       linkRequirement: 'REQUIRED',
       textRequirement: 'OPTIONAL',
     });
     const text = await create({ deliveryType: 'TEXT' });
     expect(text.body.assignment).toMatchObject({
-      fileRequirement: 'NONE',
-      linkRequirement: 'NONE',
+      fileRequirement: 'OPTIONAL',
+      linkRequirement: 'OPTIONAL',
       textRequirement: 'REQUIRED',
     });
   });
 
-  it('exige elegir al menos una forma de entrega y limita los archivos a 3', async () => {
+  it('"no se pide" se guarda como opcional y los archivos se limitan a 3', async () => {
     const none = await create({ fileRequirement: 'NONE', linkRequirement: 'NONE', textRequirement: 'NONE' });
-    expect(none.status).toBe(400);
-    expect(none.body.fields.delivery).toContain('al menos una forma');
+    expect(none.status).toBe(200);
+    expect(none.body.assignment).toMatchObject({
+      fileRequirement: 'OPTIONAL',
+      linkRequirement: 'OPTIONAL',
+      textRequirement: 'OPTIONAL',
+    });
     const many = await create({ fileRequirement: 'REQUIRED', maxFiles: 9 });
     expect(many.status).toBe(400);
     expect(many.body.fields.maxFiles).toBeDefined();
-    expect(await prisma.assignment.count({ where: { title: 'Ensayo final' } })).toBe(0);
+    expect(await prisma.assignment.count({ where: { title: 'Ensayo final' } })).toBe(1);
   });
 
   it('una clase sin estudiantes inscritas guarda la tarea y lo dice (assignedTo 0)', async () => {
@@ -182,7 +186,7 @@ describe('crear una tarea: validación y confirmación', () => {
       }),
     );
     expect(await prisma.assignment.findUniqueOrThrow({ where: { id: t.id } })).toMatchObject({
-      fileRequirement: 'NONE',
+      fileRequirement: 'OPTIONAL',
       linkRequirement: 'REQUIRED',
       textRequirement: 'OPTIONAL',
       allowLate: false,
@@ -209,10 +213,11 @@ describe('crear una tarea: validación y confirmación', () => {
 });
 
 describe('qué puede entregar la estudiante según la tarea', () => {
-  it('solo archivo: exige el archivo y rechaza el enlace', async () => {
+  it('archivo obligatorio: exige el archivo y acepta además enlace y texto', async () => {
     const t = await taskWith({ file: 'REQUIRED', link: 'NONE', text: 'OPTIONAL' });
     expect((await deliver(t.id, { notes: 'hola' })).status).toBe(400);
-    expect((await deliver(t.id, { link: LINK })).body.error).toContain('no recibe enlaces');
+    expect((await deliver(t.id, { link: LINK })).body.error).toContain('archivo');
+    expect((await deliver(t.id, { files: [mine('b.pdf')], link: LINK, notes: 'hola' })).status).toBe(200);
     const ok = await deliver(t.id, { files: [mine('trabajo.pdf')] });
     expect(ok.status).toBe(200);
     expect(ok.body.submission).toMatchObject({
@@ -230,28 +235,29 @@ describe('qué puede entregar la estudiante según la tarea', () => {
     expect(repeated.status).toBe(400);
   });
 
-  it('solo enlace: exige un enlace https y rechaza archivos', async () => {
+  it('enlace obligatorio: exige un enlace https y acepta además archivos', async () => {
     const t = await taskWith({ file: 'NONE', link: 'REQUIRED', text: 'OPTIONAL' });
     expect((await deliver(t.id, {})).status).toBe(400);
     expect((await deliver(t.id, { link: 'http://inseguro.com' })).status).toBe(400);
-    expect((await deliver(t.id, { files: [mine('a.pdf')] })).body.error).toContain('no recibe archivos');
+    expect((await deliver(t.id, { files: [mine('a.pdf')] })).body.error).toContain('enlace');
+    expect((await deliver(t.id, { files: [mine('a.pdf')], link: LINK })).status).toBe(200);
     expect((await deliver(t.id, { link: LINK })).status).toBe(200);
   });
 
-  it('solo texto: pide al menos 20 caracteres y rechaza archivos y enlaces', async () => {
+  it('texto obligatorio: pide 20 caracteres si no hay archivo ni enlace', async () => {
     const t = await taskWith({ file: 'NONE', link: 'NONE', text: 'REQUIRED' });
     expect((await deliver(t.id, {})).status).toBe(400);
     expect((await deliver(t.id, { notes: 'muy corto' })).status).toBe(400);
-    expect((await deliver(t.id, { notes: LONG_TEXT, link: LINK })).status).toBe(400);
+    expect((await deliver(t.id, { notes: 'corto', link: LINK })).status).toBe(200);
     const ok = await deliver(t.id, { notes: LONG_TEXT });
     expect(ok.status).toBe(200);
     expect(ok.body.submission).toMatchObject({ fileKeys: [], linkUrl: null, notes: LONG_TEXT });
   });
 
-  it('archivo o enlace (con uno basta, sin texto): acepta cualquiera de los dos o los dos', async () => {
+  it('todo opcional (con uno basta): acepta archivo, enlace o texto, solos o juntos', async () => {
     const t = await taskWith({ file: 'OPTIONAL', link: 'OPTIONAL', text: 'NONE' });
     expect((await deliver(t.id, {})).status).toBe(400);
-    expect((await deliver(t.id, { notes: 'solo texto largo que no se acepta aquí' })).status).toBe(400);
+    expect((await deliver(t.id, { notes: 'solo texto' })).status).toBe(200);
     expect((await deliver(t.id, { link: LINK })).status).toBe(200);
     expect((await deliver(t.id, { files: [mine('a.pdf')] })).status).toBe(200);
     const both = await deliver(t.id, { files: [mine('a.pdf')], link: LINK });

@@ -1,13 +1,17 @@
 /**
- * Qué debe entregar la estudiante en una tarea. La mentora elige, para cada tipo (archivo, enlace, texto), si no se
- * pide, es opcional u obligatorio; el servidor y la pantalla de entrega aplican exactamente las mismas reglas
- * (este archivo lo usan los dos).
+ * Qué debe entregar la estudiante en una tarea. La estudiante siempre puede agregar archivos, un enlace (por ejemplo
+ * de un video) y texto; la mentora solo elige, para cada tipo, si es opcional u obligatorio. El servidor y la pantalla
+ * de entrega aplican exactamente las mismas reglas (este archivo lo usan los dos).
  */
 
 import { nameFromKey } from './file-types';
 
 export const REQUIREMENTS = ['NONE', 'OPTIONAL', 'REQUIRED'] as const;
 export type Requirement = (typeof REQUIREMENTS)[number];
+
+/** "No se pide" ya no cierra el tipo: las tareas guardadas así se tratan como opcionales. */
+export const effectiveRequirement = (requirement: Requirement): 'OPTIONAL' | 'REQUIRED' =>
+  requirement === 'REQUIRED' ? 'REQUIRED' : 'OPTIONAL';
 
 /** Forma antigua (un solo tipo de entrega). Se conserva para traducir lo que envíe una pestaña abierta antes del cambio. */
 export const DELIVERY_TYPES = ['FILE', 'LINK', 'TEXT', 'FILE_OR_LINK', 'ANY'] as const;
@@ -34,11 +38,11 @@ export function legacyRequirements(
   const text: Requirement = deliveryType === 'TEXT' || notesRequired ? 'REQUIRED' : 'OPTIONAL';
   switch (deliveryType) {
     case 'FILE':
-      return { fileRequirement: 'REQUIRED', linkRequirement: 'NONE', textRequirement: text };
+      return { fileRequirement: 'REQUIRED', linkRequirement: 'OPTIONAL', textRequirement: text };
     case 'LINK':
-      return { fileRequirement: 'NONE', linkRequirement: 'REQUIRED', textRequirement: text };
+      return { fileRequirement: 'OPTIONAL', linkRequirement: 'REQUIRED', textRequirement: text };
     case 'TEXT':
-      return { fileRequirement: 'NONE', linkRequirement: 'NONE', textRequirement: 'REQUIRED' };
+      return { fileRequirement: 'OPTIONAL', linkRequirement: 'OPTIONAL', textRequirement: 'REQUIRED' };
     default:
       return { fileRequirement: 'OPTIONAL', linkRequirement: 'OPTIONAL', textRequirement: text };
   }
@@ -48,28 +52,23 @@ export function legacyRequirements(
 export const DELIVERY_PRESETS: { id: string; label: string; config: Omit<DeliveryConfig, 'maxFiles'> }[] = [
   {
     id: 'file',
-    label: 'Solo archivo',
-    config: { fileRequirement: 'REQUIRED', linkRequirement: 'NONE', textRequirement: 'OPTIONAL' },
+    label: 'Archivo obligatorio',
+    config: { fileRequirement: 'REQUIRED', linkRequirement: 'OPTIONAL', textRequirement: 'OPTIONAL' },
   },
   {
     id: 'link',
-    label: 'Solo enlace',
-    config: { fileRequirement: 'NONE', linkRequirement: 'REQUIRED', textRequirement: 'OPTIONAL' },
+    label: 'Enlace obligatorio',
+    config: { fileRequirement: 'OPTIONAL', linkRequirement: 'REQUIRED', textRequirement: 'OPTIONAL' },
   },
   {
     id: 'text',
-    label: 'Solo texto',
-    config: { fileRequirement: 'NONE', linkRequirement: 'NONE', textRequirement: 'REQUIRED' },
-  },
-  {
-    id: 'file-or-link',
-    label: 'Archivo o enlace (con uno basta)',
-    config: { fileRequirement: 'OPTIONAL', linkRequirement: 'OPTIONAL', textRequirement: 'NONE' },
+    label: 'Texto obligatorio',
+    config: { fileRequirement: 'OPTIONAL', linkRequirement: 'OPTIONAL', textRequirement: 'REQUIRED' },
   },
   {
     id: 'text-file',
-    label: 'Texto + archivo',
-    config: { fileRequirement: 'REQUIRED', linkRequirement: 'NONE', textRequirement: 'REQUIRED' },
+    label: 'Texto y archivo obligatorios',
+    config: { fileRequirement: 'REQUIRED', linkRequirement: 'OPTIONAL', textRequirement: 'REQUIRED' },
   },
   {
     id: 'any',
@@ -78,21 +77,17 @@ export const DELIVERY_PRESETS: { id: string; label: string; config: Omit<Deliver
   },
 ];
 
-export const hasDeliveryChoice = (
-  config: Pick<DeliveryConfig, 'fileRequirement' | 'linkRequirement' | 'textRequirement'>,
-) => config.fileRequirement !== 'NONE' || config.linkRequirement !== 'NONE' || config.textRequirement !== 'NONE';
-
 /** Frase para mostrar lo que se pide, por ejemplo "un texto escrito y un archivo (hasta 3); también puede agregar un enlace". */
 export function describeDelivery(config: DeliveryConfig): string {
   const names: Record<'file' | 'link' | 'text', string> = {
     file: config.maxFiles > 1 ? `archivos (hasta ${config.maxFiles})` : 'un archivo',
-    link: 'un enlace (https://...)',
+    link: 'un enlace (por ejemplo, de un video)',
     text: 'un texto escrito',
   };
   const kinds = [
-    { key: 'file' as const, requirement: config.fileRequirement },
-    { key: 'link' as const, requirement: config.linkRequirement },
-    { key: 'text' as const, requirement: config.textRequirement },
+    { key: 'file' as const, requirement: effectiveRequirement(config.fileRequirement) },
+    { key: 'link' as const, requirement: effectiveRequirement(config.linkRequirement) },
+    { key: 'text' as const, requirement: effectiveRequirement(config.textRequirement) },
   ];
   const required = kinds.filter((k) => k.requirement === 'REQUIRED').map((k) => names[k.key]);
   const optional = kinds.filter((k) => k.requirement === 'OPTIONAL').map((k) => names[k.key]);
@@ -100,7 +95,7 @@ export function describeDelivery(config: DeliveryConfig): string {
     items.length <= 1 ? (items[0] ?? '') : `${items.slice(0, -1).join(', ')} ${last} ${items[items.length - 1]}`;
 
   if (required.length === 0) {
-    return optional.length === 0 ? 'nada' : `al menos una de estas opciones: ${join(optional, 'o')}`;
+    return `al menos una de estas opciones: ${join(optional, 'o')}`;
   }
   const base = join(required, 'y');
   return optional.length > 0 ? `${base}; también puede agregar ${join(optional, 'o')}` : base;
@@ -119,40 +114,30 @@ export function validateDelivery(config: DeliveryConfig, input: DeliveryInput): 
   const hasFile = input.fileCount > 0;
   const hasLink = Boolean(input.link);
   const hasNotes = notes.length > 0;
-  const textOnly = config.fileRequirement === 'NONE' && config.linkRequirement === 'NONE';
+  const fileReq = effectiveRequirement(config.fileRequirement);
+  const linkReq = effectiveRequirement(config.linkRequirement);
+  const textReq = effectiveRequirement(config.textRequirement);
+  // Si lo único que se exige es el texto y no hay archivo ni enlace, debe ser una respuesta con cuerpo.
+  const textOnly = textReq === 'REQUIRED' && fileReq !== 'REQUIRED' && linkReq !== 'REQUIRED' && !hasFile && !hasLink;
   const textMin = textOnly ? TEXT_MIN_LENGTH : 1;
 
-  if (config.fileRequirement === 'NONE' && hasFile) return 'Esta tarea no recibe archivos.';
-  if (config.linkRequirement === 'NONE' && hasLink) return 'Esta tarea no recibe enlaces.';
-  if (config.textRequirement === 'NONE' && hasNotes) return 'Esta tarea no recibe texto escrito.';
   if (input.fileCount > config.maxFiles) {
     return config.maxFiles === 1
       ? 'Puedes entregar un solo archivo.'
       : `Puedes entregar hasta ${config.maxFiles} archivos.`;
   }
 
-  if (config.fileRequirement === 'REQUIRED' && !hasFile) {
+  if (fileReq === 'REQUIRED' && !hasFile) {
     return config.maxFiles === 1 ? 'Sube el archivo que pide la tarea.' : 'Sube al menos un archivo: la tarea lo pide.';
   }
-  if (config.linkRequirement === 'REQUIRED' && !hasLink)
-    return 'Pega el enlace que pide la tarea (empieza por https://).';
-  if (config.textRequirement === 'REQUIRED' && notes.length < textMin) {
+  if (linkReq === 'REQUIRED' && !hasLink) return 'Pega el enlace que pide la tarea (empieza por https://).';
+  if (textReq === 'REQUIRED' && notes.length < textMin) {
     return textOnly
       ? `Escribe tu respuesta (mínimo ${TEXT_MIN_LENGTH} caracteres).`
       : 'Escribe también el texto o comentario que pide la tarea.';
   }
 
-  if (!hasFile && !hasLink && !hasNotes) {
-    const accepted = [
-      config.fileRequirement !== 'NONE' ? 'un archivo' : null,
-      config.linkRequirement !== 'NONE' ? 'un enlace' : null,
-      config.textRequirement !== 'NONE' ? 'un texto' : null,
-    ].filter(Boolean);
-    return `No has entregado nada: agrega ${accepted.join(', ').replace(/, ([^,]*)$/, ' o $1')}.`;
-  }
-  if (textOnly && hasNotes && notes.length < TEXT_MIN_LENGTH) {
-    return `Escribe tu respuesta (mínimo ${TEXT_MIN_LENGTH} caracteres).`;
-  }
+  if (!hasFile && !hasLink && !hasNotes) return 'No has entregado nada: agrega un archivo, un enlace o un texto.';
   return null;
 }
 

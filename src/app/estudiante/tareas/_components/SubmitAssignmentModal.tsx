@@ -27,7 +27,6 @@ interface SubmitAssignmentModalProps {
 
 /** Etiqueta "Obligatorio" u "Opcional" junto al título de cada parte de la entrega. */
 function RequirementBadge({ requirement }: { requirement: Requirement }) {
-  if (requirement === 'NONE') return null;
   return (
     <span
       className={
@@ -60,10 +59,12 @@ export function SubmitAssignmentModal({ assignment, onClose, onSubmitted }: Subm
 
   const late = assignment ? isLateSubmission(new Date(), assignment.dueDate) : false;
   const existing = assignment?.submissions[0];
-  const wantsFile = assignment?.fileRequirement !== 'NONE';
-  const wantsLink = assignment?.linkRequirement !== 'NONE';
-  const wantsText = assignment?.textRequirement !== 'NONE';
-  const textOnly = !wantsFile && !wantsLink;
+  const textFirst =
+    assignment?.textRequirement === 'REQUIRED' &&
+    assignment.fileRequirement !== 'REQUIRED' &&
+    assignment.linkRequirement !== 'REQUIRED';
+  // El mínimo de 20 caracteres solo rige si no se adjunta ni archivo ni enlace.
+  const textOnly = textFirst && files.length === 0 && !url.trim();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -167,7 +168,7 @@ export function SubmitAssignmentModal({ assignment, onClose, onSubmitted }: Subm
           </div>
         )}
 
-        {assignment && wantsFile && (
+        {assignment && (
           <section className="space-y-2">
             <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700">
               {assignment.maxFiles > 1 ? `Archivos (hasta ${assignment.maxFiles})` : 'Archivo'}
@@ -187,7 +188,7 @@ export function SubmitAssignmentModal({ assignment, onClose, onSubmitted }: Subm
           </section>
         )}
 
-        {assignment && wantsLink && (
+        {assignment && (
           <section className="space-y-2">
             <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700">
               Enlace
@@ -196,25 +197,25 @@ export function SubmitAssignmentModal({ assignment, onClose, onSubmitted }: Subm
             <Input
               aria-label="Enlace de tu trabajo"
               type="url"
-              placeholder="https://docs.google.com/..."
+              placeholder="https://youtube.com/..."
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              hint="Google Drive, Docs, Canva, YouTube... Debe empezar por https://"
+              hint="Aquí puedes pegar el enlace de tu video (YouTube, Drive...), Docs o Canva. Debe empezar por https://"
             />
           </section>
         )}
 
-        {assignment && wantsText && (
+        {assignment && (
           <section className="space-y-2">
             <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700">
-              {textOnly ? 'Tu respuesta' : 'Texto o comentario'}
+              {textFirst ? 'Tu respuesta' : 'Texto o comentario'}
               <RequirementBadge requirement={assignment.textRequirement} />
             </p>
             <Textarea
-              aria-label={textOnly ? 'Tu respuesta' : 'Texto o comentario para tu mentor/a'}
-              rows={textOnly ? 8 : 4}
+              aria-label={textFirst ? 'Tu respuesta' : 'Texto o comentario para tu mentor/a'}
+              rows={textFirst ? 8 : 4}
               placeholder={
-                textOnly
+                textFirst
                   ? 'Escribe aquí tu respuesta...'
                   : 'Escribe tu reflexión, comentarios o resumen del trabajo realizado...'
               }
