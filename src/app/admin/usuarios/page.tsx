@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Highlight } from '@/components/ui/Highlight';
+import { rankMatches } from '@/lib/text-search';
 import { Users, UserPlus, Search, Edit3, UserX, KeyRound } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
@@ -154,16 +156,16 @@ export default function AdminUsersPage() {
     loadData();
   };
 
-  const filteredUsers = users.filter((u) => {
-    const matchSearch =
-      u.name.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase()) ||
-      (u.memberNumber && u.memberNumber.toLowerCase().includes(search.toLowerCase()));
-    const matchRole =
-      roleFilter === 'ALL' || u.role === roleFilter || u.extraRoles?.includes(roleFilter as UserItem['role']);
-    const matchStatus = statusFilter === 'ALL' || u.status === statusFilter;
-    return matchSearch && matchRole && matchStatus;
-  });
+  // Primero el rol y el estado; luego la búsqueda por nombre (sin tildes), con lo más parecido arriba.
+  const filteredUsers = useMemo(() => {
+    const byFilters = users.filter((u) => {
+      const matchRole =
+        roleFilter === 'ALL' || u.role === roleFilter || u.extraRoles?.includes(roleFilter as UserItem['role']);
+      const matchStatus = statusFilter === 'ALL' || u.status === statusFilter;
+      return matchRole && matchStatus;
+    });
+    return rankMatches(byFilters, search, (u) => [u.name, u.email, u.memberNumber ?? '']).map((r) => r.item);
+  }, [users, search, roleFilter, statusFilter]);
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
@@ -184,7 +186,9 @@ export default function AdminUsersPage() {
       <Card variant="glass" className="flex flex-col items-center gap-4 p-5 md:flex-row">
         <div className="w-full flex-1">
           <Input
-            placeholder="Nombre, correo o número..."
+            placeholder="Escribe un nombre, correo o número..."
+            aria-label="Buscar usuarias"
+            autoComplete="off"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             leftIcon={<Search className="h-4 w-4" />}
@@ -247,7 +251,9 @@ export default function AdminUsersPage() {
                         <div className="flex items-center gap-3">
                           <Avatar fallbackInitial={u.name.charAt(0)} size="sm" />
                           <div>
-                            <p className="font-bold leading-tight text-slate-800">{u.name}</p>
+                            <p className="font-bold leading-tight text-slate-800">
+                              <Highlight text={u.name} query={search} />
+                            </p>
                             <p className="text-xs text-slate-500">{u.email}</p>
                             <div className="mt-1 flex flex-wrap items-center gap-1.5">
                               <UserRoles user={u} />
@@ -350,7 +356,9 @@ export default function AdminUsersPage() {
                   <div className="mb-3 flex items-center gap-3">
                     <Avatar fallbackInitial={u.name.charAt(0)} size="sm" />
                     <div className="flex-1">
-                      <p className="font-bold leading-tight text-slate-800">{u.name}</p>
+                      <p className="font-bold leading-tight text-slate-800">
+                        <Highlight text={u.name} query={search} />
+                      </p>
                       <UserRoles user={u} className="mt-1" />
                     </div>
                   </div>

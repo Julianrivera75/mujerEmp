@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { rankMatches } from '@/lib/text-search';
 import { CheckCircle2, Clock, Search, Award, Download } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
@@ -63,14 +64,15 @@ export default function AdminAttendancePage() {
     })();
   }, []);
 
-  const filteredDays = days.filter((d) => {
-    const q = search.toLowerCase();
-    return (
-      d.name.toLowerCase().includes(q) ||
-      d.email.toLowerCase().includes(q) ||
-      d.classTitles.some((title) => title.toLowerCase().includes(q))
-    );
-  });
+  // La misma búsqueda filtra las tarjetas de porcentaje y la tabla, con lo más parecido arriba.
+  const filteredDays = useMemo(
+    () => rankMatches(days, search, (d) => [d.name, d.email, ...d.classTitles]).map((r) => r.item),
+    [days, search],
+  );
+  const filteredSummary = useMemo(
+    () => rankMatches(studentSummary, search, (st) => [st.name, st.email]).map((r) => r.item),
+    [studentSummary, search],
+  );
 
   const exportToCsv = () => {
     if (filteredDays.length === 0) {
@@ -132,6 +134,21 @@ export default function AdminAttendancePage() {
           <Award className="h-5 w-5 text-role-ink" />
           <span>Porcentaje de asistencia por estudiante (sobre días con charlas)</span>
         </h2>
+        <div className="mb-4 w-full sm:w-80">
+          <Input
+            placeholder="Escribe el nombre de una estudiante..."
+            aria-label="Buscar estudiante"
+            autoComplete="off"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            leftIcon={<Search className="h-4 w-4" />}
+          />
+        </div>
+        {!loading && search.trim() && filteredSummary.length === 0 && (
+          <p className="mb-4 text-xs text-slate-500" aria-live="polite">
+            Nadie se parece a «{search.trim()}».
+          </p>
+        )}
 
         {loading ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -141,7 +158,7 @@ export default function AdminAttendancePage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {studentSummary.map((st) => (
+            {filteredSummary.map((st) => (
               <Card key={st.id} variant="glass" className="flex flex-col justify-between p-5">
                 <div>
                   <div className="mb-2 flex items-center justify-between">
@@ -176,7 +193,9 @@ export default function AdminAttendancePage() {
           </div>
           <div className="w-full sm:w-72">
             <Input
-              placeholder="Filtrar por alumna o charla..."
+              placeholder="Escribe una alumna o charla..."
+              aria-label="Buscar alumna o charla"
+              autoComplete="off"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               leftIcon={<Search className="h-4 w-4" />}

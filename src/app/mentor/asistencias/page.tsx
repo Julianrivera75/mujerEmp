@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { SearchBox } from '@/components/ui/SearchBox';
+import { Highlight } from '@/components/ui/Highlight';
+import { useNameFilter } from '@/hooks/useNameFilter';
 import { CheckCircle2, Clock } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
@@ -27,6 +30,7 @@ const dayDate = (day: string) => new Date(`${day}T12:00:00-05:00`);
 export default function MentorAttendancesPage() {
   const [days, setDays] = useState<DayRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const { query, setQuery, results: shownDays } = useNameFilter(days, (d) => [d.name, d.email]);
 
   useEffect(() => {
     (async () => {
@@ -52,6 +56,16 @@ export default function MentorAttendancesPage() {
       />
 
       <Card variant="glass" className="p-4 sm:p-6">
+        {!loading && days.length > 0 && (
+          <div className="mb-4 w-full sm:w-80">
+            <SearchBox
+              aria-label="Buscar estudiante"
+              placeholder="Escribe el nombre de una estudiante..."
+              value={query}
+              onChange={setQuery}
+            />
+          </div>
+        )}
         {loading ? (
           <div className="divide-y divide-slate-100">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -63,7 +77,7 @@ export default function MentorAttendancesPage() {
         ) : (
           <ResponsiveTable
             caption="Asistencia de las estudiantes a mis clases por día"
-            rows={days}
+            rows={shownDays}
             rowKey={(d) => `${d.studentId}-${d.day}`}
             columns={[
               {
@@ -71,7 +85,9 @@ export default function MentorAttendancesPage() {
                 primary: true,
                 cell: (d) => (
                   <>
-                    <p className="font-bold text-slate-800">{d.name}</p>
+                    <p className="font-bold text-slate-800">
+                      <Highlight text={d.name} query={query} />
+                    </p>
                     <p className="text-[11px] font-normal text-slate-500">{d.email}</p>
                   </>
                 ),

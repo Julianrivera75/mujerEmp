@@ -5,12 +5,15 @@ import { reachableUsersFilter } from '@/lib/chat-db';
 import { rolesOf } from '@/lib/roles';
 import { ROLES } from '@/lib/validators';
 import { presenceForViewer } from '@/lib/presence';
+import { rankMatches } from '@/lib/text-search';
 import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
 const DEFAULT_LIMIT = 30;
 const MAX_LIMIT = 50;
+/** Personas que se comparan al buscar por texto (más que de sobra para esta comunidad). */
+const MAX_CANDIDATES = 3000;
 
 /**
  * Directorio de personas con las que se puede iniciar una conversación: cuentas activas que la persona puede
@@ -35,31 +38,49 @@ export const GET = withAuth('chat contacts', 'any', async (req, user) => {
         id: { not: user.id },
         status: 'ACTIVO',
         anonymizedAt: null,
-        ...(q ? { name: { contains: q, mode: 'insensitive' } } : {}),
       },
       me ? reachableUsersFilter(me) : {},
       role ? { OR: [{ role }, { extraRoles: { has: role } }] } : {},
     ],
   };
+  const select = {
+    id: true,
+    name: true,
+    avatar: true,
+    role: true,
+    extraRoles: true,
+    lastSeenAt: true,
+    showOnlineStatus: true,
+  } as const;
 
-  const [total, page] = await Promise.all([
-    prisma.user.count({ where }),
-    prisma.user.findMany({
+  let total: number;
+  let page: Prisma.UserGetPayload<{ select: typeof select }>[];
+  if (q) {
+    // Con texto: se ordena por parecido (sin importar tildes ni mayúsculas) y luego se pagina.
+    const candidates = await prisma.user.findMany({
       where,
+      select: { id: true, name: true },
       orderBy: [{ name: 'asc' }, { id: 'asc' }],
-      skip: offset,
-      take: limit,
-      select: {
-        id: true,
-        name: true,
-        avatar: true,
-        role: true,
-        extraRoles: true,
-        lastSeenAt: true,
-        showOnlineStatus: true,
-      },
-    }),
-  ]);
+      take: MAX_CANDIDATES,
+    });
+    const ranked = rankMatches(candidates, q, (c) => [c.name]).map((r) => r.item);
+    total = ranked.length;
+    const ids = ranked.slice(offset, offset + limit).map((c) => c.id);
+    const rows = await prisma.user.findMany({ where: { id: { in: ids } }, select });
+    const byId = new Map(rows.map((row) => [row.id, row]));
+    page = ids.flatMap((id) => byId.get(id) ?? []);
+  } else {
+    [total, page] = await Promise.all([
+      prisma.user.count({ where }),
+      prisma.user.findMany({
+        where,
+        orderBy: [{ name: 'asc' }, { id: 'asc' }],
+        skip: offset,
+        take: limit,
+        select,
+      }),
+    ]);
+  }
 
   const existing = await prisma.conversation.findMany({
     where: {

@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
+import { Highlight } from '@/components/ui/Highlight';
+import { SearchBox } from '@/components/ui/SearchBox';
+import { useNameFilter } from '@/hooks/useNameFilter';
 import { CheckCircle2, Flag } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -63,6 +66,7 @@ export default function ReportesPage() {
   };
 
   const pending = reports.filter((r) => !r.reviewedAt).length;
+  const { query, setQuery, results: shownReports } = useNameFilter(reports, (r) => [r.reported.name, r.reporter.name]);
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
@@ -85,13 +89,28 @@ export default function ReportesPage() {
           <p className="text-xs font-bold uppercase tracking-wider text-slate-600" aria-live="polite">
             {pending} {pending === 1 ? 'pendiente' : 'pendientes'}
           </p>
+          {reports.length > 3 && (
+            <div className="w-full sm:w-96">
+              <SearchBox
+                aria-label="Buscar por persona"
+                placeholder="Escribe el nombre de quien reportó o fue reportada..."
+                value={query}
+                onChange={setQuery}
+              />
+            </div>
+          )}
+          {query.trim() && shownReports.length === 0 && (
+            <p className="text-xs text-slate-500">Nadie se parece a «{query.trim()}».</p>
+          )}
           <ul className="space-y-3">
-            {reports.map((r) => (
+            {shownReports.map((r) => (
               <li key={r.id} className="space-y-3 rounded-2xl border border-white/70 bg-white/85 p-4 shadow-soft">
                 <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
                   <span>
-                    <strong className="text-slate-800">{r.reporter.name}</strong> reportó un mensaje de{' '}
-                    <strong className="text-slate-800">{r.reported.name}</strong>
+                    <strong className="text-slate-800">
+                      <Highlight text={r.reporter.name} query={query} />
+                    </strong>{' '}
+                    reportó un mensaje de <strong className="text-slate-800">{r.reported.name}</strong>
                   </span>
                   <span>{formatDayMonthTime(r.createdAt)}</span>
                 </div>

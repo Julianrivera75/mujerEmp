@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Video, Youtube } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Input, Select, Textarea } from '@/components/ui/Field';
+import { PersonChecklist } from '@/components/ui/PersonChecklist';
+import { PersonSearch } from '@/components/ui/PersonSearch';
 import { DateField } from '@/components/ui/DateField';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Button } from '@/components/ui/Button';
@@ -99,17 +101,19 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, mode, editingClass]);
 
-  const toggleAllStudents = () => {
-    setFormData((prev) =>
-      prev.studentIds.length === students.length
-        ? { ...prev, studentIds: [] }
-        : { ...prev, studentIds: students.map((s) => s.id) },
-    );
-  };
+  const mentorOptions = useMemo(() => mentors.map((m) => ({ id: m.id, name: m.name, subtitle: m.email })), [mentors]);
+  const studentOptions = useMemo(
+    () => students.map((st) => ({ id: st.id, name: st.name, subtitle: st.email })),
+    [students],
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
+    if (!formData.mentorId) {
+      setErrorMsg('Elige la mentora de la clase: escribe su nombre y selecciónala de la lista.');
+      return;
+    }
     if (new Date(formData.dateEnd) <= new Date(formData.dateStart)) {
       setErrorMsg('La fecha de fin debe ser posterior a la de inicio.');
       return;
@@ -198,19 +202,14 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Select
+          <PersonSearch
             label="Mentora asignada"
             required
-            value={formData.mentorId}
-            onChange={(e) => setFormData({ ...formData, mentorId: e.target.value })}
-          >
-            <option value="">Selecciona una mentora...</option>
-            {mentors.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name} ({m.email})
-              </option>
-            ))}
-          </Select>
+            placeholder="Escribe el nombre de la mentora..."
+            options={mentorOptions}
+            value={formData.mentorId || null}
+            onChange={(id) => setFormData({ ...formData, mentorId: id ?? '' })}
+          />
           <Select
             label="Estado de la clase"
             value={formData.status}
@@ -264,53 +263,13 @@ export function ClassFormModal({ open, mode, editingClass, mentors, students, on
 
         <ClassImagesField images={images} onChange={setImages} onBusyChange={setUploading} />
 
-        <div>
-          <div className="mb-2 flex items-center justify-between">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
-              Estudiantes asignadas ({formData.studentIds.length} seleccionadas)
-            </label>
-            <button
-              type="button"
-              onClick={toggleAllStudents}
-              className="text-xs font-bold text-role-ink hover:underline"
-            >
-              {formData.studentIds.length === students.length ? 'Deseleccionar todas' : 'Seleccionar todas'}
-            </button>
-          </div>
-
-          <div className="max-h-36 divide-y divide-slate-100 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-2.5">
-            {students.length === 0 ? (
-              <p className="p-2 text-xs text-slate-500">No hay estudiantes activas registradas.</p>
-            ) : (
-              students.map((st) => {
-                const checked = formData.studentIds.includes(st.id);
-                return (
-                  <label
-                    key={st.id}
-                    className="flex cursor-pointer items-center justify-between rounded-xl px-2 py-2 text-xs hover:bg-role-soft"
-                  >
-                    <span className="font-semibold text-slate-800">
-                      {st.name} ({st.email})
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          studentIds: checked
-                            ? prev.studentIds.filter((id) => id !== st.id)
-                            : [...prev.studentIds, st.id],
-                        }))
-                      }
-                      className="h-4 w-4 rounded text-role-ink focus:ring-primary/40"
-                    />
-                  </label>
-                );
-              })
-            )}
-          </div>
-        </div>
+        <PersonChecklist
+          label="Estudiantes asignadas"
+          options={studentOptions}
+          selectedIds={formData.studentIds}
+          onChange={(ids) => setFormData((prev) => ({ ...prev, studentIds: ids }))}
+          emptyText="No hay estudiantes activas registradas."
+        />
       </form>
 
       {submitting && (

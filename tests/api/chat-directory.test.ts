@@ -5,6 +5,7 @@ import { POST as preview } from '@/app/api/chat/broadcast/preview/route';
 import { GET as contacts } from '@/app/api/chat/contacts/route';
 import { GET as listConversations } from '@/app/api/chat/conversations/route';
 import { GET as listMessages } from '@/app/api/chat/messages/route';
+import { GET as searchChats } from '@/app/api/chat/search/route';
 import { countUnreadMessages } from '@/lib/notifications';
 import prisma from '@/lib/prisma';
 import { resetRateLimit } from '@/lib/rate-limit';
@@ -245,5 +246,66 @@ describe('aviso de mensaje nuevo en la campana', () => {
     const notices = await prisma.notification.findMany({ where: { type: 'NEW_MESSAGE' } });
     expect(notices.map((n) => n.userId).sort()).toEqual([w.sofia.id, otra.id].sort());
     expect(notices.every((n) => n.body === 'Aviso general' && n.href.startsWith('/chat?c='))).toBe(true);
+  });
+});
+
+describe('búsqueda por nombre con sugerencias', () => {
+  const namesOf = (body: Record<string, any>) => (body.contacts as { name: string }[]).map((c) => c.name);
+
+  it('encuentra sin importar tildes ni mayúsculas y pone primero a quien empieza igual', async () => {
+    await addUser('María Pérez');
+    await addUser('Ana María Gómez');
+    await addUser('Marta Díaz');
+    actAs(w.sofia);
+    const res = await read(await contacts(request('/api/chat/contacts?q=MARIA')));
+    expect(res.status).toBe(200);
+    expect(namesOf(res.body)).toEqual(['María Pérez', 'Ana María Gómez']);
+    const prefix = await read(await contacts(request('/api/chat/contacts?q=mar')));
+    expect(namesOf(prefix.body).slice(0, 2).sort()).toEqual(['Marta Díaz', 'María Pérez'].sort());
+    expect(namesOf(prefix.body)[2]).toBe('Ana María Gómez');
+  });
+
+  it('acepta las palabras en otro orden, perdona una letra y pagina sobre el orden por parecido', async () => {
+    await addUser('Daniela Ortiz');
+    for (let i = 0; i < 5; i++) await addUser('Laura Gómez ' + i);
+    actAs(w.sofia);
+    expect(namesOf((await read(await contacts(request('/api/chat/contacts?q=ortiz+dani')))).body)).toEqual([
+      'Daniela Ortiz',
+    ]);
+    expect(namesOf((await read(await contacts(request('/api/chat/contacts?q=daniella')))).body)).toEqual([
+      'Daniela Ortiz',
+    ]);
+
+    const first = await read(await contacts(request('/api/chat/contacts?q=laura&limit=2&offset=0')));
+    const second = await read(await contacts(request('/api/chat/contacts?q=laura&limit=2&offset=2')));
+    expect(first.body.total).toBe(5);
+    expect(first.body.nextOffset).toBe(2);
+    const seen = [...namesOf(first.body), ...namesOf(second.body)];
+    expect(new Set(seen).size).toBe(4);
+  });
+
+  it('con una búsqueda sigue respetando la protección de menores', async () => {
+    await addUser('Mariana Menor', { isMinor: true });
+    actAs(w.sofia);
+    expect(namesOf((await read(await contacts(request('/api/chat/contacts?q=mariana')))).body)).toEqual([]);
+    actAs(w.carolina);
+    expect(namesOf((await read(await contacts(request('/api/chat/contacts?q=mariana')))).body)).toEqual([
+      'Mariana Menor',
+    ]);
+  });
+
+  it('buscar en mis conversaciones por nombre ignora tildes y trae primero el nombre más parecido', async () => {
+    const jose = await addUser('José Luis');
+    const josefina = await addUser('Ana Josefina');
+    for (const other of [jose, josefina]) {
+      const [userAId, userBId] = w.sofia.id < other.id ? [w.sofia.id, other.id] : [other.id, w.sofia.id];
+      await prisma.conversation.create({ data: { userAId, userBId } });
+    }
+    actAs(w.sofia);
+    const res = await read(await searchChats(request('/api/chat/search?q=jose')));
+    expect(res.body.results.map((r: { other: { name: string } }) => r.other.name)).toEqual([
+      'José Luis',
+      'Ana Josefina',
+    ]);
   });
 });

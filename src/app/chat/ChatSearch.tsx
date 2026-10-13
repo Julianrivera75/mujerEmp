@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Search } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
+import { Highlight } from '@/components/ui/Highlight';
 import { Input } from '@/components/ui/Field';
 import { logClientError } from '@/lib/client-log';
 
@@ -85,7 +86,9 @@ export function ChatSearch({ onOpen, onActiveChange }: ChatSearchProps) {
                 >
                   <Avatar avatarKey={r.other.avatar} fallbackInitial={r.other.name.charAt(0)} size="sm" />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-slate-800">{r.other.name}</span>
+                    <span className="block truncate text-sm font-semibold text-slate-800">
+                      <Highlight text={r.other.name} query={query} />
+                    </span>
                     {r.snippet && <span className="block truncate text-[11px] text-slate-500">{r.snippet}</span>}
                   </span>
                 </button>

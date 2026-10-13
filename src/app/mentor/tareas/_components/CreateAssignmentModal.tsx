@@ -6,6 +6,9 @@ import { AlertTriangle, CheckCircle2, FileText, Users } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Input, Select, Textarea } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
+import { Highlight } from '@/components/ui/Highlight';
+import { SearchBox } from '@/components/ui/SearchBox';
+import { useNameFilter } from '@/hooks/useNameFilter';
 import { FileDropZone, type UploadedFile } from '@/components/FileDropZone';
 import { DateField } from '@/components/ui/DateField';
 import { cn } from '@/lib/cn';
@@ -242,7 +245,12 @@ export function CreateAssignmentModal({ open, classes, editing, onClose, onSaved
   }, [open, editing, phase, classId, title, description, dueDate, fileReq, linkReq, textReq, maxFiles, allowLate]);
 
   const selectedClass = useMemo(() => classes.find((c) => c.id === classId) ?? null, [classes, classId]);
-  const students = editing ? [] : (selectedClass?.students ?? []);
+  const students = useMemo(() => (editing ? [] : (selectedClass?.students ?? [])), [editing, selectedClass]);
+  const {
+    query: studentQuery,
+    setQuery: setStudentQuery,
+    results: shownStudents,
+  } = useNameFilter(students, (s) => [s.name]);
   const dueText = describeInputDate(dueDate, true);
   const existingSubmissions = editing?.submissions.length ?? 0;
   const delivery = { fileRequirement: fileReq, linkRequirement: linkReq, textRequirement: textReq, maxFiles };
@@ -486,13 +494,26 @@ export function CreateAssignmentModal({ open, classes, editing, onClose, onSaved
                       </button>
                     </p>
                     {showStudents && (
-                      <ul className="mt-2 grid max-h-32 grid-cols-1 gap-x-4 gap-y-0.5 overflow-y-auto sm:grid-cols-2">
-                        {students.map((s) => (
-                          <li key={s.id} className="truncate">
-                            {s.name}
-                          </li>
-                        ))}
-                      </ul>
+                      <div className="mt-2 space-y-2">
+                        {students.length > 8 && (
+                          <SearchBox
+                            aria-label="Buscar estudiante inscrita"
+                            placeholder="Escribe un nombre..."
+                            value={studentQuery}
+                            onChange={setStudentQuery}
+                          />
+                        )}
+                        <ul className="grid max-h-32 grid-cols-1 gap-x-4 gap-y-0.5 overflow-y-auto sm:grid-cols-2">
+                          {shownStudents.map((s) => (
+                            <li key={s.id} className="truncate">
+                              <Highlight text={s.name} query={studentQuery} />
+                            </li>
+                          ))}
+                          {shownStudents.length === 0 && (
+                            <li className="col-span-full text-slate-500">Nadie se parece a «{studentQuery.trim()}».</li>
+                          )}
+                        </ul>
+                      </div>
                     )}
                   </>
                 )}

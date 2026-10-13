@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Search, Users } from 'lucide-react';
 import { PresenceDot } from '@/components/PresenceDot';
 import { Avatar } from '@/components/ui/Avatar';
+import { Highlight } from '@/components/ui/Highlight';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/Field';
 import { cn } from '@/lib/cn';
@@ -78,7 +79,7 @@ export function ContactPicker({ onSelect }: ContactPickerProps) {
     <div className="flex min-h-0 flex-col gap-2 border-b border-slate-100 p-3">
       <Input
         aria-label="Buscar personas"
-        placeholder="Buscar a una persona por nombre..."
+        placeholder="Escribe un nombre para encontrar a alguien..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         leftIcon={<Search className="h-4 w-4" />}
@@ -111,7 +112,8 @@ export function ContactPicker({ onSelect }: ContactPickerProps) {
         ) : (
           <ul>
             {people.map((p, i) => {
-              const showInitial = i === 0 || initialOf(people[i - 1].name) !== initialOf(p.name);
+              // Con texto escrito el orden es por parecido, no alfabético: no se separan por inicial.
+              const showInitial = !search.trim() && (i === 0 || initialOf(people[i - 1].name) !== initialOf(p.name));
               return (
                 <React.Fragment key={p.id}>
                   {showInitial && (
@@ -130,7 +132,9 @@ export function ContactPicker({ onSelect }: ContactPickerProps) {
                     >
                       <Avatar avatarKey={p.avatar} fallbackInitial={p.name.charAt(0)} size="sm" />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-semibold text-slate-800">{p.name}</span>
+                        <span className="block truncate text-sm font-semibold text-slate-800">
+                          <Highlight text={p.name} query={search} />
+                        </span>
                         <span className="block truncate text-[11px] text-slate-500">{roleLabels(p.roles)}</span>
                       </span>
                       <PresenceDot online={p.presence.online} label={p.presence.label} dotOnly />

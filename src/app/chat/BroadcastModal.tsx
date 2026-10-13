@@ -4,6 +4,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Megaphone } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
+import { Highlight } from '@/components/ui/Highlight';
+import { SearchBox } from '@/components/ui/SearchBox';
+import { useNameFilter } from '@/hooks/useNameFilter';
 import { Select } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
 import { logClientError } from '@/lib/client-log';
@@ -115,6 +118,11 @@ export function BroadcastModal({ open, onClose, onSent }: BroadcastModalProps) {
   }, [open, options, audience, classId]);
 
   const selected = useMemo(() => recipients.filter((r) => !excluded.has(r.id)), [recipients, excluded]);
+  const {
+    query: findQuery,
+    setQuery: setFindQuery,
+    results: shownRecipients,
+  } = useNameFilter(recipients, (r) => [r.name]);
   const toggle = (id: string) =>
     setExcluded((prev) => {
       const next = new Set(prev);
@@ -229,18 +237,32 @@ export function BroadcastModal({ open, onClose, onSent }: BroadcastModalProps) {
                 </button>
               )}
             </div>
+            {recipients.length > 8 && (
+              <div className="mb-2">
+                <SearchBox
+                  aria-label="Buscar en la lista de destinatarias"
+                  placeholder="Escribe un nombre para encontrarla..."
+                  value={findQuery}
+                  onChange={setFindQuery}
+                />
+              </div>
+            )}
             <ul className="max-h-44 divide-y divide-slate-100 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-2">
               {recipients.length === 0 ? (
                 <li className="p-2 text-xs text-slate-500">
                   {audience === 'class' && !classId ? 'Elige una clase.' : 'No hay personas en esta lista.'}
                 </li>
+              ) : shownRecipients.length === 0 ? (
+                <li className="p-2 text-xs text-slate-500">Nadie se parece a «{findQuery.trim()}».</li>
               ) : (
-                recipients.map((r) => (
+                shownRecipients.map((r) => (
                   <li key={r.id}>
                     <label className="flex cursor-pointer items-center gap-2.5 rounded-xl px-2 py-1.5 hover:bg-role-soft">
                       <Avatar avatarKey={r.avatar} fallbackInitial={r.name.charAt(0)} size="sm" />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-xs font-semibold text-slate-800">{r.name}</span>
+                        <span className="block truncate text-xs font-semibold text-slate-800">
+                          <Highlight text={r.name} query={findQuery} />
+                        </span>
                         <span className="block truncate text-[11px] text-slate-500">
                           {r.roles.map((role) => ROLE_META[role].label).join(' · ')}
                         </span>

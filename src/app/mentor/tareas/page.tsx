@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { Highlight } from '@/components/ui/Highlight';
+import { SearchBox } from '@/components/ui/SearchBox';
+import { rankMatches } from '@/lib/text-search';
 import {
   ClipboardList,
   PlusCircle,
@@ -41,6 +44,12 @@ export default function MentorTasksPage() {
   const [classes, setClasses] = useState<{ id: string; title: string; students: { id: string; name: string }[] }[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [studentQuery, setStudentQuery] = useState('');
+  /** Entregas de una tarea que coinciden con la estudiante buscada, las más parecidas primero. */
+  const submissionsOf = (assignment: Assignment) =>
+    rankMatches(assignment.submissions, studentQuery, (sub) => [sub.student.name, sub.student.email]).map(
+      (r) => r.item,
+    );
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Assignment | null>(null);
@@ -131,6 +140,18 @@ export default function MentorTasksPage() {
           </Button>
         }
       />
+
+      {!loading && !loadError && assignments.some((a) => a.submissions.length > 0) && (
+        <div className="w-full sm:w-96">
+          <SearchBox
+            aria-label="Buscar estudiante en las entregas"
+            placeholder="Escribe el nombre de una estudiante..."
+            value={studentQuery}
+            onChange={setStudentQuery}
+            hint={studentQuery.trim() ? 'Se muestran solo las entregas de esa estudiante en cada tarea.' : undefined}
+          />
+        </div>
+      )}
 
       {loading ? (
         <div className="space-y-6">
@@ -257,9 +278,13 @@ export default function MentorTasksPage() {
                   <p className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-xs italic text-slate-500">
                     Aún ninguna estudiante ha enviado su entrega para esta tarea.
                   </p>
+                ) : submissionsOf(ass).length === 0 ? (
+                  <p className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-xs italic text-slate-500">
+                    Nadie se parece a «{studentQuery.trim()}» en las entregas de esta tarea.
+                  </p>
                 ) : (
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    {ass.submissions.map((sub) => {
+                    {submissionsOf(ass).map((sub) => {
                       const isGraded = sub.grade !== null;
                       return (
                         <div
@@ -268,7 +293,9 @@ export default function MentorTasksPage() {
                         >
                           <div>
                             <div className="mb-2 flex items-center justify-between">
-                              <span className="text-sm font-bold text-slate-800">{sub.student.name}</span>
+                              <span className="text-sm font-bold text-slate-800">
+                                <Highlight text={sub.student.name} query={studentQuery} />
+                              </span>
                               <span
                                 className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${isGraded ? 'bg-role-soft text-role-ink' : 'bg-amber-100 text-amber-800'}`}
                               >

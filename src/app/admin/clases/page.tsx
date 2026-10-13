@@ -41,15 +41,15 @@ export default function AdminClassesPage() {
   // Las personas se cargan una sola vez; solo las clases cambian con el mes.
   const loadUsers = async () => {
     try {
-      const usersRes = await fetch('/api/admin/users');
-      const usersData = await usersRes.json();
-      const allUsers: ManagedUser[] = usersData.users || [];
-      setMentors(
-        allUsers.filter((u) => (u.role === 'MENTOR' || u.extraRoles?.includes('MENTOR')) && u.status === 'ACTIVO'),
-      );
-      setStudents(
-        allUsers.filter((u) => (u.role === 'STUDENT' || u.extraRoles?.includes('STUDENT')) && u.status === 'ACTIVO'),
-      );
+      // Se pide cada grupo por separado: el listado general corta en 500 personas antes de filtrar por rol.
+      const [mentorsRes, studentsRes] = await Promise.all([
+        fetch('/api/admin/users?role=MENTOR&status=ACTIVO'),
+        fetch('/api/admin/users?role=STUDENT&status=ACTIVO'),
+      ]);
+      const mentorsData = await mentorsRes.json();
+      const studentsData = await studentsRes.json();
+      setMentors((mentorsData.users || []) as ManagedUser[]);
+      setStudents((studentsData.users || []) as ManagedUser[]);
     } catch (err) {
       logClientError('Error al cargar las personas:', err);
     } finally {
