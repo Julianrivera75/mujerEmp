@@ -1,11 +1,12 @@
 import { attendancePercentage, certificateOpensAt, type ModuleStatus } from './modules';
+import type { CERTIFICATE_RULE_TYPES } from './validators';
 
 /**
  * Regla de elegibilidad de un módulo: porcentaje mínimo de días con asistencia, o una cantidad
  * mínima de días (la excepción del Módulo 1: basta con 1). Editable por módulo desde admin.
  */
 export interface CertificateRule {
-  ruleType: 'MIN_ATTENDANCE_PERCENT' | 'MIN_ATTENDED_DAYS';
+  ruleType: (typeof CERTIFICATE_RULE_TYPES)[number];
   threshold: number;
 }
 

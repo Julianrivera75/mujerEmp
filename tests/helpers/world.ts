@@ -7,6 +7,20 @@ export async function resetDb() {
   await prisma.$executeRawUnsafe(
     'TRUNCATE "Attendance","Submission","Assignment","ClassResource","ClassEnrollment","ClassSession","LoginAttempt","User" RESTART IDENTITY CASCADE',
   );
+  // CertificateModuleRule no depende de User, así que el TRUNCATE de arriba no la toca: una prueba que
+  // cambia un umbral lo dejaría pegado para las siguientes si no se restaura aquí.
+  const defaultRules = [
+    { moduleNumber: 1, ruleType: 'MIN_ATTENDED_DAYS', threshold: 1 },
+    { moduleNumber: 2, ruleType: 'MIN_ATTENDANCE_PERCENT', threshold: 80 },
+    { moduleNumber: 3, ruleType: 'MIN_ATTENDANCE_PERCENT', threshold: 80 },
+    { moduleNumber: 4, ruleType: 'MIN_ATTENDANCE_PERCENT', threshold: 80 },
+    { moduleNumber: 5, ruleType: 'MIN_ATTENDANCE_PERCENT', threshold: 80 },
+  ] as const satisfies readonly { moduleNumber: number; ruleType: 'MIN_ATTENDED_DAYS' | 'MIN_ATTENDANCE_PERCENT'; threshold: number }[];
+  await Promise.all(
+    defaultRules.map((rule) =>
+      prisma.certificateModuleRule.upsert({ where: { moduleNumber: rule.moduleNumber }, create: rule, update: rule }),
+    ),
+  );
 }
 
 async function makeUser(name: string, role: 'ADMIN' | 'MENTOR' | 'STUDENT', extra: Record<string, unknown> = {}) {
