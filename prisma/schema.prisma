@@ -83,19 +83,20 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  mentoredClasses    ClassSession[]    @relation("MentorClasses")
-  enrolledClasses    ClassEnrollment[]
-  attendances        Attendance[]
-  submissions        Submission[]
-  createdAssignments Assignment[]      @relation("MentorAssignments")
-  conversationsA     Conversation[]    @relation("ConversationA")
-  conversationsB     Conversation[]    @relation("ConversationB")
-  messagesSent       Message[]
-  chatBlocksMade     ChatBlock[]       @relation("ChatBlocker")
-  chatBlocksReceived ChatBlock[]       @relation("ChatBlocked")
-  reportsMade        MessageReport[]   @relation("ReportReporter")
-  reportsReceived    MessageReport[]   @relation("ReportReported")
-  notifications      Notification[]
+  mentoredClasses      ClassSession[]        @relation("MentorClasses")
+  enrolledClasses      ClassEnrollment[]
+  attendances          Attendance[]
+  submissions          Submission[]
+  createdAssignments   Assignment[]          @relation("MentorAssignments")
+  conversationsA       Conversation[]        @relation("ConversationA")
+  conversationsB       Conversation[]        @relation("ConversationB")
+  messagesSent         Message[]
+  chatBlocksMade       ChatBlock[]           @relation("ChatBlocker")
+  chatBlocksReceived   ChatBlock[]           @relation("ChatBlocked")
+  reportsMade          MessageReport[]       @relation("ReportReporter")
+  reportsReceived      MessageReport[]       @relation("ReportReported")
+  notifications        Notification[]
+  certificateIssuances CertificateIssuance[]
 }
 
 // Intentos de inicio de sesión fallidos: limitan la fuerza bruta entre reinicios y réplicas
@@ -319,6 +320,7 @@ enum NotificationType {
   SUBMISSION_GRADED
   NEW_MESSAGE
   CHAT_REPORT
+  CERTIFICATE_AVAILABLE
 }
 
 model Notification {
@@ -337,4 +339,38 @@ model Notification {
 
   @@unique([userId, dedupeKey])
   @@index([userId, readAt, createdAt])
+}
+
+enum CertificateRuleType {
+  // threshold = porcentaje mínimo (0-100) de días con asistencia sobre los días con charlas del módulo
+  MIN_ATTENDANCE_PERCENT
+  // threshold = cantidad mínima de días con asistencia (p. ej. 1 para la excepción del Módulo 1)
+  MIN_ATTENDED_DAYS
+}
+
+// Regla de elegibilidad por módulo, editable desde el panel admin.
+model CertificateModuleRule {
+  id           String              @id @default(cuid())
+  moduleNumber Int                 @unique
+  ruleType     CertificateRuleType @default(MIN_ATTENDANCE_PERCENT)
+  threshold    Int
+  updatedAt    DateTime            @updatedAt
+}
+
+// Certificado emitido por (estudiante, módulo): código único de verificación, reutilizado en cada
+// re-descarga. studentName/studentNumber son una foto del dato al emitir, para que el PDF no cambie
+// si la cuenta se edita después.
+model CertificateIssuance {
+  id               String   @id @default(cuid())
+  studentId        String
+  moduleNumber     Int
+  verificationCode String   @unique
+  studentName      String
+  studentNumber    String
+  issuedAt         DateTime @default(now())
+  downloadCount    Int      @default(1)
+  student          User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, moduleNumber])
+  @@index([studentId])
 }

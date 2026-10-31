@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api';
-import { countUnreadMessages, syncDueSoon } from '@/lib/notifications';
+import { countUnreadMessages, syncCertificatesAvailable, syncDueSoon } from '@/lib/notifications';
 import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -20,7 +20,10 @@ export const POST = withAuth('activity', 'any', async (_req, user) => {
     await prisma.user.update({ where: { id: user.id }, data: { lastSeenAt: now } });
   }
 
-  if (user.roles.includes('STUDENT')) await syncDueSoon(user.id, now);
+  if (user.roles.includes('STUDENT')) {
+    await syncDueSoon(user.id, now);
+    await syncCertificatesAvailable(user.id, now);
+  }
 
   const [unreadNotifications, unreadMessages, latest] = await Promise.all([
     prisma.notification.count({ where: { userId: user.id, readAt: null } }),

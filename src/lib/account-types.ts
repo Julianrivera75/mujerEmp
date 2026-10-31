@@ -21,3 +21,8 @@ export function accountTypeOf(role: string, extraRoles: readonly string[]): Acco
 /** La cuenta cumple funciones de estudiante (rol principal o adicional). */
 export const isStudentAccount = (role: string, extraRoles: readonly string[]) =>
   role === 'STUDENT' || extraRoles.includes('STUDENT');
+
+/** Dominio de las cuentas de prueba sembradas por prisma/seed.js; no hay un campo isTest en el modelo. */
+const TEST_ACCOUNT_EMAIL_DOMAIN = '@empoderas.org';
+
+export const isTestAccountEmail = (email: string) => email.toLowerCase().endsWith(TEST_ACCOUNT_EMAIL_DOMAIN);

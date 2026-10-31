@@ -52,6 +52,7 @@ const adminLinks = [
   { href: '/admin/usuarios', label: 'Usuarios', icon: Users },
   { href: '/admin/clases', label: 'Programación', icon: Calendar },
   { href: '/admin/asistencias', label: 'Asistencias', icon: CheckCircle2 },
+  { href: '/admin/certificados', label: 'Certificados', icon: Award },
   { href: '/admin/tareas', label: 'Tareas', icon: ClipboardList },
   { href: '/chat', label: 'Chat', icon: MessageCircle },
   { href: '/admin/reportes', label: 'Reportes', icon: Flag },

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { HttpError, parseBody, withAuth } from '@/lib/api';
+import { syncCertificatesAvailable } from '@/lib/notifications';
 import prisma from '@/lib/prisma';
 import { resolveTargetClass } from '@/lib/rooms';
 import { loadRoomClasses } from '@/lib/rooms-db';
@@ -43,6 +44,9 @@ export const POST = withAuth('attendance/mark', 'any', async (req, user) => {
 
     const target = nearby.find((c) => c.id === targetId) ?? classSession;
     attendedClass = { id: target.id, title: target.title };
+
+    // Avisa de inmediato si esta asistencia volvió disponible algún certificado, sin esperar al heartbeat.
+    await syncCertificatesAvailable(user.id, new Date(), true);
   }
 
   return NextResponse.json({

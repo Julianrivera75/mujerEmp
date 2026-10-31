@@ -2,27 +2,39 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Award, Download, Eye, Lock, Printer } from 'lucide-react';
+import { ArrowLeft, Award, Download, ExternalLink, Eye, Lock } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ProgressBar } from '@/components/ui/ProgressBar';
-import { canvasToBlob, renderCertificate } from '@/lib/certificate-canvas';
 import { logClientError } from '@/lib/client-log';
 import { formatDateLong } from '@/lib/format';
-import { CERTIFICATE_MODULES, type ModuleStatus } from '@/lib/modules';
-import { CERTIFICATE_MIN_ATTENDANCE_PERCENT } from '@/lib/legal';
+import { type ModuleStatus } from '@/lib/modules';
+
+interface CertificateRule {
+  ruleType: 'MIN_ATTENDANCE_PERCENT' | 'MIN_ATTENDED_DAYS';
+  threshold: number;
+}
 
 interface ModuleState {
   number: number;
   title: string;
   issuedOn: string;
-  art: string;
   status: ModuleStatus;
   percentage: number;
   attended: number;
   total: number;
   opensAt: string;
+  rule: CertificateRule;
+}
+
+/** Cuánto le falta a la estudiante para cumplir la regla del módulo, en su propia forma (porcentaje o días). */
+function missingAttendanceText(module: ModuleState): string {
+  if (module.rule.ruleType === 'MIN_ATTENDED_DAYS') {
+    const plural = module.rule.threshold === 1 ? 'día' : 'días';
+    return `Necesitas asistir al menos a ${module.rule.threshold} ${plural} con charla (tienes ${module.attended}).`;
+  }
+  return `Necesitas al menos ${module.rule.threshold}% de asistencia para descargarlo (tienes ${module.percentage}%).`;
 }
 
 interface CertificatesResponse {
@@ -70,12 +82,15 @@ export default function StudentCertificatesPage() {
 
   const openPreview = async (module: ModuleState) => {
     if (!data?.student.studentNumber) return;
-    const layout = CERTIFICATE_MODULES.find((m) => m.number === module.number);
-    if (!layout) return;
     setWorking(module.number);
     try {
-      const canvas = await renderCertificate(layout, data.student.name, data.student.studentNumber);
-      const blob = await canvasToBlob(canvas);
+      const res = await fetch(`/api/certificates/pdf?moduleNumber=${module.number}`);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setError(body.error || 'No pudimos generar el certificado. Inténtalo de nuevo.');
+        return;
+      }
+      const blob = await res.blob();
       setPreview({ moduleNumber: module.number, url: URL.createObjectURL(blob) });
     } catch (err) {
       logClientError('Error generando el certificado:', err);
@@ -97,9 +112,8 @@ export default function StudentCertificatesPage() {
         </Link>
         <h1 className="font-display text-2xl font-bold text-slate-800 sm:text-3xl">Certificados por módulo</h1>
         <p className="mt-0.5 text-xs text-slate-500">
-          Cada módulo se certifica al terminar el mes. Necesitas asistir al menos al{' '}
-          {CERTIFICATE_MIN_ATTENDANCE_PERCENT}% de los días con charlas del módulo (cuenta cada día en que entras al
-          menos a una charla).
+          Cada módulo se certifica al terminar el mes. Cada uno tiene su propia regla de asistencia: consulta el detalle
+          en su tarjeta.
         </p>
       </div>
 
@@ -133,27 +147,35 @@ export default function StudentCertificatesPage() {
 
           {preview && (
             <section aria-label={`Certificado del módulo ${preview.moduleNumber}`} className="mt-8">
-              <div className="no-print mb-3 flex flex-wrap items-center justify-between gap-3">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                 <h2 className="font-display text-lg font-bold text-slate-800">
                   Certificado del módulo {preview.moduleNumber}
                 </h2>
                 <div className="flex gap-2">
                   <Button
                     href={preview.url}
-                    download={`certificado-modulo-${preview.moduleNumber}.png`}
+                    download={`certificado-modulo-${preview.moduleNumber}.pdf`}
                     leftIcon={<Download className="h-4 w-4" />}
                   >
                     Descargar
                   </Button>
-                  <Button variant="secondary" leftIcon={<Printer className="h-4 w-4" />} onClick={() => window.print()}>
-                    Imprimir
+                  <Button
+                    variant="secondary"
+                    href={preview.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    leftIcon={<ExternalLink className="h-4 w-4" />}
+                  >
+                    Abrir en pestaña nueva
                   </Button>
                 </div>
               </div>
-              <img
+              {/* El soporte de `<embed>` para PDF varía en móvil; el enlace de arriba es el respaldo. */}
+              <embed
                 src={preview.url}
-                alt={`Certificado del módulo ${preview.moduleNumber} de ${data.student.name}`}
-                className="w-full rounded-2xl border border-slate-200 shadow-lift print:rounded-none print:border-0 print:shadow-none"
+                type="application/pdf"
+                aria-label={`Certificado del módulo ${preview.moduleNumber} de ${data.student.name}`}
+                className="h-[600px] w-full rounded-2xl border border-slate-200 shadow-lift"
               />
             </section>
           )}
@@ -202,7 +224,7 @@ function ModuleCard({
           : module.status === 'no-classes'
             ? 'Este módulo aún no tiene clases registradas para ti.'
             : module.status === 'low-attendance'
-              ? `Necesitas al menos ${CERTIFICATE_MIN_ATTENDANCE_PERCENT}% de asistencia para descargarlo.`
+              ? missingAttendanceText(module)
               : `Fecha de emisión del certificado: ${module.issuedOn}.`}
       </p>
 

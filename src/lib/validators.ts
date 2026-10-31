@@ -3,6 +3,7 @@ export const USER_STATUSES = ['ACTIVO', 'INACTIVO'] as const;
 export const CLASS_STATUSES = ['PROGRAMADA', 'FINALIZADA', 'CANCELADA'] as const;
 export const RESOURCE_TYPES = ['YOUTUBE', 'DOCUMENT', 'LINK'] as const;
 export const SUBMISSION_FILE_TYPES = ['PDF', 'IMAGE', 'DOC', 'LINK'] as const;
+export const CERTIFICATE_RULE_TYPES = ['MIN_ATTENDANCE_PERCENT', 'MIN_ATTENDED_DAYS'] as const;
 
 export const MEET_HOSTS = ['meet.google.com'];
 export const YOUTUBE_HOSTS = ['youtube.com', 'youtu.be', 'youtube-nocookie.com'];

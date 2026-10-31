@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { NotificationType } from '@prisma/client';
 import { unreadByConversation } from './chat-db';
+import { loadModuleEligibility } from './certificate-eligibility-db';
 import prisma from './prisma';
 
 /** Aviso "por vencer" para las tareas que vencen dentro de este margen. */
@@ -8,6 +9,7 @@ const DUE_SOON_HOURS = 48;
 const SYNC_INTERVAL_MS = 10 * 60 * 1000;
 
 const lastSync = new Map<string, number>();
+const certLastSync = new Map<string, number>();
 
 export interface NotificationInput {
   type: NotificationType;
@@ -99,6 +101,37 @@ export async function syncDueSoon(userId: string, now = new Date()) {
 /** Solo para pruebas: reinicia el límite de sincronización. */
 export function resetDueSoonThrottle() {
   lastSync.clear();
+}
+
+/**
+ * Avisa a la estudiante de cada módulo cuyo certificado acaba de quedar disponible. Se ejecuta con el
+ * latido de actividad (como máximo cada 10 minutos) y, sin ese límite, justo al marcar una asistencia,
+ * para dar aviso inmediato si esa asistencia fue la que volvió elegible al módulo.
+ */
+export async function syncCertificatesAvailable(userId: string, now = new Date(), force = false) {
+  const previous = certLastSync.get(userId) ?? 0;
+  if (!force && now.getTime() - previous < SYNC_INTERVAL_MS) return;
+  certLastSync.set(userId, now.getTime());
+
+  const eligibility = (await loadModuleEligibility([userId], { now })).get(userId) ?? [];
+  await Promise.all(
+    eligibility
+      .filter((m) => m.status === 'available')
+      .map((m) =>
+        notifyMany([userId], {
+          type: 'CERTIFICATE_AVAILABLE',
+          title: 'Certificado disponible',
+          body: `"${m.title}" ya está disponible para descargar.`,
+          href: '/estudiante/certificado',
+          dedupeKey: `cert:${m.number}`,
+        }),
+      ),
+  );
+}
+
+/** Solo para pruebas: reinicia el límite de sincronización de certificados. */
+export function resetCertificateSyncThrottle() {
+  certLastSync.clear();
 }
 
 /** Cantidad de mensajes sin leer de una persona en todas sus conversaciones. */

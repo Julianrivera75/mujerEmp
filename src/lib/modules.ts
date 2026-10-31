@@ -1,5 +1,3 @@
-import { CERTIFICATE_MIN_ATTENDANCE_PERCENT } from './legal';
-
 /** Posición (en píxeles del arte original) de una línea en blanco donde se estampa un dato de la estudiante. */
 export interface CertificateLine {
   x1: number;
@@ -89,15 +87,4 @@ export function certificateOpensAt(monthKey: string): Date {
 
 export function attendancePercentage(attended: number, total: number): number {
   return total > 0 ? Math.round((attended / total) * 100) : 0;
-}
-
-/**
- * Estado del certificado de un módulo: se habilita al entrar en la ventana final del mes
- * y exige el porcentaje mínimo de asistencia a las clases de ese módulo.
- */
-export function moduleStatus(monthKey: string, now: Date, attended: number, total: number): ModuleStatus {
-  if (now < certificateOpensAt(monthKey)) return 'locked';
-  if (total === 0) return 'no-classes';
-  if (attendancePercentage(attended, total) < CERTIFICATE_MIN_ATTENDANCE_PERCENT) return 'low-attendance';
-  return 'available';
 }

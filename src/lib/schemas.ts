@@ -2,6 +2,7 @@ import { MAX_CLASS_IMAGES } from './class-images';
 import { DELIVERY_TYPES, MAX_FILES_LIMIT, REQUIREMENTS } from './delivery';
 import { z } from 'zod';
 import {
+  CERTIFICATE_RULE_TYPES,
   CLASS_STATUSES,
   MEET_HOSTS,
   RESOURCE_TYPES,
@@ -392,3 +393,14 @@ export const markConversationReadSchema = z.object({ conversationId: requiredId(
 export const markNotificationsReadSchema = z
   .object({ id: z.string().min(1).optional(), all: z.boolean().optional() })
   .refine((v) => v.all === true || Boolean(v.id), { message: 'Indica qué notificación marcar.' });
+
+export const certificateRuleSchema = z
+  .object({
+    moduleNumber: z.number().int().min(1, 'Módulo inválido.').max(5, 'Módulo inválido.'),
+    ruleType: z.enum(CERTIFICATE_RULE_TYPES, { error: 'Tipo de regla inválido.' }),
+    threshold: z.number().int().min(1, 'El umbral debe ser al menos 1.'),
+  })
+  .refine((v) => v.ruleType !== 'MIN_ATTENDANCE_PERCENT' || v.threshold <= 100, {
+    message: 'El porcentaje no puede superar 100.',
+    path: ['threshold'],
+  });
