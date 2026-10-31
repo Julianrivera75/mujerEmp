@@ -1,35 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { CERTIFICATE_MODULES, attendancePercentage, certificateOpensAt, moduleStatus } from '@/lib/modules';
+import { CERTIFICATE_MODULES, attendancePercentage, certificateOpensAt } from '@/lib/modules';
 
 describe('certificateOpensAt', () => {
   it('abre en los últimos 5 días del mes del módulo', () => {
     expect(certificateOpensAt('2026-10')).toEqual(new Date(2026, 9, 27)); // 27 al 31 de octubre
     expect(certificateOpensAt('2026-11')).toEqual(new Date(2026, 10, 26)); // noviembre tiene 30 días
     expect(certificateOpensAt('2027-02')).toEqual(new Date(2027, 1, 24)); // febrero de 2027 tiene 28 días
-  });
-});
-
-describe('moduleStatus', () => {
-  const inWindow = new Date(2026, 9, 28, 10);
-
-  it('está bloqueado antes de la ventana, aunque tenga asistencia completa', () => {
-    expect(moduleStatus('2026-10', new Date(2026, 9, 26, 23, 59), 4, 4)).toBe('locked');
-    expect(moduleStatus('2026-10', new Date(2026, 8, 25), 4, 4)).toBe('locked');
-  });
-
-  it('se habilita desde el primer instante de la ventana y sigue disponible después', () => {
-    expect(moduleStatus('2026-10', new Date(2026, 9, 27, 0, 0), 4, 4)).toBe('available');
-    expect(moduleStatus('2026-10', new Date(2027, 5, 1), 4, 4)).toBe('available');
-  });
-
-  it('exige el 80 % de asistencia', () => {
-    expect(moduleStatus('2026-10', inWindow, 4, 5)).toBe('available'); // 80 %
-    expect(moduleStatus('2026-10', inWindow, 3, 5)).toBe('low-attendance'); // 60 %
-    expect(moduleStatus('2026-10', inWindow, 0, 4)).toBe('low-attendance');
-  });
-
-  it('sin clases en el módulo no hay certificado', () => {
-    expect(moduleStatus('2026-10', inWindow, 0, 0)).toBe('no-classes');
   });
 });
 

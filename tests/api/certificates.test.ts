@@ -102,4 +102,23 @@ describe('GET /api/certificates', () => {
     vi.useFakeTimers({ toFake: ['Date'], now: new Date(2026, 10, 2) });
     expect((await read(await list())).body.modules[0].status).toBe('low-attendance');
   });
+
+  it('el Módulo 1 es la excepción: basta un día de asistencia aunque el porcentaje sea bajo', async () => {
+    await octoberClass('Clase 1', true, 1);
+    await octoberClass('Clase 2', false, 8);
+    await octoberClass('Clase 3', false, 15);
+    await octoberClass('Clase 4', false, 22);
+
+    actAs(w.sofia);
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date(2026, 9, 29) });
+    const first = (await read(await list())).body.modules[0];
+    expect(first).toMatchObject({
+      number: 1,
+      attended: 1,
+      total: 4,
+      percentage: 25,
+      status: 'available',
+      rule: { ruleType: 'MIN_ATTENDED_DAYS', threshold: 1 },
+    });
+  });
 });

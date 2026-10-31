@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import { HttpError, withAuth } from '@/lib/api';
-import { CERTIFICATE_MODULES, attendancePercentage, certificateOpensAt, moduleStatus } from '@/lib/modules';
+import { loadModuleEligibility } from '@/lib/certificate-eligibility-db';
+import { CERTIFICATE_MODULES } from '@/lib/modules';
 import prisma from '@/lib/prisma';
-import { loadDaySummaries } from '@/lib/attendance-days-db';
-import { summarizeByMonth } from '@/lib/attendance-days';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,26 +14,23 @@ export const GET = withAuth('certificates GET', ['STUDENT'], async (_req, user) 
   });
   if (!student) throw new HttpError(404, 'Usuario no encontrado.');
 
-  // Cada módulo se mide en días: presente el día si entró al menos a una charla, sobre los días con charlas del mes.
-  const summary = (await loadDaySummaries([user.id])).get(user.id);
-  const months = summarizeByMonth(summary?.days ?? []);
+  const eligibility = (await loadModuleEligibility([user.id])).get(user.id) ?? [];
+  const byNumber = new Map(eligibility.map((m) => [m.number, m]));
 
-  const now = new Date();
   const modules = CERTIFICATE_MODULES.map((module) => {
-    const month = months.get(module.monthKey);
-    const total = month?.totalDays ?? 0;
-    const attended = month?.attendedDays ?? 0;
+    const m = byNumber.get(module.number);
     return {
       number: module.number,
       title: module.title,
       issuedOn: module.issuedOn,
       art: module.art,
-      status: moduleStatus(module.monthKey, now, attended, total),
-      percentage: attendancePercentage(attended, total),
+      status: m?.status ?? 'no-classes',
+      percentage: m?.percentage ?? 0,
       /** Días presentes y días con charlas del módulo. */
-      attended,
-      total,
-      opensAt: certificateOpensAt(module.monthKey).toISOString(),
+      attended: m?.attended ?? 0,
+      total: m?.total ?? 0,
+      opensAt: m?.opensAt ?? null,
+      rule: m?.rule ?? { ruleType: 'MIN_ATTENDANCE_PERCENT', threshold: 80 },
     };
   });
 
