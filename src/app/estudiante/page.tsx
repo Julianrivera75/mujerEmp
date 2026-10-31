@@ -20,7 +20,6 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { useSessionUser } from '@/lib/user-context';
-import { CERTIFICATE_MIN_ATTENDANCE_PERCENT } from '@/lib/legal';
 import JoinMeetButton from '@/components/JoinMeetButton';
 import { formatDateLong, formatTimeRange, formatWeekdayDate } from '@/lib/format';
 import { logClientError } from '@/lib/client-log';
@@ -167,8 +166,8 @@ export default function StudentDashboardPage() {
               <div>
                 <h2 className="text-base font-bold text-slate-800">Tu progreso hacia los certificados por módulo</h2>
                 <p className="text-xs text-slate-600">
-                  Requiere al menos un {CERTIFICATE_MIN_ATTENDANCE_PERCENT}% de asistencia. Cuenta cada día en que
-                  entras al menos a una charla por Google Meet.
+                  Cada módulo tiene su propia regla de asistencia; consulta el detalle en Certificados. Cuenta cada
+                  día en que entras al menos a una charla por Google Meet.
                 </p>
               </div>
             </div>

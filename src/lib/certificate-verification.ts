@@ -7,7 +7,7 @@ const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const CODE_LENGTH = 6;
 
 /** Código de verificación único, formato ED-AAAA-XXXXXX (año de emisión + 6 caracteres aleatorios). */
-export function generateVerificationCode(year: number = new Date().getFullYear()): string {
+function generateVerificationCode(year: number = new Date().getFullYear()): string {
   let suffix = '';
   for (let i = 0; i < CODE_LENGTH; i++) suffix += CODE_ALPHABET[randomInt(CODE_ALPHABET.length)];
   return `ED-${year}-${suffix}`;
