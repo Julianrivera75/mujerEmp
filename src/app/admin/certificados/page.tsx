@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Award, Download, Save, Search } from 'lucide-react';
+import { Award, Bell, Download, Save, Search } from 'lucide-react';
 import { Badge, StatusPill } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -77,6 +77,7 @@ export default function AdminCertificatesPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [includeTest, setIncludeTest] = useState(false);
   const [savingModule, setSavingModule] = useState<number | null>(null);
+  const [notifying, setNotifying] = useState(false);
   const { show } = useToast();
 
   const load = async () => {
@@ -169,6 +170,24 @@ export default function AdminCertificatesPage() {
     show('success', 'Reporte exportado.');
   };
 
+  const notifyNow = async () => {
+    setNotifying(true);
+    try {
+      const res = await fetch('/api/admin/certificates/notify', { method: 'POST' });
+      const body = await res.json();
+      if (!res.ok) {
+        show('error', body.error || 'No se pudo enviar el aviso.');
+        return;
+      }
+      show('success', `Certificados disponibles notificados a ${body.notified} estudiantes.`);
+    } catch (err) {
+      logClientError('Error notificando certificados:', err);
+      show('error', 'Error de conexión al enviar el aviso.');
+    } finally {
+      setNotifying(false);
+    }
+  };
+
   return (
     <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
       <PageHeader
@@ -176,9 +195,19 @@ export default function AdminCertificatesPage() {
         title="Certificados por módulo"
         description="Elegibilidad de cada estudiante según la regla configurada por módulo."
         actions={
-          <Button variant="secondary" leftIcon={<Download className="h-4 w-4" />} onClick={exportCsv}>
-            Exportar CSV
-          </Button>
+          <>
+            <Button
+              variant="secondary"
+              loading={notifying}
+              leftIcon={<Bell className="h-4 w-4" />}
+              onClick={notifyNow}
+            >
+              Notificar certificados disponibles
+            </Button>
+            <Button variant="secondary" leftIcon={<Download className="h-4 w-4" />} onClick={exportCsv}>
+              Exportar CSV
+            </Button>
+          </>
         }
       />
 
