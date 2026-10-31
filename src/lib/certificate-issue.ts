@@ -17,7 +17,10 @@ export async function issueCertificatePdf(
   const module = CERTIFICATE_MODULES.find((m) => m.number === moduleNumber);
   if (!module) throw new HttpError(400, 'Módulo inválido.');
 
-  const student = await prisma.user.findUnique({ where: { id: studentId }, select: { name: true, memberNumber: true } });
+  const student = await prisma.user.findUnique({
+    where: { id: studentId },
+    select: { name: true, memberNumber: true },
+  });
   if (!student) throw new HttpError(404, 'Estudiante no encontrada.');
 
   const eligibility = (await loadModuleEligibility([studentId])).get(studentId) ?? [];

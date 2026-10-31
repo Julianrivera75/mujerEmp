@@ -15,7 +15,11 @@ export async function resetDb() {
     { moduleNumber: 3, ruleType: 'MIN_ATTENDANCE_PERCENT', threshold: 80 },
     { moduleNumber: 4, ruleType: 'MIN_ATTENDANCE_PERCENT', threshold: 80 },
     { moduleNumber: 5, ruleType: 'MIN_ATTENDANCE_PERCENT', threshold: 80 },
-  ] as const satisfies readonly { moduleNumber: number; ruleType: 'MIN_ATTENDED_DAYS' | 'MIN_ATTENDANCE_PERCENT'; threshold: number }[];
+  ] as const satisfies readonly {
+    moduleNumber: number;
+    ruleType: 'MIN_ATTENDED_DAYS' | 'MIN_ATTENDANCE_PERCENT';
+    threshold: number;
+  }[];
   await Promise.all(
     defaultRules.map((rule) =>
       prisma.certificateModuleRule.upsert({ where: { moduleNumber: rule.moduleNumber }, create: rule, update: rule }),

@@ -166,8 +166,8 @@ export default function StudentDashboardPage() {
               <div>
                 <h2 className="text-base font-bold text-slate-800">Tu progreso hacia los certificados por módulo</h2>
                 <p className="text-xs text-slate-600">
-                  Cada módulo tiene su propia regla de asistencia; consulta el detalle en Certificados. Cuenta cada
-                  día en que entras al menos a una charla por Google Meet.
+                  Cada módulo tiene su propia regla de asistencia; consulta el detalle en Certificados. Cuenta cada día
+                  en que entras al menos a una charla por Google Meet.
                 </p>
               </div>
             </div>

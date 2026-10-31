@@ -39,10 +39,7 @@ export async function loadModuleEligibility(
   if (studentIds.length === 0) return new Map();
   const now = options.now ?? new Date();
 
-  const [summaries, rules] = await Promise.all([
-    loadDaySummaries(studentIds, options),
-    getCertificateRules(),
-  ]);
+  const [summaries, rules] = await Promise.all([loadDaySummaries(studentIds, options), getCertificateRules()]);
 
   return new Map(
     studentIds.map((studentId) => {

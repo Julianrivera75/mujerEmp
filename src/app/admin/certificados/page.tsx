@@ -196,12 +196,7 @@ export default function AdminCertificatesPage() {
         description="Elegibilidad de cada estudiante según la regla configurada por módulo."
         actions={
           <>
-            <Button
-              variant="secondary"
-              loading={notifying}
-              leftIcon={<Bell className="h-4 w-4" />}
-              onClick={notifyNow}
-            >
+            <Button variant="secondary" loading={notifying} leftIcon={<Bell className="h-4 w-4" />} onClick={notifyNow}>
               Notificar certificados disponibles
             </Button>
             <Button variant="secondary" leftIcon={<Download className="h-4 w-4" />} onClick={exportCsv}>
@@ -232,9 +227,7 @@ export default function AdminCertificatesPage() {
                 <Select
                   label="Tipo de regla"
                   value={rule.ruleType}
-                  onChange={(e) =>
-                    updateLocalRule(rule.moduleNumber, { ruleType: e.target.value as RuleType })
-                  }
+                  onChange={(e) => updateLocalRule(rule.moduleNumber, { ruleType: e.target.value as RuleType })}
                 >
                   <option value="MIN_ATTENDANCE_PERCENT">Porcentaje mínimo de asistencia</option>
                   <option value="MIN_ATTENDED_DAYS">Días mínimos con asistencia</option>
@@ -344,7 +337,11 @@ export default function AdminCertificatesPage() {
               },
               {
                 header: 'Módulo',
-                cell: (r) => <span className="font-semibold text-slate-700">{r.moduleNumber}. {r.moduleTitle}</span>,
+                cell: (r) => (
+                  <span className="font-semibold text-slate-700">
+                    {r.moduleNumber}. {r.moduleTitle}
+                  </span>
+                ),
               },
               {
                 header: 'Asistencia',
@@ -356,11 +353,17 @@ export default function AdminCertificatesPage() {
                       </span>
                       <span>{r.percentage}%</span>
                     </div>
-                    <ProgressBar value={r.percentage} label={`Asistencia de ${r.name} en el módulo ${r.moduleNumber}`} />
+                    <ProgressBar
+                      value={r.percentage}
+                      label={`Asistencia de ${r.name} en el módulo ${r.moduleNumber}`}
+                    />
                   </div>
                 ),
               },
-              { header: 'Regla', cell: (r) => <span className="text-slate-600">{ruleText(r.ruleType, r.threshold)}</span> },
+              {
+                header: 'Regla',
+                cell: (r) => <span className="text-slate-600">{ruleText(r.ruleType, r.threshold)}</span>,
+              },
               {
                 header: 'Estado',
                 align: 'center',

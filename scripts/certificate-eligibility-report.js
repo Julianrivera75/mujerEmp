@@ -35,7 +35,9 @@ function dayKeyOf(date) {
  * limitado al mes del Módulo 1, para no depender de los módulos TypeScript del proyecto desde un script plano.
  */
 function summarizeModule1(classes, attendances, now) {
-  const active = classes.filter((c) => c.status !== 'CANCELADA' && dayKeyOf(c.dateStart).slice(0, 7) === MODULE_1_MONTH_KEY);
+  const active = classes.filter(
+    (c) => c.status !== 'CANCELADA' && dayKeyOf(c.dateStart).slice(0, 7) === MODULE_1_MONTH_KEY,
+  );
   const byId = new Map(active.map((c) => [c.id, c]));
 
   const days = new Map();
@@ -81,11 +83,18 @@ async function main() {
     const [enrollments, attendances] = await Promise.all([
       prisma.classEnrollment.findMany({
         where: { studentId: { in: students.map((s) => s.id) } },
-        select: { studentId: true, classSession: { select: { id: true, dateStart: true, status: true, meetLink: true } } },
+        select: {
+          studentId: true,
+          classSession: { select: { id: true, dateStart: true, status: true, meetLink: true } },
+        },
       }),
       prisma.attendance.findMany({
         where: { studentId: { in: students.map((s) => s.id) } },
-        select: { studentId: true, classId: true, classSession: { select: { id: true, dateStart: true, status: true, meetLink: true } } },
+        select: {
+          studentId: true,
+          classId: true,
+          classSession: { select: { id: true, dateStart: true, status: true, meetLink: true } },
+        },
       }),
     ]);
 

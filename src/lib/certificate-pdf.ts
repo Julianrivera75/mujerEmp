@@ -26,7 +26,12 @@ export interface GenerateCertificatePdfParams {
 }
 
 /** Tamaño de letra que cabe en el ancho de la línea, sin bajar del mínimo legible. */
-function fitFontSize(font: Awaited<ReturnType<PDFDocument['embedFont']>>, text: string, maxWidth: number, start: number) {
+function fitFontSize(
+  font: Awaited<ReturnType<PDFDocument['embedFont']>>,
+  text: string,
+  maxWidth: number,
+  start: number,
+) {
   let fontSize = start;
   while (font.widthOfTextAtSize(text, fontSize) > maxWidth && fontSize > 16) fontSize -= 1;
   return fontSize;

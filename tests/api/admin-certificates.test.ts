@@ -75,7 +75,10 @@ describe('GET/PUT /api/admin/certificates/rules', () => {
     expect(
       (
         await putRules(
-          request('/api/admin/certificates/rules', { method: 'PUT', body: { moduleNumber: 2, ruleType: 'MIN_ATTENDANCE_PERCENT', threshold: 50 } }),
+          request('/api/admin/certificates/rules', {
+            method: 'PUT',
+            body: { moduleNumber: 2, ruleType: 'MIN_ATTENDANCE_PERCENT', threshold: 50 },
+          }),
         )
       ).status,
     ).toBe(403);
@@ -91,7 +94,10 @@ describe('GET/PUT /api/admin/certificates/rules', () => {
 
   it('cambiar el umbral se refleja de inmediato en la elegibilidad', async () => {
     // Módulo 2 = noviembre de 2026: una charla asistida y una sin asistir (50 %).
-    for (const [day, attended] of [[3, true], [10, false]] as const) {
+    for (const [day, attended] of [
+      [3, true],
+      [10, false],
+    ] as const) {
       await prisma.classSession.create({
         data: {
           title: `Charla módulo 2 (${day})`,
@@ -123,9 +129,7 @@ describe('GET/PUT /api/admin/certificates/rules', () => {
     );
     expect(put.status).toBe(200);
 
-    const after = await read(
-      await getCertificates(request('/api/admin/certificates?moduleNumber=2&status=available')),
-    );
+    const after = await read(await getCertificates(request('/api/admin/certificates?moduleNumber=2&status=available')));
     expect(after.body.rows.some((r: { email: string }) => r.email === w.sofia.email)).toBe(true);
   });
 });
@@ -145,9 +149,9 @@ describe('GET /api/admin/certificates/pdf', () => {
 
   it('no entrega el PDF si la estudiante no es elegible', async () => {
     actAs(w.admin);
-    expect(
-      (await getPdf(request(`/api/admin/certificates/pdf?studentId=${w.sofia.id}&moduleNumber=1`))).status,
-    ).toBe(403);
+    expect((await getPdf(request(`/api/admin/certificates/pdf?studentId=${w.sofia.id}&moduleNumber=1`))).status).toBe(
+      403,
+    );
   });
 
   it('entrega el PDF de cualquier estudiante elegible', async () => {

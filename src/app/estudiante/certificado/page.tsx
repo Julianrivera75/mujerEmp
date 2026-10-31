@@ -112,8 +112,8 @@ export default function StudentCertificatesPage() {
         </Link>
         <h1 className="font-display text-2xl font-bold text-slate-800 sm:text-3xl">Certificados por módulo</h1>
         <p className="mt-0.5 text-xs text-slate-500">
-          Cada módulo se certifica al terminar el mes. Cada uno tiene su propia regla de asistencia: consulta el
-          detalle en su tarjeta.
+          Cada módulo se certifica al terminar el mes. Cada uno tiene su propia regla de asistencia: consulta el detalle
+          en su tarjeta.
         </p>
       </div>
 
