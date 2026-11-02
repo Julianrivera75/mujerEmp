@@ -1,8 +1,10 @@
 import type { Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
-import { MAX_ROWS, withAuth } from '@/lib/api';
+import { HttpError, MAX_ROWS, parseBody, withAuth } from '@/lib/api';
 import prisma from '@/lib/prisma';
 import { loadDaySummaries } from '@/lib/attendance-days-db';
+import { syncCertificatesAvailable } from '@/lib/notifications';
+import { adminMarkAttendanceSchema } from '@/lib/schemas';
 
 export const dynamic = 'force-dynamic';
 
@@ -114,4 +116,26 @@ export const GET = withAuth('admin/attendances', 'any', async (req, user) => {
   }
 
   return NextResponse.json({ attendances, studentSummary, days });
+});
+
+/** Marca a una estudiante como presente en una clase a mano (p. ej. tuvo problemas técnicos para ingresar). */
+export const POST = withAuth('admin/attendances POST', ['ADMIN'], async (req) => {
+  const { classId, studentId } = await parseBody(req, adminMarkAttendanceSchema);
+
+  const enrollment = await prisma.classEnrollment.findUnique({
+    where: { classId_studentId: { classId, studentId } },
+    select: { id: true },
+  });
+  if (!enrollment) throw new HttpError(400, 'La estudiante no está inscrita en esa clase.');
+
+  const attendance = await prisma.attendance.upsert({
+    where: { classId_studentId: { classId, studentId } },
+    update: {},
+    create: { classId, studentId, joinedAt: new Date(), source: 'CARRY' },
+  });
+
+  // Avisa de inmediato si esto volvió disponible algún certificado, sin esperar al heartbeat.
+  await syncCertificatesAvailable(studentId, new Date(), true);
+
+  return NextResponse.json({ success: true, attendance });
 });

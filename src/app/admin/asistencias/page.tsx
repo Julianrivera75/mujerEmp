@@ -2,11 +2,11 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { rankMatches } from '@/lib/text-search';
-import { CheckCircle2, Clock, Search, Award, Download } from 'lucide-react';
+import { CheckCircle2, CheckCheck, Clock, Search, Award, Download } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Field';
+import { Input, Select } from '@/components/ui/Field';
 import { ResponsiveTable } from '@/components/ui/Table';
 import { StatusPill } from '@/components/ui/Badge';
 import { ProgressBar } from '@/components/ui/ProgressBar';
@@ -15,6 +15,12 @@ import { SkeletonRow } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { formatDateTimeSeconds, formatTimeSeconds, formatWeekdayDate } from '@/lib/format';
 import { logClientError } from '@/lib/client-log';
+
+interface ClassOption {
+  id: string;
+  title: string;
+  dateStart: string;
+}
 
 interface DayRow {
   studentId: string;
@@ -44,25 +50,73 @@ const dayDate = (day: string) => new Date(`${day}T12:00:00-05:00`);
 export default function AdminAttendancePage() {
   const [days, setDays] = useState<DayRow[]>([]);
   const [studentSummary, setStudentSummary] = useState<StudentSummary[]>([]);
+  const [classes, setClasses] = useState<ClassOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [manualStudentId, setManualStudentId] = useState('');
+  const [manualClassId, setManualClassId] = useState('');
+  const [marking, setMarking] = useState(false);
   const { show } = useToast();
 
+  const loadAttendances = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/admin/attendances');
+      const data = await res.json();
+      setDays(data.days || []);
+      setStudentSummary(data.studentSummary || []);
+    } catch (err) {
+      logClientError('Error cargando asistencias:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
+    loadAttendances();
     (async () => {
       try {
-        setLoading(true);
-        const res = await fetch('/api/admin/attendances');
+        const res = await fetch('/api/classes');
         const data = await res.json();
-        setDays(data.days || []);
-        setStudentSummary(data.studentSummary || []);
+        const options: ClassOption[] = (data.classes || [])
+          .map((c: { id: string; title: string; dateStart: string }) => ({
+            id: c.id,
+            title: c.title,
+            dateStart: c.dateStart,
+          }))
+          .sort((a: ClassOption, b: ClassOption) => b.dateStart.localeCompare(a.dateStart));
+        setClasses(options);
       } catch (err) {
-        logClientError('Error cargando asistencias:', err);
-      } finally {
-        setLoading(false);
+        logClientError('Error cargando clases:', err);
       }
     })();
   }, []);
+
+  const markPresent = async () => {
+    if (!manualStudentId || !manualClassId) return;
+    setMarking(true);
+    try {
+      const res = await fetch('/api/admin/attendances', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ classId: manualClassId, studentId: manualStudentId }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        show('error', body.error || 'No se pudo marcar la asistencia.');
+        return;
+      }
+      show('success', 'Asistencia marcada manualmente.');
+      setManualStudentId('');
+      setManualClassId('');
+      await loadAttendances();
+    } catch (err) {
+      logClientError('Error marcando asistencia manual:', err);
+      show('error', 'No se pudo marcar la asistencia.');
+    } finally {
+      setMarking(false);
+    }
+  };
 
   // La misma búsqueda filtra las tarjetas de porcentaje y la tabla, con lo más parecido arriba.
   const filteredDays = useMemo(
@@ -128,6 +182,51 @@ export default function AdminAttendancePage() {
           </Button>
         }
       />
+
+      <Card variant="glass" className="p-4 sm:p-6">
+        <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-bold text-slate-800">
+          <CheckCheck className="h-5 w-5 text-role-ink" />
+          <span>Marcar asistencia manual</span>
+        </h2>
+        <p className="mb-4 text-xs text-slate-500">
+          Para cuando una estudiante tuvo problemas técnicos para ingresar pero sí participó. Queda registrado como
+          marcado a mano, no como clic real.
+        </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="flex-1">
+            <Select
+              label="Estudiante"
+              value={manualStudentId}
+              onChange={(e) => setManualStudentId(e.target.value)}
+            >
+              <option value="">Selecciona una estudiante...</option>
+              {studentSummary.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} ({s.email})
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div className="flex-1">
+            <Select label="Clase" value={manualClassId} onChange={(e) => setManualClassId(e.target.value)}>
+              <option value="">Selecciona una clase...</option>
+              {classes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {formatWeekdayDate(new Date(c.dateStart))} — {c.title}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <Button
+            loading={marking}
+            disabled={!manualStudentId || !manualClassId}
+            leftIcon={<CheckCheck className="h-4 w-4" />}
+            onClick={markPresent}
+          >
+            Marcar presente
+          </Button>
+        </div>
+      </Card>
 
       <div>
         <h2 className="mb-4 flex items-center gap-2 font-display text-lg font-bold text-slate-800">
