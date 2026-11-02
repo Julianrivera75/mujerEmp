@@ -20,7 +20,12 @@ interface BaseProps {
 
 type ButtonAsButton = BaseProps & React.ButtonHTMLAttributes<HTMLButtonElement> & { href?: undefined };
 
-type ButtonAsLink = BaseProps & Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> & { href: string };
+type ButtonAsLink = BaseProps &
+  Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> & {
+    href: string;
+    /** Para blob:/data: u otras URLs que no son rutas de la app: usa un <a> normal, sin pasar por next/link. */
+    external?: boolean;
+  };
 
 export type ButtonProps = ButtonAsButton | ButtonAsLink;
 
@@ -54,7 +59,16 @@ export function Button(props: ButtonProps) {
   );
 
   if ('href' in props && props.href) {
-    const { href: _href, ...anchorRest } = rest as React.AnchorHTMLAttributes<HTMLAnchorElement>;
+    const { href: _href, external, ...anchorRest } = rest as React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+      external?: boolean;
+    };
+    if (external) {
+      return (
+        <a href={props.href} className={cls} {...anchorRest}>
+          {content}
+        </a>
+      );
+    }
     return (
       <Link href={props.href} className={cls} {...anchorRest}>
         {content}

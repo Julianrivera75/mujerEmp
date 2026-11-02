@@ -154,6 +154,7 @@ export default function StudentCertificatesPage() {
                 <div className="flex gap-2">
                   <Button
                     href={preview.url}
+                    external
                     download={`certificado-modulo-${preview.moduleNumber}.pdf`}
                     leftIcon={<Download className="h-4 w-4" />}
                   >
@@ -162,6 +163,7 @@ export default function StudentCertificatesPage() {
                   <Button
                     variant="secondary"
                     href={preview.url}
+                    external
                     target="_blank"
                     rel="noreferrer"
                     leftIcon={<ExternalLink className="h-4 w-4" />}

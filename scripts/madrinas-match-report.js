@@ -83,18 +83,16 @@ async function main() {
       return;
     }
 
-    const marthaIndex = process.argv.indexOf('--find-martha');
-    if (marthaIndex >= 0) {
+    const findIndex = process.argv.indexOf('--find');
+    if (findIndex >= 0) {
+      const term = normalize(process.argv[findIndex + 1] || '');
       const all = await prisma.user.findMany({
         where: { anonymizedAt: null },
         select: { id: true, name: true, email: true, role: true, extraRoles: true, status: true },
         orderBy: { name: 'asc' },
       });
-      const matches = all.filter((u) => {
-        const n = normalize(u.name);
-        return n.includes('martha') || n.includes('marta') || n.includes('rojas');
-      });
-      console.log(`=== Coincidencias de "martha"/"marta"/"rojas" en TODOS los roles (${matches.length}) ===\n`);
+      const matches = all.filter((u) => normalize(u.name).includes(term));
+      console.log(`=== Coincidencias de "${term}" en TODOS los roles (${matches.length}) ===\n`);
       if (matches.length === 0) {
         console.log('Ninguna, en ningún rol.');
       } else {
