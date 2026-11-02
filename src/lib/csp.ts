@@ -10,7 +10,8 @@ export function buildCsp(nonce: string, isProd: boolean): string {
     'frame-src https://www.youtube-nocookie.com https://www.youtube.com',
     "media-src 'self' blob: https:",
     "worker-src 'self' blob:",
-    "object-src 'none'",
+    // 'self' blob: para permitir el <embed> del PDF del certificado (generado como blob: en el cliente).
+    "object-src 'self' blob:",
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
