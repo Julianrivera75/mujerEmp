@@ -74,11 +74,32 @@ async function main() {
     const applyIds = applyIndex >= 0 ? process.argv[applyIndex + 1].split(',').map((s) => s.trim()) : null;
 
     if (applyIds) {
+      // Acepta STUDENT puro y también MENTOR/ADMIN con rol adicional STUDENT (p. ej. Martha Rojas es MENTOR_STUDENT).
       const result = await prisma.user.updateMany({
-        where: { id: { in: applyIds }, role: 'STUDENT' },
+        where: { id: { in: applyIds }, OR: [{ role: 'STUDENT' }, { extraRoles: { has: 'STUDENT' } }] },
         data: { certificateExempt: true },
       });
       console.log(`certificateExempt=true aplicado a ${result.count} cuenta(s): ${applyIds.join(', ')}`);
+      return;
+    }
+
+    const marthaIndex = process.argv.indexOf('--find-martha');
+    if (marthaIndex >= 0) {
+      const all = await prisma.user.findMany({
+        where: { anonymizedAt: null },
+        select: { id: true, name: true, email: true, role: true, extraRoles: true, status: true },
+        orderBy: { name: 'asc' },
+      });
+      const matches = all.filter((u) => {
+        const n = normalize(u.name);
+        return n.includes('martha') || n.includes('marta') || n.includes('rojas');
+      });
+      console.log(`=== Coincidencias de "martha"/"marta"/"rojas" en TODOS los roles (${matches.length}) ===\n`);
+      if (matches.length === 0) {
+        console.log('Ninguna, en ningún rol.');
+      } else {
+        console.table(matches);
+      }
       return;
     }
 
@@ -109,10 +130,13 @@ async function main() {
       return;
     }
 
-    // No selecciona `certificateExempt`: la migración que la agrega todavía no está desplegada en producción
-    // en el momento de este reporte (ver plan, el --apply corre después del deploy).
+    // Incluye STUDENT puro y cuentas MENTOR/ADMIN con rol adicional STUDENT (p. ej. mentora-y-estudiante).
     const students = await prisma.user.findMany({
-      where: { role: 'STUDENT', anonymizedAt: null, email: { not: { endsWith: TEST_ACCOUNT_DOMAIN } } },
+      where: {
+        OR: [{ role: 'STUDENT' }, { extraRoles: { has: 'STUDENT' } }],
+        anonymizedAt: null,
+        email: { not: { endsWith: TEST_ACCOUNT_DOMAIN } },
+      },
       select: { id: true, name: true, email: true, memberNumber: true },
       orderBy: { name: 'asc' },
     });
