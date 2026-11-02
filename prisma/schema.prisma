@@ -79,6 +79,8 @@ model User {
   lastSeenAt         DateTime?
   showOnlineStatus   Boolean   @default(true)
   emailNotifications Boolean   @default(true)
+  // "Madrina": ya pagó su cupo, así que no le aplica ninguna regla de asistencia para el certificado (los 5 módulos).
+  certificateExempt  Boolean   @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

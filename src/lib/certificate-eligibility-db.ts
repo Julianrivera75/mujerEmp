@@ -39,11 +39,17 @@ export async function loadModuleEligibility(
   if (studentIds.length === 0) return new Map();
   const now = options.now ?? new Date();
 
-  const [summaries, rules] = await Promise.all([loadDaySummaries(studentIds, options), getCertificateRules()]);
+  const [summaries, rules, exemptRows] = await Promise.all([
+    loadDaySummaries(studentIds, options),
+    getCertificateRules(),
+    prisma.user.findMany({ where: { id: { in: [...studentIds] } }, select: { id: true, certificateExempt: true } }),
+  ]);
+  const exemptById = new Map(exemptRows.map((u) => [u.id, u.certificateExempt]));
 
   return new Map(
     studentIds.map((studentId) => {
       const months = summarizeByMonth(summaries.get(studentId)?.days ?? []);
+      const exempt = exemptById.get(studentId) ?? false;
       const eligibility = CERTIFICATE_MODULES.map((module) => {
         const month = months.get(module.monthKey);
         const total = month?.totalDays ?? 0;
@@ -53,7 +59,7 @@ export async function loadModuleEligibility(
           number: module.number,
           title: module.title,
           monthKey: module.monthKey,
-          status: moduleStatus(module.monthKey, now, attended, total, rule),
+          status: moduleStatus(module.monthKey, now, attended, total, rule, exempt),
           percentage: attendancePercentage(attended, total),
           attended,
           total,
