@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Bell, CheckCheck, ClipboardCheck, ClipboardList, Clock, Flag, Inbox, MessageCircle } from 'lucide-react';
+import { Award, Bell, CheckCheck, ClipboardCheck, ClipboardList, Clock, Flag, Inbox, MessageCircle } from 'lucide-react';
 import { useActivity } from '@/components/ActivityProvider';
 import { useNotificationOpener } from '@/components/useNotificationOpener';
 import { formatDayMonthTime } from '@/lib/format';
@@ -17,7 +17,8 @@ export interface NotificationItem {
     | 'SUBMISSION_RECEIVED'
     | 'SUBMISSION_GRADED'
     | 'NEW_MESSAGE'
-    | 'CHAT_REPORT';
+    | 'CHAT_REPORT'
+    | 'CERTIFICATE_AVAILABLE';
   title: string;
   body: string;
   href: string;
@@ -32,10 +33,12 @@ const ICONS = {
   SUBMISSION_GRADED: ClipboardCheck,
   NEW_MESSAGE: MessageCircle,
   CHAT_REPORT: Flag,
+  CERTIFICATE_AVAILABLE: Award,
 } as const;
 
 export function NotificationIcon({ type, className }: { type: NotificationItem['type']; className?: string }) {
-  const Icon = ICONS[type];
+  // Red de seguridad: un tipo de notificación nuevo sin ícono mapeado no debe tumbar la página.
+  const Icon = ICONS[type] ?? Bell;
   return <Icon className={className} strokeWidth={1.75} />;
 }
 
