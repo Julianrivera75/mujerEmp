@@ -1,8 +1,9 @@
 /*
- * Revisión de inscripciones: lista las estudiantes activas a las que les falta alguna clase vigente (no cancelada y que
- * aún no termina) y las cuentas con más de un rol. Por defecto solo lee y no modifica nada.
+ * Revisión de inscripciones: lista las estudiantes activas a las que les falta alguna clase de la cohorte actual
+ * (no cancelada, desde MODULE_1_MONTH_KEY, pasada o futura) y las cuentas con más de un rol. Por defecto solo lee
+ * y no modifica nada.
  *
- * Con --apply inscribe a cada estudiante activa en las clases vigentes que le faltan. Solo agrega inscripciones:
+ * Con --apply inscribe a cada estudiante activa en las clases de la cohorte que le faltan. Solo agrega inscripciones:
  * nunca borra ni cambia las existentes. Ojo: si la administración sacó a propósito a alguien de una clase, --apply la
  * volvería a agregar; por eso conviene revisar primero la lista.
  *
@@ -12,6 +13,8 @@
  */
 const { PrismaClient } = require('@prisma/client');
 
+// Primer mes de la cohorte de certificación 2026-2027 (ver CERTIFICATE_MODULES[0].monthKey en src/lib/modules.ts).
+const MODULE_1_MONTH_KEY = '2026-10';
 const MAX_LISTED = 60;
 
 async function main() {
@@ -19,11 +22,11 @@ async function main() {
   const prisma = new PrismaClient();
   try {
     const classes = await prisma.classSession.findMany({
-      where: { status: { not: 'CANCELADA' }, dateEnd: { gte: new Date() } },
+      where: { status: { not: 'CANCELADA' }, monthKey: { gte: MODULE_1_MONTH_KEY } },
       select: { id: true, title: true, dateStart: true, _count: { select: { enrollments: true } } },
       orderBy: { dateStart: 'asc' },
     });
-    console.log(`Clases vigentes: ${classes.length}`);
+    console.log(`Clases de la cohorte actual: ${classes.length}`);
     for (const c of classes) {
       console.log(
         ` - ${c.dateStart.toISOString().slice(0, 16)}  inscritas ${c._count.enrollments}  ${c.title.slice(0, 60)}`,
@@ -55,8 +58,8 @@ async function main() {
       .filter((s) => s.absent.length > 0);
 
     console.log(`\nEstudiantes activas: ${students.length}`);
-    console.log(`Con todas las clases vigentes: ${students.length - missing.length}`);
-    console.log(`A las que les falta alguna clase vigente: ${missing.length}`);
+    console.log(`Con todas las clases de la cohorte: ${students.length - missing.length}`);
+    console.log(`A las que les falta alguna clase de la cohorte: ${missing.length}`);
     for (const s of missing.slice(0, MAX_LISTED)) {
       const dual = s.role === 'STUDENT' ? '' : '  [cuenta con dos roles]';
       console.log(

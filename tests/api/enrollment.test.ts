@@ -22,7 +22,7 @@ const put = (handler: (req: Request) => Promise<Response>, path: string, body: R
   handler(request(path, { method: 'PUT', body }));
 
 describe('enrollInUpcomingClasses', () => {
-  it('inscribe en las clases vigentes y no duplica si ya estaba inscrita', async () => {
+  it('inscribe en las clases de la cohorte y no duplica si ya estaba inscrita', async () => {
     const count = await enrollInUpcomingClasses(w.lucia.id);
     expect(count).toBe(2); // la clase de Carolina y la de Valeria, ambas futuras en el mundo de pruebas
     expect(await prisma.classEnrollment.count({ where: { studentId: w.lucia.id } })).toBe(2);
@@ -32,15 +32,22 @@ describe('enrollInUpcomingClasses', () => {
     expect(await prisma.classEnrollment.count({ where: { studentId: w.lucia.id } })).toBe(2);
   });
 
-  it('no inscribe en una clase cancelada ni en una que ya terminó', async () => {
+  it('no inscribe en una clase cancelada, pero sí en una ya terminada de la cohorte actual', async () => {
     await prisma.classSession.update({ where: { id: w.claseCarolina.id }, data: { status: 'CANCELADA' } });
     await prisma.classSession.update({
       where: { id: w.claseValeria.id },
       data: { dateStart: new Date(Date.now() - 2 * 86400000), dateEnd: new Date(Date.now() - 86400000) },
     });
     const count = await enrollInUpcomingClasses(w.lucia.id);
-    expect(count).toBe(0);
-    expect(await prisma.classEnrollment.count({ where: { studentId: w.lucia.id } })).toBe(0);
+    expect(count).toBe(1); // la de Valeria ya terminó pero sigue dentro de la cohorte, así que cuenta
+    expect(await prisma.classEnrollment.count({ where: { studentId: w.lucia.id } })).toBe(1);
+  });
+
+  it('no inscribe en una clase de una cohorte anterior', async () => {
+    await prisma.classSession.update({ where: { id: w.claseValeria.id }, data: { monthKey: '2026-09' } });
+    const count = await enrollInUpcomingClasses(w.lucia.id);
+    expect(count).toBe(1); // solo la de Carolina; la de Valeria quedó fuera de la cohorte actual
+    expect(await prisma.classEnrollment.count({ where: { studentId: w.lucia.id } })).toBe(1);
   });
 });
 

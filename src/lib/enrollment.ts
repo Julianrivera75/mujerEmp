@@ -1,12 +1,18 @@
+import { CERTIFICATE_MODULES } from './modules';
 import prisma from './prisma';
 
+/** Primer mes de la cohorte de certificación actual; las clases de meses anteriores son de cohortes previas. */
+const COHORT_START_MONTH_KEY = CERTIFICATE_MODULES[0].monthKey;
+
 /**
- * Inscribe a una estudiante en todas las clases vigentes (no canceladas y que aún no terminaron),
- * sin importar el mes. Es idempotente: no duplica una inscripción que ya exista.
+ * Inscribe a una estudiante en todas las clases de la cohorte actual (no canceladas, desde
+ * `COHORT_START_MONTH_KEY`), sin importar si ya pasaron o todavía no — así ve también las
+ * grabaciones de meses anteriores y sus certificados de módulos previos quedan coherentes.
+ * Es idempotente: no duplica una inscripción que ya exista.
  */
-export async function enrollInUpcomingClasses(studentId: string, now = new Date()) {
+export async function enrollInUpcomingClasses(studentId: string) {
   const classes = await prisma.classSession.findMany({
-    where: { status: { not: 'CANCELADA' }, dateEnd: { gte: now } },
+    where: { status: { not: 'CANCELADA' }, monthKey: { gte: COHORT_START_MONTH_KEY } },
     select: { id: true },
   });
   if (classes.length === 0) return 0;
@@ -21,11 +27,11 @@ export async function enrollInUpcomingClasses(studentId: string, now = new Date(
 export interface MissingEnrollmentsReport {
   totalClasses: number;
   totalStudents: number;
-  /** Estudiantes a las que les falta al menos una clase vigente. */
+  /** Estudiantes a las que les falta al menos una clase de la cohorte actual. */
   missingStudents: number;
   /** Inscripciones que faltan en total (estudiante × clase). */
   missingEnrollments: number;
-  /** Clases vigentes con estudiantes sin inscribir, de mayor a menor número de faltantes. */
+  /** Clases de la cohorte con estudiantes sin inscribir, de mayor a menor número de faltantes. */
   classes: { id: string; title: string; dateStart: Date; missing: number }[];
   /** Estudiantes con inscripciones faltantes, de mayor a menor número de faltantes. */
   students: { id: string; name: string; email: string; missing: number }[];
@@ -34,12 +40,12 @@ export interface MissingEnrollmentsReport {
 }
 
 /**
- * Qué inscripciones faltan: cada estudiante activa (con vigencia al día) debería estar en todas las clases vigentes
- * (no canceladas y que aún no terminan). Solo lee; no modifica nada.
+ * Qué inscripciones faltan: cada estudiante activa (con vigencia al día) debería estar en todas las clases de la
+ * cohorte actual (no canceladas, desde `COHORT_START_MONTH_KEY`, pasadas o futuras). Solo lee; no modifica nada.
  */
 export async function findMissingEnrollments(now = new Date()): Promise<MissingEnrollmentsReport> {
   const classes = await prisma.classSession.findMany({
-    where: { status: { not: 'CANCELADA' }, dateEnd: { gte: now } },
+    where: { status: { not: 'CANCELADA' }, monthKey: { gte: COHORT_START_MONTH_KEY } },
     select: { id: true, title: true, dateStart: true },
     orderBy: { dateStart: 'asc' },
   });
@@ -90,7 +96,7 @@ export async function findMissingEnrollments(now = new Date()): Promise<MissingE
 
 const BATCH_SIZE = 1000;
 
-/** Inscribe a las estudiantes en las clases vigentes que les faltan. Solo agrega: nunca borra ni cambia inscripciones. */
+/** Inscribe a las estudiantes en las clases de la cohorte que les faltan. Solo agrega: nunca borra ni cambia inscripciones. */
 export async function syncMissingEnrollments(now = new Date()): Promise<number> {
   const { pairs } = await findMissingEnrollments(now);
   let added = 0;

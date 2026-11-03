@@ -26,10 +26,13 @@ function tempPassword(length = 12) {
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ROLES = ['STUDENT', 'MENTOR'];
 
-/** Inscribe a la estudiante en las clases vigentes (no canceladas y que aún no terminaron); no duplica. */
+// Primer mes de la cohorte de certificación 2026-2027 (ver CERTIFICATE_MODULES[0].monthKey en src/lib/modules.ts).
+const MODULE_1_MONTH_KEY = '2026-10';
+
+/** Inscribe a la estudiante en todas las clases de la cohorte actual (no canceladas, pasadas o futuras); no duplica. */
 async function enrollInUpcomingClasses(prisma, studentId) {
   const classes = await prisma.classSession.findMany({
-    where: { status: { not: 'CANCELADA' }, dateEnd: { gte: new Date() } },
+    where: { status: { not: 'CANCELADA' }, monthKey: { gte: MODULE_1_MONTH_KEY } },
     select: { id: true },
   });
   if (classes.length === 0) return 0;
