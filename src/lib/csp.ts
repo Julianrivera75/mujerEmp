@@ -7,7 +7,8 @@ export function buildCsp(nonce: string, isProd: boolean): string {
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
     "connect-src 'self' https:",
-    'frame-src https://www.youtube-nocookie.com https://www.youtube.com',
+    // 'self' blob: porque Chrome procesa el <embed> de PDF como si fuera un frame (no basta con object-src).
+    "frame-src 'self' blob: https://www.youtube-nocookie.com https://www.youtube.com",
     "media-src 'self' blob: https:",
     "worker-src 'self' blob:",
     // 'self' blob: para permitir el <embed> del PDF del certificado (generado como blob: en el cliente).
