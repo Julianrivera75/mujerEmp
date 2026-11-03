@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Award, Download, ExternalLink, Eye, Lock } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
@@ -53,6 +53,7 @@ export default function StudentCertificatesPage() {
   const [error, setError] = useState('');
   const [preview, setPreview] = useState<Preview | null>(null);
   const [working, setWorking] = useState<number | null>(null);
+  const previewRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     (async () => {
@@ -80,6 +81,11 @@ export default function StudentCertificatesPage() {
     };
   }, [preview]);
 
+  // La sección del certificado aparece debajo de las tarjetas: en móvil, sin esto, parece que "no pasó nada".
+  useEffect(() => {
+    if (preview) previewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [preview]);
+
   const openPreview = async (module: ModuleState) => {
     if (!data?.student.studentNumber) return;
     setWorking(module.number);
@@ -91,7 +97,16 @@ export default function StudentCertificatesPage() {
         return;
       }
       const blob = await res.blob();
-      setPreview({ moduleNumber: module.number, url: URL.createObjectURL(blob) });
+      const url = URL.createObjectURL(blob);
+      setPreview({ moduleNumber: module.number, url });
+
+      // Dispara la descarga de una vez: en móvil es la señal más clara de que sí funcionó.
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `certificado-modulo-${module.number}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch (err) {
       logClientError('Error generando el certificado:', err);
       setError('No pudimos generar el certificado. Inténtalo de nuevo.');
@@ -146,7 +161,7 @@ export default function StudentCertificatesPage() {
           </ul>
 
           {preview && (
-            <section aria-label={`Certificado del módulo ${preview.moduleNumber}`} className="mt-8">
+            <section ref={previewRef} aria-label={`Certificado del módulo ${preview.moduleNumber}`} className="mt-8">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                 <h2 className="font-display text-lg font-bold text-slate-800">
                   Certificado del módulo {preview.moduleNumber}
