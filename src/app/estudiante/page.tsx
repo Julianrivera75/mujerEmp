@@ -48,6 +48,9 @@ export default function StudentDashboardPage() {
   const user = useSessionUser();
   const [classes, setClasses] = useState<StudentClass[]>([]);
   const [loading, setLoading] = useState(true);
+  // Instante de la última carga de datos: se usa como "ahora" para toda la vista, en vez de recalcularlo en cada
+  // render, para que la asistencia mostrada no cambie sola por volver a renderizar sin datos nuevos.
+  const [asOf, setAsOf] = useState<Date>(() => new Date());
 
   const loadData = async ({ silent = false } = {}) => {
     try {
@@ -55,6 +58,7 @@ export default function StudentDashboardPage() {
       const res = await fetch('/api/classes');
       const data = await res.json();
       setClasses(data.classes || []);
+      setAsOf(new Date());
     } catch (err) {
       logClientError('Error cargando datos del estudiante:', err);
     } finally {
@@ -66,7 +70,7 @@ export default function StudentDashboardPage() {
     void loadData();
   }, []);
 
-  const now = new Date();
+  const now = asOf;
   // Una clase que ya terminó deja de ser "próxima" aunque nadie la haya marcado como finalizada, y cada clase sale en
   // exactamente una de las dos listas.
   const upcomingClasses = classes.filter((c) => !isPastClass(c, now));

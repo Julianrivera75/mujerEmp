@@ -40,7 +40,7 @@ export async function loadModuleEligibility(
   const now = options.now ?? new Date();
 
   const [summaries, rules, exemptRows] = await Promise.all([
-    loadDaySummaries(studentIds, options),
+    loadDaySummaries(studentIds, { ...options, now }),
     getCertificateRules(),
     prisma.user.findMany({ where: { id: { in: [...studentIds] } }, select: { id: true, certificateExempt: true } }),
   ]);

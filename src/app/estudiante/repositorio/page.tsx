@@ -11,6 +11,7 @@ import { SkeletonCard } from '@/components/ui/Skeleton';
 import { cn } from '@/lib/cn';
 import { formatDateLong, formatDayMonthShort } from '@/lib/format';
 import { logClientError } from '@/lib/client-log';
+import { isPastClass } from '@/lib/attendance-days';
 
 interface ClassSessionWithResources {
   id: string;
@@ -18,6 +19,7 @@ interface ClassSessionWithResources {
   description: string | null;
   dateStart: string;
   dateEnd: string;
+  status: string;
   youtubeUrl: string | null;
   recordingNotes: string | null;
   mentor: { name: string; email: string };
@@ -37,8 +39,13 @@ export default function StudentRepositoryPage() {
         const data = await res.json();
         const allClasses: ClassSessionWithResources[] = data.classes || [];
         setClasses(allClasses);
-        const withYoutube = allClasses.find((c) => c.youtubeUrl);
-        setSelectedClass(withYoutube || allClasses[0] || null);
+        // Por defecto se abre la clase ya dictada más reciente (donde la mentora suele dejar materiales recién
+        // subidos), no la primera de la lista ni la primera con video: esas podían ser de meses atrás.
+        const now = new Date();
+        const past = allClasses
+          .filter((c) => isPastClass(c, now))
+          .sort((a, b) => new Date(b.dateStart).getTime() - new Date(a.dateStart).getTime());
+        setSelectedClass(past[0] || allClasses[allClasses.length - 1] || null);
       } catch (err) {
         logClientError('Error cargando repositorio:', err);
       } finally {

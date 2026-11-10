@@ -73,6 +73,7 @@ export default function JoinMeetButton({
         }
       } else {
         logClientError('Registro de asistencia:', data.error);
+        show('error', data.error || 'No pudimos registrar tu asistencia. Avisa a la administración si esto sigue pasando.');
       }
     } catch (err) {
       logClientError('Error al marcar asistencia:', err);
