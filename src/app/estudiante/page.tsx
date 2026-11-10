@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Youtube,
   Award,
+  FileText,
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -21,6 +22,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { useSessionUser } from '@/lib/user-context';
 import JoinMeetButton from '@/components/JoinMeetButton';
+import FileLink from '@/components/FileLink';
 import { formatDateLong, formatTimeRange, formatWeekdayDate } from '@/lib/format';
 import { logClientError } from '@/lib/client-log';
 import { ClassGallery } from '@/components/ClassGallery';
@@ -28,6 +30,26 @@ import { RoomCard } from '@/components/RoomCard';
 import { isPastClass, summarizeDays } from '@/lib/attendance-days';
 import { groupRooms } from '@/lib/rooms';
 import { RoleSwitchBanner } from '@/components/RoleSwitchBanner';
+
+/** Materiales que la mentora dejó en la clase (enlaces, documentos): se ven aquí mismo, sin ir a otra página. */
+function ClassResourceList({ resources }: { resources: StudentClass['resources'] }) {
+  if (resources.length === 0) return null;
+  return (
+    <div className="space-y-1.5">
+      {resources.map((res) => (
+        <FileLink
+          key={res.id}
+          fileUrl={res.url}
+          isStoredFile={res.type === 'DOCUMENT'}
+          className="flex items-center gap-1.5 rounded-lg bg-role-soft px-2.5 py-1.5 text-xs font-bold text-role-ink transition-colors hover:brightness-95"
+        >
+          <FileText className="h-3.5 w-3.5 shrink-0" />
+          <span>{res.title}</span>
+        </FileLink>
+      ))}
+    </div>
+  );
+}
 
 interface StudentClass {
   id: string;
@@ -42,6 +64,7 @@ interface StudentClass {
   status: string;
   mentor: { name: string; email: string };
   attendances: { studentId: string; joinedAt: string }[];
+  resources: { id: string; title: string; type: string; url: string }[];
 }
 
 export default function StudentDashboardPage() {
@@ -262,6 +285,7 @@ export default function StudentDashboardPage() {
                       <p className="text-xs text-slate-500">
                         Mentora: <strong className="text-teal-700">{cls.mentor.name}</strong>
                       </p>
+                      <ClassResourceList resources={cls.resources} />
                     </div>
 
                     <div className="flex flex-col items-start gap-3 lg:items-end">
@@ -323,6 +347,7 @@ export default function StudentDashboardPage() {
                   </div>
                   <h3 className="mb-1 text-sm font-bold text-slate-800">{cls.title}</h3>
                   <p className="mb-3 text-xs text-slate-500">Docente: {cls.mentor.name}</p>
+                  <ClassResourceList resources={cls.resources} />
                 </div>
 
                 {cls.youtubeUrl ? (
