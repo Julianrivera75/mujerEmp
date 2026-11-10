@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Award, Bell, Download, Save, Search } from 'lucide-react';
+import { Award, Bell, Download, FileDown, Save, Search } from 'lucide-react';
 import { Badge, StatusPill } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -78,7 +78,19 @@ export default function AdminCertificatesPage() {
   const [includeTest, setIncludeTest] = useState(false);
   const [savingModule, setSavingModule] = useState<number | null>(null);
   const [notifying, setNotifying] = useState(false);
+  const [generating, setGenerating] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkRunning, setBulkRunning] = useState(false);
   const { show } = useToast();
+
+  const keyOf = (r: EligibilityRow) => `${r.studentId}-${r.moduleNumber}`;
+  const toggleSelected = (key: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
 
   const load = async () => {
     try {
@@ -168,6 +180,58 @@ export default function AdminCertificatesPage() {
     );
     downloadTextFile(`certificados_elegibilidad_${new Date().toISOString().slice(0, 10)}.csv`, csv);
     show('success', 'Reporte exportado.');
+  };
+
+  /** Genera y descarga el PDF real del certificado, igual que lo haría la propia estudiante. */
+  const generateCertificate = async (row: EligibilityRow, { silent = false } = {}): Promise<boolean> => {
+    const key = keyOf(row);
+    setGenerating(key);
+    try {
+      const res = await fetch(`/api/admin/certificates/pdf?studentId=${row.studentId}&moduleNumber=${row.moduleNumber}`);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        show('error', `${row.name} (módulo ${row.moduleNumber}): ${body.error || 'no se pudo generar el certificado.'}`);
+        return false;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `certificado-${row.name.replace(/\s+/g, '-').toLowerCase()}-modulo-${row.moduleNumber}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      if (!silent) show('success', `Certificado del módulo ${row.moduleNumber} de ${row.name} generado.`);
+      return true;
+    } catch (err) {
+      logClientError('Error generando certificado:', err);
+      show('error', `${row.name} (módulo ${row.moduleNumber}): error de conexión al generar el certificado.`);
+      return false;
+    } finally {
+      setGenerating(null);
+    }
+  };
+
+  /** Genera, una por una, el certificado de cada fila marcada (solo las disponibles cuentan). */
+  const generateSelected = async () => {
+    const targets = filteredRows.filter((r) => selected.has(keyOf(r)) && r.status === 'available');
+    if (targets.length === 0) {
+      show('info', 'No hay seleccionadas con el certificado disponible.');
+      return;
+    }
+    setBulkRunning(true);
+    let ok = 0;
+    try {
+      // Una descarga a la vez, para no saturar al navegador.
+      for (const row of targets) {
+        if (await generateCertificate(row, { silent: true })) ok += 1;
+      }
+      show('success', `Se generaron ${ok} de ${targets.length} certificados seleccionados.`);
+      setSelected(new Set());
+    } finally {
+      setBulkRunning(false);
+    }
   };
 
   const notifyNow = async () => {
@@ -309,6 +373,36 @@ export default function AdminCertificatesPage() {
           Incluir cuentas de prueba (@empoderas.org)
         </label>
 
+        {!loading && filteredRows.length > 0 && (
+          <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/60 p-3">
+            <span className="text-xs font-semibold text-slate-600">{selected.size} seleccionadas</span>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() =>
+                setSelected(
+                  new Set(filteredRows.filter((r) => r.status === 'available').map((r) => keyOf(r))),
+                )
+              }
+            >
+              Seleccionar todas las disponibles ({filteredRows.filter((r) => r.status === 'available').length})
+            </Button>
+            <Button size="sm" variant="ghost" disabled={selected.size === 0} onClick={() => setSelected(new Set())}>
+              Limpiar selección
+            </Button>
+            <Button
+              size="sm"
+              loading={bulkRunning}
+              disabled={selected.size === 0}
+              leftIcon={<FileDown className="h-4 w-4" />}
+              onClick={generateSelected}
+              className="ml-auto"
+            >
+              Generar certificados seleccionados
+            </Button>
+          </div>
+        )}
+
         {loading ? (
           <div className="divide-y divide-slate-100">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -323,6 +417,20 @@ export default function AdminCertificatesPage() {
             rows={filteredRows}
             rowKey={(r) => `${r.studentId}-${r.moduleNumber}`}
             columns={[
+              {
+                header: 'Sel.',
+                align: 'center',
+                cell: (r) => (
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-slate-300"
+                    disabled={r.status !== 'available'}
+                    checked={selected.has(keyOf(r))}
+                    onChange={() => toggleSelected(keyOf(r))}
+                    aria-label={`Seleccionar certificado del módulo ${r.moduleNumber} de ${r.name}`}
+                  />
+                ),
+              },
               {
                 header: 'Estudiante',
                 primary: true,
@@ -368,6 +476,22 @@ export default function AdminCertificatesPage() {
                 header: 'Estado',
                 align: 'center',
                 cell: (r) => <StatusPill label={STATUS_LABEL[r.status]} tone={STATUS_TONE[r.status]} />,
+              },
+              {
+                header: 'Certificado',
+                align: 'center',
+                cell: (r) => (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={r.status !== 'available'}
+                    loading={generating === `${r.studentId}-${r.moduleNumber}`}
+                    leftIcon={<FileDown className="h-4 w-4" />}
+                    onClick={() => generateCertificate(r)}
+                  >
+                    Generar
+                  </Button>
+                ),
               },
             ]}
           />

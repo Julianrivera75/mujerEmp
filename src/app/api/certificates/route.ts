@@ -21,6 +21,7 @@ export const GET = withAuth('certificates GET', ['STUDENT'], async (_req, user) 
     const m = byNumber.get(module.number);
     return {
       number: module.number,
+      monthKey: module.monthKey,
       title: module.title,
       issuedOn: module.issuedOn,
       art: module.art,

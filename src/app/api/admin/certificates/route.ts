@@ -15,7 +15,7 @@ export const GET = withAuth('admin/certificates GET', ['ADMIN'], async (req) => 
   const includeTest = searchParams.get('includeTest') === 'true';
 
   const students = await prisma.user.findMany({
-    where: { role: 'STUDENT' },
+    where: { OR: [{ role: 'STUDENT' }, { extraRoles: { has: 'STUDENT' } }] },
     select: { id: true, name: true, email: true, memberNumber: true, status: true },
     orderBy: { name: 'asc' },
     take: MAX_ROWS,

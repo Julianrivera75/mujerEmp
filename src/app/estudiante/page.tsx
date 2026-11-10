@@ -28,8 +28,18 @@ import { logClientError } from '@/lib/client-log';
 import { ClassGallery } from '@/components/ClassGallery';
 import { RoomCard } from '@/components/RoomCard';
 import { isPastClass, summarizeDays } from '@/lib/attendance-days';
+import { monthKeyOf } from '@/lib/months';
 import { groupRooms } from '@/lib/rooms';
 import { RoleSwitchBanner } from '@/components/RoleSwitchBanner';
+
+interface CertificateModuleProgress {
+  number: number;
+  monthKey: string;
+  title: string;
+  percentage: number;
+  attended: number;
+  total: number;
+}
 
 /** Materiales que la mentora dejó en la clase (enlaces, documentos): se ven aquí mismo, sin ir a otra página. */
 function ClassResourceList({ resources }: { resources: StudentClass['resources'] }) {
@@ -70,7 +80,10 @@ interface StudentClass {
 export default function StudentDashboardPage() {
   const user = useSessionUser();
   const [classes, setClasses] = useState<StudentClass[]>([]);
+  const [certModules, setCertModules] = useState<CertificateModuleProgress[]>([]);
   const [loading, setLoading] = useState(true);
+  // Por defecto se muestra el avance del módulo en curso; con el clic se ve el acumulado de todo el programa.
+  const [showAllTime, setShowAllTime] = useState(false);
   // Instante de la última carga de datos: se usa como "ahora" para toda la vista, en vez de recalcularlo en cada
   // render, para que la asistencia mostrada no cambie sola por volver a renderizar sin datos nuevos.
   const [asOf, setAsOf] = useState<Date>(() => new Date());
@@ -78,9 +91,13 @@ export default function StudentDashboardPage() {
   const loadData = async ({ silent = false } = {}) => {
     try {
       if (!silent) setLoading(true);
-      const res = await fetch('/api/classes');
-      const data = await res.json();
+      const [classesRes, certsRes] = await Promise.all([fetch('/api/classes'), fetch('/api/certificates')]);
+      const data = await classesRes.json();
       setClasses(data.classes || []);
+      if (certsRes.ok) {
+        const certsData = await certsRes.json();
+        setCertModules(certsData.modules || []);
+      }
       setAsOf(new Date());
     } catch (err) {
       logClientError('Error cargando datos del estudiante:', err);
@@ -112,7 +129,9 @@ export default function StudentDashboardPage() {
     now,
   );
   const totalAttended = daySummary.attendedDays;
-  const progressPct = daySummary.percentage;
+  const allTimePct = daySummary.percentage;
+  const currentModule = certModules.find((m) => m.monthKey === monthKeyOf(now));
+  const progressPct = !showAllTime && currentModule ? currentModule.percentage : allTimePct;
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
@@ -191,14 +210,29 @@ export default function StudentDashboardPage() {
                 <Award className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-slate-800">Tu progreso hacia los certificados por módulo</h2>
+                <h2 className="text-base font-bold text-slate-800">
+                  {!showAllTime && currentModule
+                    ? `Tu avance en el módulo actual (${currentModule.title})`
+                    : 'Tu avance acumulado de todo el programa'}
+                </h2>
                 <p className="text-xs text-slate-600">
                   Cada módulo tiene su propia regla de asistencia; consulta el detalle en Certificados. Cuenta cada día
                   en que entras al menos a una charla por Google Meet.
                 </p>
               </div>
             </div>
-            <span className="self-start text-lg font-black text-role-ink sm:self-auto">{progressPct}% cumplido</span>
+            <div className="flex flex-col items-start gap-1 sm:items-end">
+              <span className="text-lg font-black text-role-ink">{progressPct}% cumplido</span>
+              {currentModule && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllTime((v) => !v)}
+                  className="text-[11px] font-bold text-role-ink underline underline-offset-2 hover:brightness-90"
+                >
+                  {showAllTime ? 'Ver módulo actual' : 'Ver acumulado de todos los módulos'}
+                </button>
+              )}
+            </div>
           </div>
 
           <ProgressBar value={progressPct} label="Avance de asistencia" className="mb-3 h-3" />
