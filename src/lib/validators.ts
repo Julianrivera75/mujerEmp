@@ -114,6 +114,19 @@ export function extractHttpsUrls(text: string | null | undefined): string[] {
   return result;
 }
 
+/**
+ * El texto sin las URLs (ya se ofrecen como botón aparte con `extractHttpsUrls`): evita mostrar la
+ * dirección pelada y fea dentro del párrafo. Si no queda nada más que espacios, devuelve cadena vacía.
+ */
+export function stripHttpsUrls(text: string | null | undefined): string {
+  if (!text) return '';
+  return text
+    .replace(URL_IN_TEXT, '')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 /** Teléfono internacional flexible: dígitos, espacios, guiones, puntos, paréntesis y un "+" inicial (7 a 25 caracteres). */
 export function isValidPhone(value: string): boolean {
   return /^\+?[\d\s().-]{7,25}$/.test(value) && (value.match(/\d/g) ?? []).length >= 7;

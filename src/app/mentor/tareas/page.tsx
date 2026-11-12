@@ -30,7 +30,7 @@ import { formatDate, formatDue, formatTime } from '@/lib/format';
 import { logClientError } from '@/lib/client-log';
 import { cn } from '@/lib/cn';
 import { describeDelivery, isLateSubmission, submissionFiles, submissionLink, taskStatus } from '@/lib/delivery';
-import { extractHttpsUrls } from '@/lib/validators';
+import { extractHttpsUrls, stripHttpsUrls } from '@/lib/validators';
 import { useHighlight } from '@/lib/use-highlight';
 
 const STATUS_LABEL = { ACTIVE: 'Activa', DUE_SOON: 'Vence pronto', OVERDUE: 'Vencida' } as const;
@@ -182,6 +182,7 @@ export default function MentorTasksPage() {
             const status = taskStatus(ass.dueDate);
             const lateCount = ass.submissions.filter((sub) => isLateSubmission(sub.submittedAt, ass.dueDate)).length;
             const descriptionLinks = extractHttpsUrls(ass.description);
+            const descriptionText = stripHttpsUrls(ass.description);
 
             return (
               <Card
@@ -204,8 +205,8 @@ export default function MentorTasksPage() {
                       </span>
                     )}
                     <h2 className="text-xl font-bold text-slate-800">{ass.title}</h2>
-                    {ass.description && (
-                      <p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-600">{ass.description}</p>
+                    {descriptionText && (
+                      <p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-600">{descriptionText}</p>
                     )}
                     {descriptionLinks.length > 0 && (
                       <div className="mt-2 flex flex-col items-start gap-2">

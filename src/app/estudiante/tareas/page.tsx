@@ -28,7 +28,7 @@ import { logClientError } from '@/lib/client-log';
 import { cn } from '@/lib/cn';
 import { useHighlight } from '@/lib/use-highlight';
 import { describeDelivery, isLateSubmission, submissionFiles, submissionLink } from '@/lib/delivery';
-import { extractHttpsUrls } from '@/lib/validators';
+import { extractHttpsUrls, stripHttpsUrls } from '@/lib/validators';
 
 export default function StudentTasksPage() {
   const [assignments, setAssignments] = useState<StudentAssignment[]>([]);
@@ -126,8 +126,10 @@ export default function StudentTasksPage() {
             const dueDate = new Date(ass.dueDate);
             const formattedDue = formatDue(dueDate);
             // Si la mentora pegó un enlace en la descripción, se ofrece como botón: no todas saben
-            // que un enlace en un texto se puede copiar y pegar en el navegador.
+            // que un enlace en un texto se puede copiar y pegar en el navegador. El texto se
+            // muestra sin la URL pelada, ya que el botón la reemplaza.
             const descriptionLinks = extractHttpsUrls(ass.description);
+            const descriptionText = stripHttpsUrls(ass.description);
 
             return (
               <Card
@@ -152,9 +154,9 @@ export default function StudentTasksPage() {
                     </div>
 
                     <h2 className="text-xl font-bold text-slate-800">{ass.title}</h2>
-                    {ass.description && (
+                    {descriptionText && (
                       <p className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 text-xs leading-relaxed text-slate-600">
-                        {ass.description}
+                        {descriptionText}
                       </p>
                     )}
                     {descriptionLinks.length > 0 && (
