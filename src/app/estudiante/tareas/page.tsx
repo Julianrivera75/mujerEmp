@@ -28,6 +28,7 @@ import { logClientError } from '@/lib/client-log';
 import { cn } from '@/lib/cn';
 import { useHighlight } from '@/lib/use-highlight';
 import { describeDelivery, isLateSubmission, submissionFiles, submissionLink } from '@/lib/delivery';
+import { extractHttpsUrls } from '@/lib/validators';
 
 export default function StudentTasksPage() {
   const [assignments, setAssignments] = useState<StudentAssignment[]>([]);
@@ -124,6 +125,9 @@ export default function StudentTasksPage() {
             const isGraded = mySub && mySub.grade !== null;
             const dueDate = new Date(ass.dueDate);
             const formattedDue = formatDue(dueDate);
+            // Si la mentora pegó un enlace en la descripción, se ofrece como botón: no todas saben
+            // que un enlace en un texto se puede copiar y pegar en el navegador.
+            const descriptionLinks = extractHttpsUrls(ass.description);
 
             return (
               <Card
@@ -152,6 +156,23 @@ export default function StudentTasksPage() {
                       <p className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 text-xs leading-relaxed text-slate-600">
                         {ass.description}
                       </p>
+                    )}
+                    {descriptionLinks.length > 0 && (
+                      <div className="flex flex-col items-start gap-2">
+                        {descriptionLinks.map((url, i) => (
+                          <Button
+                            key={url}
+                            href={url}
+                            external
+                            target="_blank"
+                            rel="noreferrer"
+                            size="lg"
+                            leftIcon={<ExternalLink className="h-4 w-4" />}
+                          >
+                            Abrir enlace de la tarea{descriptionLinks.length > 1 ? ` ${i + 1}` : ''}
+                          </Button>
+                        ))}
+                      </div>
                     )}
                     {ass.attachmentName &&
                       (ass.attachmentUrl ? (

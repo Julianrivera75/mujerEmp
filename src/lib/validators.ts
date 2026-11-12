@@ -91,6 +91,29 @@ export function safeHref(value: string | null | undefined): string | undefined {
   return parseHttpsUrl(value ?? '') ?? undefined;
 }
 
+const URL_IN_TEXT = /https:\/\/[^\s<>"']+/g;
+
+/**
+ * URLs https válidas y únicas dentro de un bloque de texto libre (p. ej. la descripción de una
+ * tarea donde alguien pegó un enlace). Sirve para ofrecer un botón de "abrir enlace" además del
+ * texto, pensado para quien no sabe copiar y pegar una URL.
+ */
+export function extractHttpsUrls(text: string | null | undefined): string[] {
+  if (!text) return [];
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const match of text.match(URL_IN_TEXT) ?? []) {
+    // Quita puntuación final que probablemente no es parte de la URL (un punto de cierre, una coma, etc.).
+    const cleaned = match.replace(/[),.;:!?]+$/, '');
+    const valid = parseHttpsUrl(cleaned);
+    if (valid && !seen.has(valid)) {
+      seen.add(valid);
+      result.push(valid);
+    }
+  }
+  return result;
+}
+
 /** Teléfono internacional flexible: dígitos, espacios, guiones, puntos, paréntesis y un "+" inicial (7 a 25 caracteres). */
 export function isValidPhone(value: string): boolean {
   return /^\+?[\d\s().-]{7,25}$/.test(value) && (value.match(/\d/g) ?? []).length >= 7;
