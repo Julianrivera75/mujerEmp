@@ -46,6 +46,9 @@ function ClassResourceList({ resources }: { resources: StudentClass['resources']
   if (resources.length === 0) return null;
   return (
     <div className="space-y-1.5">
+      <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">
+        Materiales de la mentora
+      </p>
       {resources.map((res) => (
         <FileLink
           key={res.id}
