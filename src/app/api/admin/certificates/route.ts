@@ -44,6 +44,14 @@ export const GET = withAuth('admin/certificates GET', ['ADMIN'], async (req) => 
         total: m.total,
         ruleType: m.rule.ruleType,
         threshold: m.rule.threshold,
+        override: m.override
+          ? {
+              action: m.override.action,
+              reason: m.override.reason,
+              createdByName: m.override.createdByName,
+              createdAt: m.override.createdAt,
+            }
+          : null,
       }));
   });
 

@@ -46,20 +46,23 @@ interface EligibilityRow {
   total: number;
   ruleType: RuleType;
   threshold: number;
+  override: { action: 'AUTHORIZED' | 'BLOCKED'; reason: string; createdByName: string; createdAt: string } | null;
 }
 
 const STATUS_LABEL: Record<ModuleStatus, string> = {
   available: 'Disponible',
-  locked: 'Bloqueado',
+  locked: 'Bloqueado por fecha',
   'low-attendance': 'Falta asistencia',
   'no-classes': 'Sin clases',
+  blocked: 'Bloqueada por admin',
 };
 
-const STATUS_TONE: Record<ModuleStatus, 'success' | 'neutral' | 'warning'> = {
+const STATUS_TONE: Record<ModuleStatus, 'success' | 'neutral' | 'warning' | 'danger'> = {
   available: 'success',
   locked: 'neutral',
   'low-attendance': 'warning',
   'no-classes': 'neutral',
+  blocked: 'danger',
 };
 
 const ruleText = (ruleType: RuleType, threshold: number) =>
@@ -76,6 +79,7 @@ export default function AdminCertificatesPage() {
   const [moduleFilter, setModuleFilter] = useState('1');
   const [statusFilter, setStatusFilter] = useState('');
   const [includeTest, setIncludeTest] = useState(false);
+  const [accountStatusFilter, setAccountStatusFilter] = useState('');
   const [savingModule, setSavingModule] = useState<number | null>(null);
   const [notifying, setNotifying] = useState(false);
   const [generating, setGenerating] = useState<string | null>(null);
@@ -122,10 +126,12 @@ export default function AdminCertificatesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [moduleFilter, statusFilter, includeTest]);
 
-  const filteredRows = useMemo(
-    () => rankMatches(rows, search, (r) => [r.name, r.email]).map((r) => r.item),
-    [rows, search],
-  );
+  const filteredRows = useMemo(() => {
+    const byAccountStatus = accountStatusFilter
+      ? rows.filter((r) => r.accountStatus === accountStatusFilter)
+      : rows;
+    return rankMatches(byAccountStatus, search, (r) => [r.name, r.email]).map((r) => r.item);
+  }, [rows, search, accountStatusFilter]);
 
   const counts = useMemo(() => {
     const eligible = filteredRows.filter((r) => r.status === 'available').length;
@@ -165,17 +171,33 @@ export default function AdminCertificatesPage() {
       return;
     }
     const csv = toCsv(
-      ['Estudiante', 'Correo', 'Número', 'Módulo', 'Estado', 'Asistencia', 'Porcentaje', 'Regla', 'Cuenta de prueba'],
+      [
+        'Estudiante',
+        'Correo',
+        'Número',
+        'Módulo',
+        'Estado de la cuenta',
+        'Estado del certificado',
+        'Asistencia',
+        'Porcentaje',
+        'Regla',
+        'Cuenta de prueba',
+        'Autorización/bloqueo manual',
+        'Motivo',
+      ],
       filteredRows.map((r) => [
         r.name,
         r.email,
         r.memberNumber || 'N/A',
         `${r.moduleNumber} - ${r.moduleTitle}`,
+        r.accountStatus === 'ACTIVO' ? 'Activa' : 'Inactiva',
         STATUS_LABEL[r.status],
         `${r.attended} de ${r.total} días`,
         r.percentage,
         ruleText(r.ruleType, r.threshold),
         r.isTestAccount ? 'sí' : 'no',
+        r.override ? `${r.override.action === 'AUTHORIZED' ? 'Autorizada' : 'Bloqueada'} por ${r.override.createdByName}` : '',
+        r.override?.reason || '',
       ]),
     );
     downloadTextFile(`certificados_elegibilidad_${new Date().toISOString().slice(0, 10)}.csv`, csv);
@@ -345,9 +367,21 @@ export default function AdminCertificatesPage() {
               <Select label="Estado" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
                 <option value="">Todos</option>
                 <option value="available">Disponible</option>
-                <option value="locked">Bloqueado</option>
+                <option value="locked">Bloqueado por fecha</option>
                 <option value="low-attendance">Falta asistencia</option>
                 <option value="no-classes">Sin clases</option>
+                <option value="blocked">Bloqueada por admin</option>
+              </Select>
+            </div>
+            <div className="w-40">
+              <Select
+                label="Cuenta"
+                value={accountStatusFilter}
+                onChange={(e) => setAccountStatusFilter(e.target.value)}
+              >
+                <option value="">Todas</option>
+                <option value="ACTIVO">Activas</option>
+                <option value="INACTIVO">Inactivas</option>
               </Select>
             </div>
             <div className="w-full sm:w-64">
@@ -438,7 +472,8 @@ export default function AdminCertificatesPage() {
                   <>
                     <p className="font-bold text-slate-800">{r.name}</p>
                     <p className="text-[11px] font-normal text-slate-500">
-                      {r.email} {r.isTestAccount && <Badge tone="neutral">Prueba</Badge>}
+                      {r.email} {r.isTestAccount && <Badge tone="neutral">Prueba</Badge>}{' '}
+                      {r.accountStatus !== 'ACTIVO' && <Badge tone="danger">Inactiva</Badge>}
                     </p>
                   </>
                 ),
@@ -475,7 +510,16 @@ export default function AdminCertificatesPage() {
               {
                 header: 'Estado',
                 align: 'center',
-                cell: (r) => <StatusPill label={STATUS_LABEL[r.status]} tone={STATUS_TONE[r.status]} />,
+                cell: (r) => (
+                  <div className="flex flex-col items-center gap-1">
+                    <StatusPill label={STATUS_LABEL[r.status]} tone={STATUS_TONE[r.status]} />
+                    {r.override && (
+                      <p className="max-w-[180px] text-center text-[10px] text-slate-500" title={r.override.reason}>
+                        Por {r.override.createdByName}: {r.override.reason}
+                      </p>
+                    )}
+                  </div>
+                ),
               },
               {
                 header: 'Certificado',

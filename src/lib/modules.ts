@@ -76,7 +76,7 @@ export const CERTIFICATE_MODULES: readonly CertificateModule[] = [
   },
 ];
 
-export type ModuleStatus = 'locked' | 'no-classes' | 'low-attendance' | 'available';
+export type ModuleStatus = 'locked' | 'no-classes' | 'low-attendance' | 'available' | 'blocked';
 
 /** Primer instante en que se habilita el certificado: los últimos `CERTIFICATE_WINDOW_DAYS` días del mes del módulo. */
 export function certificateOpensAt(monthKey: string): Date {

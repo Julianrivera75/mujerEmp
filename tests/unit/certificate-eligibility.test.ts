@@ -45,4 +45,24 @@ describe('moduleStatus', () => {
     expect(moduleStatus('2026-10', inWindow, 0, 0, percentRule)).toBe('no-classes');
     expect(moduleStatus('2026-10', inWindow, 0, 0, oneDayRule)).toBe('no-classes');
   });
+
+  it('sin overrides, el comportamiento es idéntico al de antes (parámetro opcional)', () => {
+    expect(moduleStatus('2026-10', inWindow, 3, 5, percentRule, false, undefined)).toBe('low-attendance');
+  });
+
+  it('una autorización manual vuelve disponible el módulo aunque no cumpla la regla', () => {
+    expect(moduleStatus('2026-10', inWindow, 0, 10, percentRule, false, 'AUTHORIZED')).toBe('available');
+    expect(moduleStatus('2026-10', inWindow, 0, 0, percentRule, false, 'AUTHORIZED')).toBe('available'); // ni "sin clases" lo detiene
+  });
+
+  it('un bloqueo manual impide el certificado aunque cumpla la regla o esté exenta', () => {
+    expect(moduleStatus('2026-10', inWindow, 5, 5, percentRule, false, 'BLOCKED')).toBe('blocked');
+    expect(moduleStatus('2026-10', inWindow, 5, 5, percentRule, true, 'BLOCKED')).toBe('blocked'); // override gana a exempt
+  });
+
+  it('ni la autorización ni el bloqueo adelantan la fecha: antes de la ventana sigue "locked"', () => {
+    const beforeWindow = new Date(2026, 9, 26, 23, 59);
+    expect(moduleStatus('2026-10', beforeWindow, 5, 5, percentRule, false, 'AUTHORIZED')).toBe('locked');
+    expect(moduleStatus('2026-10', beforeWindow, 5, 5, percentRule, false, 'BLOCKED')).toBe('locked');
+  });
 });
