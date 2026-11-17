@@ -1,21 +1,32 @@
 /*
- * Reporte de solo lectura: elegibilidad del Módulo 1 bajo la nueva regla (basta una asistencia).
- * No modifica nada. Es el paso de revisión humana antes de habilitar la descarga en producción
- * (ver plan "Certificados por módulo", punto 9): compartir esta tabla y los conteos con la
- * coordinadora y esperar su confirmación antes de desplegar las fases siguientes.
+ * Reporte de solo lectura: elegibilidad de certificado de cada estudiante en cada módulo, con la
+ * regla configurada, las autorizaciones/bloqueos manuales activos y las exenciones ("Madrina").
+ * No modifica nada. Es el paso de revisión humana antes de habilitar cualquier cambio de datos o de
+ * decisión de certificados: compartir esta tabla y los conteos con la coordinadora y esperar su
+ * confirmación.
  *
  * Ejecutar contra la base real con el CLI de Railway:
  *
  *   railway run node scripts/certificate-eligibility-report.js
  *
  * Excluye las cuentas con dominio @empoderas.org (las mismas que usa prisma/seed.js para las
- * cuentas de prueba) y las cuentas anonimizadas.
+ * cuentas de prueba) y las cuentas anonimizadas. Las estudiantes inactivas se incluyen pero se
+ * marcan aparte, para que la coordinadora decida si les aplica certificado.
  */
 const { PrismaClient } = require('@prisma/client');
 
-const MODULE_1_MONTH_KEY = '2026-10';
 const TEST_ACCOUNT_DOMAIN = '@empoderas.org';
 const ATTENDANCE_TIME_ZONE = 'America/Bogota';
+
+// Mismos 5 módulos que src/lib/modules.ts (CERTIFICATE_MODULES); se duplican aquí a propósito
+// para no depender de los módulos TypeScript del proyecto desde un script plano de Node.
+const MODULES = [
+  { number: 1, monthKey: '2026-10', title: 'Zarpando: Alistando las Velas' },
+  { number: 2, monthKey: '2026-11', title: 'Tomando el Timón: Gobernando tu Destino' },
+  { number: 3, monthKey: '2026-12', title: 'Resistiendo la Tormenta: El Equipaje' },
+  { number: 4, monthKey: '2027-01', title: 'La Brújula y el Faro: Divisando el Propósito' },
+  { number: 5, monthKey: '2027-02', title: 'Arribo a Puerto: Tierra Firme' },
+];
 
 const dayFormat = new Intl.DateTimeFormat('en-CA', {
   timeZone: ATTENDANCE_TIME_ZONE,
@@ -32,12 +43,10 @@ function dayKeyOf(date) {
 /**
  * Días del módulo con al menos una charla elegible (ya empezada, no cancelada, con enlace de Meet),
  * más cualquier día en que la estudiante haya asistido. Replica src/lib/attendance-days.ts#summarizeDays
- * limitado al mes del Módulo 1, para no depender de los módulos TypeScript del proyecto desde un script plano.
+ * limitado a un mes, para no depender de los módulos TypeScript del proyecto desde un script plano.
  */
-function summarizeModule1(classes, attendances, now) {
-  const active = classes.filter(
-    (c) => c.status !== 'CANCELADA' && dayKeyOf(c.dateStart).slice(0, 7) === MODULE_1_MONTH_KEY,
-  );
+function summarizeModule(monthKey, classes, attendances, now) {
+  const active = classes.filter((c) => c.status !== 'CANCELADA' && dayKeyOf(c.dateStart).slice(0, 7) === monthKey);
   const byId = new Map(active.map((c) => [c.id, c]));
 
   const days = new Map();
@@ -70,33 +79,47 @@ function summarizeModule1(classes, attendances, now) {
   return { totalDays, attendedDays };
 }
 
+function meetsRule(rule, attended, total) {
+  if (rule.ruleType === 'MIN_ATTENDED_DAYS') return attended >= rule.threshold;
+  return total > 0 && Math.round((attended / total) * 100) >= rule.threshold;
+}
+
 async function main() {
   const prisma = new PrismaClient();
   try {
     const now = new Date();
     const students = await prisma.user.findMany({
       where: { role: 'STUDENT', anonymizedAt: null, email: { not: { endsWith: TEST_ACCOUNT_DOMAIN } } },
-      select: { id: true, name: true, email: true, memberNumber: true },
+      select: { id: true, name: true, email: true, memberNumber: true, status: true, certificateExempt: true },
       orderBy: { name: 'asc' },
     });
+    const studentIds = students.map((s) => s.id);
 
-    const [enrollments, attendances] = await Promise.all([
+    const [enrollments, attendances, rules, overrides] = await Promise.all([
       prisma.classEnrollment.findMany({
-        where: { studentId: { in: students.map((s) => s.id) } },
+        where: { studentId: { in: studentIds } },
         select: {
           studentId: true,
           classSession: { select: { id: true, dateStart: true, status: true, meetLink: true } },
         },
       }),
       prisma.attendance.findMany({
-        where: { studentId: { in: students.map((s) => s.id) } },
+        where: { studentId: { in: studentIds } },
         select: {
           studentId: true,
           classId: true,
           classSession: { select: { id: true, dateStart: true, status: true, meetLink: true } },
         },
       }),
+      prisma.certificateModuleRule.findMany({ select: { moduleNumber: true, ruleType: true, threshold: true } }),
+      prisma.certificateOverride.findMany({
+        where: { studentId: { in: studentIds }, revokedAt: null },
+        select: { studentId: true, moduleNumber: true, action: true },
+      }),
     ]);
+
+    const ruleByModule = new Map(rules.map((r) => [r.moduleNumber, r]));
+    const overrideByStudentModule = new Map(overrides.map((o) => [`${o.studentId}:${o.moduleNumber}`, o.action]));
 
     const classesOf = new Map();
     const attendancesOf = new Map();
@@ -111,28 +134,51 @@ async function main() {
       attendancesOf.get(a.studentId).push({ classId: a.classId });
     }
 
-    const rows = students.map((s) => {
-      const { totalDays, attendedDays } = summarizeModule1(
-        [...(classesOf.get(s.id)?.values() ?? [])],
-        attendancesOf.get(s.id) ?? [],
-        now,
+    for (const mod of MODULES) {
+      const rule = ruleByModule.get(mod.number) ?? { ruleType: 'MIN_ATTENDANCE_PERCENT', threshold: 80 };
+      const rows = students.map((s) => {
+        const { totalDays, attendedDays } = summarizeModule(
+          mod.monthKey,
+          [...(classesOf.get(s.id)?.values() ?? [])],
+          attendancesOf.get(s.id) ?? [],
+          now,
+        );
+        const override = overrideByStudentModule.get(`${s.id}:${mod.number}`) ?? null;
+        let estado;
+        if (override === 'BLOCKED') estado = 'bloqueada (manual)';
+        else if (override === 'AUTHORIZED') estado = 'autorizada (manual)';
+        else if (s.certificateExempt) estado = 'exenta (Madrina)';
+        else if (totalDays === 0) estado = 'sin clases';
+        else if (meetsRule(rule, attendedDays, totalDays)) estado = 'elegible por regla';
+        else estado = 'no elegible';
+
+        return {
+          nombre: s.name,
+          correo: s.email,
+          numero: s.memberNumber ?? '',
+          cuenta: s.status === 'ACTIVO' ? 'activa' : 'inactiva',
+          dias: totalDays,
+          asistidos: attendedDays,
+          estado,
+        };
+      });
+
+      const counts = rows.reduce((acc, r) => {
+        acc[r.estado] = (acc[r.estado] ?? 0) + 1;
+        return acc;
+      }, {});
+
+      console.log(
+        `\n=== Módulo ${mod.number}: ${mod.title} (${mod.monthKey}) — regla: ${rule.ruleType === 'MIN_ATTENDED_DAYS' ? `al menos ${rule.threshold} día(s)` : `al menos ${rule.threshold}%`} ===`,
       );
-      return {
-        nombre: s.name,
-        correo: s.email,
-        numero: s.memberNumber ?? '',
-        diasModulo1: totalDays,
-        diasAsistidos: attendedDays,
-        elegible: attendedDays >= 1 ? 'sí' : 'no',
-      };
-    });
-
-    const eligible = rows.filter((r) => r.elegible === 'sí').length;
-    const notEligible = rows.length - eligible;
-
-    console.log(`Módulo 1 (${MODULE_1_MONTH_KEY}) — regla nueva: basta con 1 día de asistencia.\n`);
-    console.table(rows);
-    console.log(`\nElegibles: ${eligible} / No elegibles: ${notEligible} / Total evaluadas: ${rows.length}`);
+      console.table(rows);
+      console.log(
+        Object.entries(counts)
+          .map(([estado, n]) => `${estado}: ${n}`)
+          .join(' · '),
+        `· total evaluadas: ${rows.length}`,
+      );
+    }
   } finally {
     await prisma.$disconnect();
   }
