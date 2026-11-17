@@ -85,20 +85,23 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  mentoredClasses      ClassSession[]        @relation("MentorClasses")
-  enrolledClasses      ClassEnrollment[]
-  attendances          Attendance[]
-  submissions          Submission[]
-  createdAssignments   Assignment[]          @relation("MentorAssignments")
-  conversationsA       Conversation[]        @relation("ConversationA")
-  conversationsB       Conversation[]        @relation("ConversationB")
-  messagesSent         Message[]
-  chatBlocksMade       ChatBlock[]           @relation("ChatBlocker")
-  chatBlocksReceived   ChatBlock[]           @relation("ChatBlocked")
-  reportsMade          MessageReport[]       @relation("ReportReporter")
-  reportsReceived      MessageReport[]       @relation("ReportReported")
-  notifications        Notification[]
-  certificateIssuances CertificateIssuance[]
+  mentoredClasses             ClassSession[]        @relation("MentorClasses")
+  enrolledClasses             ClassEnrollment[]
+  attendances                 Attendance[]
+  submissions                 Submission[]
+  createdAssignments          Assignment[]          @relation("MentorAssignments")
+  conversationsA              Conversation[]        @relation("ConversationA")
+  conversationsB              Conversation[]        @relation("ConversationB")
+  messagesSent                Message[]
+  chatBlocksMade              ChatBlock[]           @relation("ChatBlocker")
+  chatBlocksReceived          ChatBlock[]           @relation("ChatBlocked")
+  reportsMade                 MessageReport[]       @relation("ReportReporter")
+  reportsReceived             MessageReport[]       @relation("ReportReported")
+  notifications               Notification[]
+  certificateIssuances        CertificateIssuance[]
+  certificateOverrides        CertificateOverride[] @relation("CertificateOverrideStudent")
+  certificateOverridesCreated CertificateOverride[] @relation("CertificateOverrideCreatedBy")
+  certificateOverridesRevoked CertificateOverride[] @relation("CertificateOverrideRevokedBy")
 }
 
 // Intentos de inicio de sesión fallidos: limitan la fuerza bruta entre reinicios y réplicas
@@ -375,4 +378,32 @@ model CertificateIssuance {
 
   @@unique([studentId, moduleNumber])
   @@index([studentId])
+}
+
+enum CertificateOverrideAction {
+  AUTHORIZED
+  BLOCKED
+}
+
+// Autorización o bloqueo manual del certificado de un módulo para una estudiante puntual, al margen
+// de la regla configurada. Registro histórico: nunca se borra, se revierte marcando revokedAt/revokedBy.
+// La override "activa" de un (studentId, moduleNumber) es la más reciente con revokedAt null; antes de
+// crear una nueva para ese par se revoca la activa existente, en vez de usar un índice único parcial.
+model CertificateOverride {
+  id            String                    @id @default(cuid())
+  studentId     String
+  moduleNumber  Int
+  action        CertificateOverrideAction
+  reason        String
+  createdById   String
+  createdAt     DateTime                  @default(now())
+  revokedAt     DateTime?
+  revokedById   String?
+  revokedReason String?
+
+  student   User  @relation("CertificateOverrideStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  createdBy User  @relation("CertificateOverrideCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  revokedBy User? @relation("CertificateOverrideRevokedBy", fields: [revokedById], references: [id], onDelete: Restrict)
+
+  @@index([studentId, moduleNumber, revokedAt])
 }
