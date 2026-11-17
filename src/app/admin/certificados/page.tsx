@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Award, Bell, Download, FileDown, Save, Search } from 'lucide-react';
+import { Award, Ban, Bell, Download, FileDown, Save, Search, ShieldCheck, Undo2 } from 'lucide-react';
 import { Badge, StatusPill } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -46,26 +46,47 @@ interface EligibilityRow {
   total: number;
   ruleType: RuleType;
   threshold: number;
+  override: { action: 'AUTHORIZED' | 'BLOCKED'; reason: string; createdByName: string; createdAt: string } | null;
 }
 
 const STATUS_LABEL: Record<ModuleStatus, string> = {
   available: 'Disponible',
-  locked: 'Bloqueado',
+  locked: 'Bloqueado por fecha',
   'low-attendance': 'Falta asistencia',
   'no-classes': 'Sin clases',
+  blocked: 'Bloqueada por admin',
 };
 
-const STATUS_TONE: Record<ModuleStatus, 'success' | 'neutral' | 'warning'> = {
+const STATUS_TONE: Record<ModuleStatus, 'success' | 'neutral' | 'warning' | 'danger'> = {
   available: 'success',
   locked: 'neutral',
   'low-attendance': 'warning',
   'no-classes': 'neutral',
+  blocked: 'danger',
 };
 
 const ruleText = (ruleType: RuleType, threshold: number) =>
   ruleType === 'MIN_ATTENDED_DAYS'
     ? `Al menos ${threshold} día${threshold === 1 ? '' : 's'}`
     : `Al menos ${threshold}%`;
+
+interface RosterStudent {
+  id: string;
+  name: string;
+  email: string;
+}
+
+interface OverrideRow {
+  id: string;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  moduleNumber: number;
+  action: 'AUTHORIZED' | 'BLOCKED';
+  reason: string;
+  createdByName: string;
+  createdAt: string;
+}
 
 export default function AdminCertificatesPage() {
   const [modules, setModules] = useState<ModuleRef[]>([]);
@@ -76,11 +97,21 @@ export default function AdminCertificatesPage() {
   const [moduleFilter, setModuleFilter] = useState('1');
   const [statusFilter, setStatusFilter] = useState('');
   const [includeTest, setIncludeTest] = useState(false);
+  const [accountStatusFilter, setAccountStatusFilter] = useState('');
   const [savingModule, setSavingModule] = useState<number | null>(null);
   const [notifying, setNotifying] = useState(false);
   const [generating, setGenerating] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkRunning, setBulkRunning] = useState(false);
+  const [roster, setRoster] = useState<RosterStudent[]>([]);
+  const [overrides, setOverrides] = useState<OverrideRow[]>([]);
+  const [overrideModule, setOverrideModule] = useState('1');
+  const [overrideAction, setOverrideAction] = useState<'AUTHORIZED' | 'BLOCKED'>('AUTHORIZED');
+  const [overrideReason, setOverrideReason] = useState('');
+  const [overrideSearch, setOverrideSearch] = useState('');
+  const [overrideSelected, setOverrideSelected] = useState<Set<string>>(new Set());
+  const [overrideSubmitting, setOverrideSubmitting] = useState(false);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
   const { show } = useToast();
 
   const keyOf = (r: EligibilityRow) => `${r.studentId}-${r.moduleNumber}`;
@@ -117,20 +148,127 @@ export default function AdminCertificatesPage() {
     }
   };
 
+  /** Roster de estudiantes (id, nombre, correo) para elegir a quién autorizar/bloquear; no depende del filtro de módulo de la tabla. */
+  const loadRoster = async () => {
+    try {
+      const params = new URLSearchParams({ moduleNumber: '1' });
+      if (includeTest) params.set('includeTest', 'true');
+      const res = await fetch(`/api/admin/certificates?${params}`);
+      const body = await res.json();
+      const rosterRows: EligibilityRow[] = body.rows || [];
+      setRoster(rosterRows.map((r) => ({ id: r.studentId, name: r.name, email: r.email })));
+    } catch (err) {
+      logClientError('Error cargando estudiantes:', err);
+    }
+  };
+
+  const loadOverrides = async () => {
+    try {
+      const res = await fetch('/api/admin/certificates/overrides');
+      const body = await res.json();
+      setOverrides(body.overrides || []);
+    } catch (err) {
+      logClientError('Error cargando autorizaciones/bloqueos:', err);
+    }
+  };
+
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [moduleFilter, statusFilter, includeTest]);
 
-  const filteredRows = useMemo(
-    () => rankMatches(rows, search, (r) => [r.name, r.email]).map((r) => r.item),
-    [rows, search],
-  );
+  useEffect(() => {
+    loadRoster();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [includeTest]);
+
+  useEffect(() => {
+    loadOverrides();
+  }, []);
+
+  const filteredRows = useMemo(() => {
+    const byAccountStatus = accountStatusFilter
+      ? rows.filter((r) => r.accountStatus === accountStatusFilter)
+      : rows;
+    return rankMatches(byAccountStatus, search, (r) => [r.name, r.email]).map((r) => r.item);
+  }, [rows, search, accountStatusFilter]);
 
   const counts = useMemo(() => {
     const eligible = filteredRows.filter((r) => r.status === 'available').length;
     return { eligible, notEligible: filteredRows.length - eligible, total: filteredRows.length };
   }, [filteredRows]);
+
+  const filteredRoster = useMemo(
+    () => rankMatches(roster, overrideSearch, (s) => [s.name, s.email]).map((r) => r.item),
+    [roster, overrideSearch],
+  );
+
+  const toggleOverrideSelected = (studentId: string) =>
+    setOverrideSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(studentId)) next.delete(studentId);
+      else next.add(studentId);
+      return next;
+    });
+
+  /** Autoriza o bloquea el certificado del módulo elegido a cada estudiante marcada. */
+  const submitOverride = async () => {
+    if (overrideSelected.size === 0 || overrideReason.trim().length < 5) return;
+    setOverrideSubmitting(true);
+    try {
+      const res = await fetch('/api/admin/certificates/overrides', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentIds: [...overrideSelected],
+          moduleNumber: Number(overrideModule),
+          action: overrideAction,
+          reason: overrideReason,
+        }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        show('error', body.error || 'No se pudo guardar la autorización/bloqueo.');
+        return;
+      }
+      show(
+        'success',
+        `${overrideAction === 'AUTHORIZED' ? 'Autorización' : 'Bloqueo'} guardado para ${overrideSelected.size} estudiante(s).`,
+      );
+      setOverrideSelected(new Set());
+      setOverrideReason('');
+      await Promise.all([load(), loadOverrides()]);
+    } catch (err) {
+      logClientError('Error guardando autorización/bloqueo:', err);
+      show('error', 'Error de conexión al guardar.');
+    } finally {
+      setOverrideSubmitting(false);
+    }
+  };
+
+  /** Revierte una autorización/bloqueo: la estudiante vuelve a depender de la regla normal del módulo. */
+  const revokeOverride = async (id: string) => {
+    setRevokingId(id);
+    try {
+      const res = await fetch('/api/admin/certificates/overrides', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        show('error', body.error || 'No se pudo revertir.');
+        return;
+      }
+      show('success', 'Revertido. Vuelve a aplicar la regla normal del módulo.');
+      await Promise.all([load(), loadOverrides()]);
+    } catch (err) {
+      logClientError('Error revirtiendo autorización/bloqueo:', err);
+      show('error', 'Error de conexión al revertir.');
+    } finally {
+      setRevokingId(null);
+    }
+  };
 
   const saveRule = async (rule: Rule) => {
     setSavingModule(rule.moduleNumber);
@@ -165,17 +303,33 @@ export default function AdminCertificatesPage() {
       return;
     }
     const csv = toCsv(
-      ['Estudiante', 'Correo', 'Número', 'Módulo', 'Estado', 'Asistencia', 'Porcentaje', 'Regla', 'Cuenta de prueba'],
+      [
+        'Estudiante',
+        'Correo',
+        'Número',
+        'Módulo',
+        'Estado de la cuenta',
+        'Estado del certificado',
+        'Asistencia',
+        'Porcentaje',
+        'Regla',
+        'Cuenta de prueba',
+        'Autorización/bloqueo manual',
+        'Motivo',
+      ],
       filteredRows.map((r) => [
         r.name,
         r.email,
         r.memberNumber || 'N/A',
         `${r.moduleNumber} - ${r.moduleTitle}`,
+        r.accountStatus === 'ACTIVO' ? 'Activa' : 'Inactiva',
         STATUS_LABEL[r.status],
         `${r.attended} de ${r.total} días`,
         r.percentage,
         ruleText(r.ruleType, r.threshold),
         r.isTestAccount ? 'sí' : 'no',
+        r.override ? `${r.override.action === 'AUTHORIZED' ? 'Autorizada' : 'Bloqueada'} por ${r.override.createdByName}` : '',
+        r.override?.reason || '',
       ]),
     );
     downloadTextFile(`certificados_elegibilidad_${new Date().toISOString().slice(0, 10)}.csv`, csv);
@@ -322,6 +476,157 @@ export default function AdminCertificatesPage() {
       </Card>
 
       <Card variant="glass" className="p-4 sm:p-6">
+        <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-bold text-slate-800">
+          <ShieldCheck className="h-5 w-5 text-role-ink" />
+          <span>Autorizar o bloquear certificado</span>
+        </h2>
+        <p className="mb-4 text-xs text-slate-500">
+          Para una estudiante puntual, al margen de la regla del módulo. Queda registrado con el motivo, quién lo hizo
+          y cuándo, y se puede revertir.
+        </p>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1fr_1.4fr]">
+          <div className="space-y-3">
+            <Select label="Módulo" value={overrideModule} onChange={(e) => setOverrideModule(e.target.value)}>
+              {modules.map((m) => (
+                <option key={m.number} value={m.number}>
+                  Módulo {m.number}: {m.title}
+                </option>
+              ))}
+            </Select>
+            <div className="flex gap-4 text-sm font-semibold text-slate-700">
+              <label className="flex items-center gap-1.5">
+                <input
+                  type="radio"
+                  name="overrideAction"
+                  className="h-4 w-4 border-slate-300"
+                  checked={overrideAction === 'AUTHORIZED'}
+                  onChange={() => setOverrideAction('AUTHORIZED')}
+                />
+                Autorizar
+              </label>
+              <label className="flex items-center gap-1.5">
+                <input
+                  type="radio"
+                  name="overrideAction"
+                  className="h-4 w-4 border-slate-300"
+                  checked={overrideAction === 'BLOCKED'}
+                  onChange={() => setOverrideAction('BLOCKED')}
+                />
+                Bloquear
+              </label>
+            </div>
+            <Input
+              label="Motivo"
+              placeholder="Por qué se autoriza o bloquea..."
+              autoComplete="off"
+              value={overrideReason}
+              onChange={(e) => setOverrideReason(e.target.value)}
+            />
+            <Button
+              className="w-full"
+              loading={overrideSubmitting}
+              disabled={overrideSelected.size === 0 || overrideReason.trim().length < 5}
+              leftIcon={overrideAction === 'AUTHORIZED' ? <ShieldCheck className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
+              onClick={submitOverride}
+            >
+              {overrideAction === 'AUTHORIZED' ? 'Autorizar' : 'Bloquear'} a {overrideSelected.size} estudiante(s)
+            </Button>
+          </div>
+
+          <div className="lg:col-span-2">
+            <Input
+              placeholder="Buscar estudiante..."
+              aria-label="Buscar estudiante para autorizar o bloquear"
+              autoComplete="off"
+              value={overrideSearch}
+              onChange={(e) => setOverrideSearch(e.target.value)}
+              leftIcon={<Search className="h-4 w-4" />}
+            />
+            <div className="mt-2 max-h-56 overflow-y-auto rounded-xl border border-slate-100">
+              {filteredRoster.length === 0 ? (
+                <p className="p-3 text-xs text-slate-500">Nadie se parece a esa búsqueda.</p>
+              ) : (
+                filteredRoster.map((s) => (
+                  <label
+                    key={s.id}
+                    className="flex items-center gap-2 border-b border-slate-50 p-2 text-xs last:border-b-0 hover:bg-slate-50"
+                  >
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-slate-300"
+                      checked={overrideSelected.has(s.id)}
+                      onChange={() => toggleOverrideSelected(s.id)}
+                    />
+                    <span className="font-semibold text-slate-700">{s.name}</span>
+                    <span className="text-slate-400">{s.email}</span>
+                  </label>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+
+        {overrides.length > 0 && (
+          <div className="mt-6">
+            <h3 className="mb-2 text-sm font-bold text-slate-700">Autorizaciones y bloqueos activos</h3>
+            <ResponsiveTable
+              caption="Autorizaciones y bloqueos activos"
+              rows={overrides}
+              rowKey={(o) => o.id}
+              columns={[
+                {
+                  header: 'Estudiante',
+                  primary: true,
+                  cell: (o) => (
+                    <>
+                      <p className="font-bold text-slate-800">{o.studentName}</p>
+                      <p className="text-[11px] font-normal text-slate-500">{o.studentEmail}</p>
+                    </>
+                  ),
+                },
+                { header: 'Módulo', cell: (o) => <span className="font-semibold text-slate-700">{o.moduleNumber}</span> },
+                {
+                  header: 'Acción',
+                  align: 'center',
+                  cell: (o) => (
+                    <StatusPill
+                      label={o.action === 'AUTHORIZED' ? 'Autorizada' : 'Bloqueada'}
+                      tone={o.action === 'AUTHORIZED' ? 'success' : 'danger'}
+                    />
+                  ),
+                },
+                { header: 'Motivo', cell: (o) => <span className="text-slate-600">{o.reason}</span> },
+                {
+                  header: 'Quién y cuándo',
+                  cell: (o) => (
+                    <span className="text-slate-600">
+                      {o.createdByName} ·{' '}
+                      {new Date(o.createdAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </span>
+                  ),
+                },
+                {
+                  header: 'Revertir',
+                  align: 'center',
+                  cell: (o) => (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      loading={revokingId === o.id}
+                      leftIcon={<Undo2 className="h-4 w-4" />}
+                      onClick={() => revokeOverride(o.id)}
+                    >
+                      Revertir
+                    </Button>
+                  ),
+                },
+              ]}
+            />
+          </div>
+        )}
+      </Card>
+
+      <Card variant="glass" className="p-4 sm:p-6">
         <div className="mb-4 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
           <div>
             <h2 className="font-display text-lg font-bold text-slate-800">Elegibilidad de estudiantes</h2>
@@ -345,9 +650,21 @@ export default function AdminCertificatesPage() {
               <Select label="Estado" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
                 <option value="">Todos</option>
                 <option value="available">Disponible</option>
-                <option value="locked">Bloqueado</option>
+                <option value="locked">Bloqueado por fecha</option>
                 <option value="low-attendance">Falta asistencia</option>
                 <option value="no-classes">Sin clases</option>
+                <option value="blocked">Bloqueada por admin</option>
+              </Select>
+            </div>
+            <div className="w-40">
+              <Select
+                label="Cuenta"
+                value={accountStatusFilter}
+                onChange={(e) => setAccountStatusFilter(e.target.value)}
+              >
+                <option value="">Todas</option>
+                <option value="ACTIVO">Activas</option>
+                <option value="INACTIVO">Inactivas</option>
               </Select>
             </div>
             <div className="w-full sm:w-64">
@@ -438,7 +755,8 @@ export default function AdminCertificatesPage() {
                   <>
                     <p className="font-bold text-slate-800">{r.name}</p>
                     <p className="text-[11px] font-normal text-slate-500">
-                      {r.email} {r.isTestAccount && <Badge tone="neutral">Prueba</Badge>}
+                      {r.email} {r.isTestAccount && <Badge tone="neutral">Prueba</Badge>}{' '}
+                      {r.accountStatus !== 'ACTIVO' && <Badge tone="danger">Inactiva</Badge>}
                     </p>
                   </>
                 ),
@@ -475,7 +793,16 @@ export default function AdminCertificatesPage() {
               {
                 header: 'Estado',
                 align: 'center',
-                cell: (r) => <StatusPill label={STATUS_LABEL[r.status]} tone={STATUS_TONE[r.status]} />,
+                cell: (r) => (
+                  <div className="flex flex-col items-center gap-1">
+                    <StatusPill label={STATUS_LABEL[r.status]} tone={STATUS_TONE[r.status]} />
+                    {r.override && (
+                      <p className="max-w-[180px] text-center text-[10px] text-slate-500" title={r.override.reason}>
+                        Por {r.override.createdByName}: {r.override.reason}
+                      </p>
+                    )}
+                  </div>
+                ),
               },
               {
                 header: 'Certificado',

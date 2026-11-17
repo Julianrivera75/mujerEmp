@@ -16,12 +16,18 @@ export function meetsRule(rule: CertificateRule, attended: number, total: number
   return attendancePercentage(attended, total) >= rule.threshold;
 }
 
+/** Autorización o bloqueo manual del certificado de este módulo para esta estudiante, si existe una activa. */
+export type CertificateOverrideAction = 'AUTHORIZED' | 'BLOCKED';
+
 /**
  * Estado del certificado de un módulo: se habilita al entrar en la ventana final del mes
  * y exige que la asistencia cumpla la regla configurada para ese módulo.
  *
  * `exempt` ("Madrina", ya pagó su cupo) salta la validación de asistencia y de "sin clases" — pero no la fecha: el
  * módulo sigue sin estar disponible antes de su ventana de certificación.
+ *
+ * `override`, si existe, manda sobre la regla y sobre `exempt` (una autorización o bloqueo puntual de admin para
+ * ese módulo), pero tampoco adelanta la fecha: antes de la ventana de certificación el módulo sigue `locked`.
  */
 export function moduleStatus(
   monthKey: string,
@@ -30,8 +36,11 @@ export function moduleStatus(
   total: number,
   rule: CertificateRule,
   exempt = false,
+  override?: CertificateOverrideAction,
 ): ModuleStatus {
   if (now < certificateOpensAt(monthKey)) return 'locked';
+  if (override === 'BLOCKED') return 'blocked';
+  if (override === 'AUTHORIZED') return 'available';
   if (exempt) return 'available';
   if (total === 0) return 'no-classes';
   if (!meetsRule(rule, attended, total)) return 'low-attendance';

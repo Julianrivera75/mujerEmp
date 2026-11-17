@@ -409,3 +409,18 @@ export const certificateRuleSchema = z
     message: 'El porcentaje no puede superar 100.',
     path: ['threshold'],
   });
+
+export const certificateOverrideSchema = z.object({
+  studentIds: z.array(requiredId('ID de estudiante requerido.')).min(1, 'Selecciona al menos una estudiante.'),
+  moduleNumber: z.number().int().min(1, 'Módulo inválido.').max(5, 'Módulo inválido.'),
+  action: z.enum(['AUTHORIZED', 'BLOCKED'], { error: 'Acción inválida.' }),
+  reason: z
+    .string({ error: 'Escribe el motivo.' })
+    .transform((v) => cleanText(v, 500))
+    .refine((v): v is string => v !== null && v.length >= 5, { message: 'Escribe un motivo (al menos 5 caracteres).' }),
+});
+
+export const revokeCertificateOverrideSchema = z.object({
+  id: requiredId('Falta la autorización/bloqueo a revertir.'),
+  revokedReason: optionalText(500),
+});

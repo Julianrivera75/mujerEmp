@@ -242,7 +242,9 @@ function ModuleCard({
             ? 'Este módulo aún no tiene clases registradas para ti.'
             : module.status === 'low-attendance'
               ? missingAttendanceText(module)
-              : `Fecha de emisión del certificado: ${module.issuedOn}.`}
+              : module.status === 'blocked'
+                ? 'Tu certificado de este módulo fue bloqueado por la administración. Escríbele a la coordinación si tienes dudas.'
+                : `Fecha de emisión del certificado: ${module.issuedOn}.`}
       </p>
 
       <div className="mt-auto pt-1">
@@ -277,5 +279,6 @@ function StatusBadge({ status }: { status: ModuleStatus }) {
   }
   if (status === 'locked') return <Badge tone="neutral">Bloqueado</Badge>;
   if (status === 'low-attendance') return <Badge tone="warning">Falta asistencia</Badge>;
+  if (status === 'blocked') return <Badge tone="danger">Bloqueado</Badge>;
   return <Badge tone="neutral">Sin clases</Badge>;
 }
