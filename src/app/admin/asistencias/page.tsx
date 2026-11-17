@@ -13,8 +13,9 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonRow } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { formatDateTimeSeconds, formatTimeSeconds, formatWeekdayDate } from '@/lib/format';
+import { formatDateTimeSeconds, formatDayMonthShort, formatTimeSeconds, formatWeekdayDate } from '@/lib/format';
 import { logClientError } from '@/lib/client-log';
+import { CERTIFICATE_MODULES } from '@/lib/modules';
 
 interface ClassOption {
   id: string;
@@ -44,15 +45,29 @@ interface StudentSummary {
   percentage: number;
 }
 
+interface ModuleInfo {
+  number: number;
+  title: string;
+  monthKey: string;
+  totalDays: number;
+  firstDay: string | null;
+  lastDay: string | null;
+}
+
 /** El día viene como AAAA-MM-DD en hora de Colombia; se muestra a mediodía para que ninguna zona lo mueva de fecha. */
 const dayDate = (day: string) => new Date(`${day}T12:00:00-05:00`);
 
 export default function AdminAttendancePage() {
   const [days, setDays] = useState<DayRow[]>([]);
   const [studentSummary, setStudentSummary] = useState<StudentSummary[]>([]);
+  const [inactiveStudentSummary, setInactiveStudentSummary] = useState<StudentSummary[]>([]);
+  const [moduleInfo, setModuleInfo] = useState<ModuleInfo | null>(null);
   const [classes, setClasses] = useState<ClassOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [moduleFilter, setModuleFilter] = useState('');
+  const [includeTest, setIncludeTest] = useState(false);
+  const [showInactive, setShowInactive] = useState(false);
   const [manualStudentId, setManualStudentId] = useState('');
   const [manualClassId, setManualClassId] = useState('');
   const [marking, setMarking] = useState(false);
@@ -61,10 +76,15 @@ export default function AdminAttendancePage() {
   const loadAttendances = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/admin/attendances');
+      const params = new URLSearchParams();
+      if (moduleFilter) params.set('moduleNumber', moduleFilter);
+      if (includeTest) params.set('includeTest', 'true');
+      const res = await fetch(`/api/admin/attendances?${params}`);
       const data = await res.json();
       setDays(data.days || []);
       setStudentSummary(data.studentSummary || []);
+      setInactiveStudentSummary(data.inactiveStudentSummary || []);
+      setModuleInfo(data.module ?? null);
     } catch (err) {
       logClientError('Error cargando asistencias:', err);
     } finally {
@@ -74,6 +94,10 @@ export default function AdminAttendancePage() {
 
   useEffect(() => {
     loadAttendances();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [moduleFilter, includeTest]);
+
+  useEffect(() => {
     (async () => {
       try {
         const res = await fetch('/api/classes');
@@ -127,6 +151,19 @@ export default function AdminAttendancePage() {
     () => rankMatches(studentSummary, search, (st) => [st.name, st.email]).map((r) => r.item),
     [studentSummary, search],
   );
+  const filteredInactiveSummary = useMemo(
+    () => rankMatches(inactiveStudentSummary, search, (st) => [st.name, st.email]).map((r) => r.item),
+    [inactiveStudentSummary, search],
+  );
+
+  /** Título del bloque de porcentajes: deja claro a qué periodo corresponde. */
+  const periodLabel = moduleInfo
+    ? `Módulo ${moduleInfo.number}: ${moduleInfo.title}${
+        moduleInfo.firstDay && moduleInfo.lastDay
+          ? ` (${formatDayMonthShort(dayDate(moduleInfo.firstDay))} – ${formatDayMonthShort(dayDate(moduleInfo.lastDay))}, ${moduleInfo.totalDays} día${moduleInfo.totalDays === 1 ? '' : 's'} con charla)`
+          : ' (sin días con charla aún)'
+      }`
+    : 'Todos los módulos (acumulado de todo el programa)';
 
   const exportToCsv = () => {
     if (filteredDays.length === 0) {
@@ -229,20 +266,44 @@ export default function AdminAttendancePage() {
       </Card>
 
       <div>
-        <h2 className="mb-4 flex items-center gap-2 font-display text-lg font-bold text-slate-800">
+        <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-bold text-slate-800">
           <Award className="h-5 w-5 text-role-ink" />
-          <span>Porcentaje de asistencia por estudiante (sobre días con charlas)</span>
+          <span>Porcentaje de asistencia por estudiante</span>
         </h2>
-        <div className="mb-4 w-full sm:w-80">
-          <Input
-            placeholder="Escribe el nombre de una estudiante..."
-            aria-label="Buscar estudiante"
-            autoComplete="off"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            leftIcon={<Search className="h-4 w-4" />}
-          />
+        <p className="mb-4 text-xs font-semibold text-slate-500">{periodLabel}</p>
+
+        <div className="mb-4 flex flex-wrap items-end gap-3">
+          <div className="w-full sm:w-80">
+            <Input
+              placeholder="Escribe el nombre de una estudiante..."
+              aria-label="Buscar estudiante"
+              autoComplete="off"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              leftIcon={<Search className="h-4 w-4" />}
+            />
+          </div>
+          <div className="w-48">
+            <Select label="Módulo" value={moduleFilter} onChange={(e) => setModuleFilter(e.target.value)}>
+              <option value="">Todos los módulos</option>
+              {CERTIFICATE_MODULES.map((m) => (
+                <option key={m.number} value={m.number}>
+                  Módulo {m.number}: {m.title}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <label className="flex items-center gap-2 pb-2 text-xs font-semibold text-slate-600">
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded border-slate-300"
+              checked={includeTest}
+              onChange={(e) => setIncludeTest(e.target.checked)}
+            />
+            Incluir cuentas de prueba (@empoderas.org)
+          </label>
         </div>
+
         {!loading && search.trim() && filteredSummary.length === 0 && (
           <p className="mb-4 text-xs text-slate-500" aria-live="polite">
             Nadie se parece a «{search.trim()}».
@@ -258,29 +319,32 @@ export default function AdminAttendancePage() {
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filteredSummary.map((st) => (
-              <Card key={st.id} variant="glass" className="flex flex-col justify-between p-5">
-                <div>
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-sm font-bold text-slate-800">{st.name}</span>
-                    <StatusPill
-                      label={st.status === 'ACTIVO' ? 'Activo' : 'Inactivo'}
-                      tone={st.status === 'ACTIVO' ? 'success' : 'danger'}
-                    />
-                  </div>
-                  <p className="mb-3 text-xs text-slate-500">{st.email}</p>
-                  <ProgressBar value={st.percentage} label={`Asistencia de ${st.name}`} className="mb-2" />
-                </div>
-                <div className="flex items-center justify-between border-t border-slate-100 pt-2 text-xs text-slate-600">
-                  <span>
-                    Presente <strong>{st.attendedDays}</strong> de {st.totalDays} días
-                  </span>
-                  <span className="text-sm font-black text-role-ink">{st.percentage}%</span>
-                </div>
-              </Card>
+              <SummaryCard key={st.id} student={st} />
             ))}
           </div>
         )}
       </div>
+
+      {inactiveStudentSummary.length > 0 && (
+        <div>
+          <button
+            type="button"
+            onClick={() => setShowInactive((v) => !v)}
+            className="mb-4 flex items-center gap-2 font-display text-sm font-bold text-slate-500 hover:text-slate-700"
+          >
+            <span>
+              {showInactive ? 'Ocultar' : 'Mostrar'} estudiantes inactivas ({inactiveStudentSummary.length})
+            </span>
+          </button>
+          {showInactive && (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredInactiveSummary.map((st) => (
+                <SummaryCard key={st.id} student={st} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <Card variant="glass" className="p-4 sm:p-6">
         <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
@@ -357,5 +421,36 @@ export default function AdminAttendancePage() {
         )}
       </Card>
     </div>
+  );
+}
+
+/** Tarjeta de porcentaje de una estudiante; "Sin días" en vez de "0 de 0 días" cuando el módulo no tiene charlas para ella. */
+function SummaryCard({ student: st }: { student: StudentSummary }) {
+  return (
+    <Card variant="glass" className="flex flex-col justify-between p-5">
+      <div>
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-sm font-bold text-slate-800">{st.name}</span>
+          <StatusPill
+            label={st.status === 'ACTIVO' ? 'Activo' : 'Inactivo'}
+            tone={st.status === 'ACTIVO' ? 'success' : 'danger'}
+          />
+        </div>
+        <p className="mb-3 text-xs text-slate-500">{st.email}</p>
+        <ProgressBar value={st.percentage} label={`Asistencia de ${st.name}`} className="mb-2" />
+      </div>
+      <div className="flex items-center justify-between border-t border-slate-100 pt-2 text-xs text-slate-600">
+        {st.totalDays === 0 ? (
+          <span>Sin días con charla en este periodo</span>
+        ) : (
+          <>
+            <span>
+              Presente <strong>{st.attendedDays}</strong> de {st.totalDays} días
+            </span>
+            <span className="text-sm font-black text-role-ink">{st.percentage}%</span>
+          </>
+        )}
+      </div>
+    </Card>
   );
 }

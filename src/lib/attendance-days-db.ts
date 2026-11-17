@@ -1,5 +1,5 @@
 import prisma from './prisma';
-import { summarizeDays, type DayClass, type DaySummary } from './attendance-days';
+import { dayKeyOf, summarizeDays, type DayClass, type DaySummary } from './attendance-days';
 
 const CLASS_SELECT = { id: true, title: true, dateStart: true, status: true, meetLink: true } as const;
 
@@ -46,6 +46,36 @@ export async function loadDaySummaries(
       summarizeDays([...(classesOf.get(id)?.values() ?? [])], attendancesOf.get(id) ?? [], options.now),
     ]),
   );
+}
+
+/**
+ * Rango de días con charla de un módulo (todo el programa, sin depender de la inscripción de nadie en particular):
+ * cuántos días contables tiene y el primero y el último, para mostrar el periodo exacto del módulo.
+ */
+export async function loadModuleDayRange(
+  monthKey: string,
+  now: Date = new Date(),
+): Promise<{ totalDays: number; firstDay: string | null; lastDay: string | null }> {
+  const [year, month] = monthKey.split('-').map(Number);
+  // Un mes de margen a cada lado: el día en Colombia de una clase cerca de medianoche puede caer en el mes de
+  // calendario vecino al de su `dateStart` en UTC.
+  const rangeStart = new Date(year, month - 2, 1);
+  const rangeEnd = new Date(year, month + 1, 1);
+
+  const classes = await prisma.classSession.findMany({
+    where: { status: { not: 'CANCELADA' }, dateStart: { gte: rangeStart, lt: rangeEnd } },
+    select: { dateStart: true, meetLink: true },
+  });
+
+  const days = new Set<string>();
+  for (const c of classes) {
+    if (!c.meetLink) continue;
+    if (c.dateStart.getTime() > now.getTime()) continue;
+    const day = dayKeyOf(c.dateStart);
+    if (day.startsWith(monthKey)) days.add(day);
+  }
+  const sorted = [...days].sort();
+  return { totalDays: sorted.length, firstDay: sorted[0] ?? null, lastDay: sorted.at(-1) ?? null };
 }
 
 /** Total de pares estudiante-día con al menos un ingreso (el día es el de la charla, en hora de Colombia). */
