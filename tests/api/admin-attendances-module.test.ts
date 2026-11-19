@@ -78,9 +78,7 @@ describe('GET /api/admin/attendances: filtro por módulo y datos limpios', () =>
     );
 
     const withTest = await read(await getAttendances(request('/api/admin/attendances?includeTest=true')));
-    expect(withTest.body.studentSummary.some((s: { email: string }) => s.email === 'prueba@empoderas.org')).toBe(
-      true,
-    );
+    expect(withTest.body.studentSummary.some((s: { email: string }) => s.email === 'prueba@empoderas.org')).toBe(true);
   });
 
   it('separa a las estudiantes inactivas del acumulado activo', async () => {

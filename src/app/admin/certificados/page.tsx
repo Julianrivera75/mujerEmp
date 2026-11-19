@@ -187,9 +187,7 @@ export default function AdminCertificatesPage() {
   }, []);
 
   const filteredRows = useMemo(() => {
-    const byAccountStatus = accountStatusFilter
-      ? rows.filter((r) => r.accountStatus === accountStatusFilter)
-      : rows;
+    const byAccountStatus = accountStatusFilter ? rows.filter((r) => r.accountStatus === accountStatusFilter) : rows;
     return rankMatches(byAccountStatus, search, (r) => [r.name, r.email]).map((r) => r.item);
   }, [rows, search, accountStatusFilter]);
 
@@ -328,7 +326,9 @@ export default function AdminCertificatesPage() {
         r.percentage,
         ruleText(r.ruleType, r.threshold),
         r.isTestAccount ? 'sí' : 'no',
-        r.override ? `${r.override.action === 'AUTHORIZED' ? 'Autorizada' : 'Bloqueada'} por ${r.override.createdByName}` : '',
+        r.override
+          ? `${r.override.action === 'AUTHORIZED' ? 'Autorizada' : 'Bloqueada'} por ${r.override.createdByName}`
+          : '',
         r.override?.reason || '',
       ]),
     );
@@ -341,10 +341,15 @@ export default function AdminCertificatesPage() {
     const key = keyOf(row);
     setGenerating(key);
     try {
-      const res = await fetch(`/api/admin/certificates/pdf?studentId=${row.studentId}&moduleNumber=${row.moduleNumber}`);
+      const res = await fetch(
+        `/api/admin/certificates/pdf?studentId=${row.studentId}&moduleNumber=${row.moduleNumber}`,
+      );
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        show('error', `${row.name} (módulo ${row.moduleNumber}): ${body.error || 'no se pudo generar el certificado.'}`);
+        show(
+          'error',
+          `${row.name} (módulo ${row.moduleNumber}): ${body.error || 'no se pudo generar el certificado.'}`,
+        );
         return false;
       }
       const blob = await res.blob();
@@ -481,8 +486,8 @@ export default function AdminCertificatesPage() {
           <span>Autorizar o bloquear certificado</span>
         </h2>
         <p className="mb-4 text-xs text-slate-500">
-          Para una estudiante puntual, al margen de la regla del módulo. Queda registrado con el motivo, quién lo hizo
-          y cuándo, y se puede revertir.
+          Para una estudiante puntual, al margen de la regla del módulo. Queda registrado con el motivo, quién lo hizo y
+          cuándo, y se puede revertir.
         </p>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1fr_1.4fr]">
           <div className="space-y-3">
@@ -526,7 +531,9 @@ export default function AdminCertificatesPage() {
               className="w-full"
               loading={overrideSubmitting}
               disabled={overrideSelected.size === 0 || overrideReason.trim().length < 5}
-              leftIcon={overrideAction === 'AUTHORIZED' ? <ShieldCheck className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
+              leftIcon={
+                overrideAction === 'AUTHORIZED' ? <ShieldCheck className="h-4 w-4" /> : <Ban className="h-4 w-4" />
+              }
               onClick={submitOverride}
             >
               {overrideAction === 'AUTHORIZED' ? 'Autorizar' : 'Bloquear'} a {overrideSelected.size} estudiante(s)
@@ -584,7 +591,10 @@ export default function AdminCertificatesPage() {
                     </>
                   ),
                 },
-                { header: 'Módulo', cell: (o) => <span className="font-semibold text-slate-700">{o.moduleNumber}</span> },
+                {
+                  header: 'Módulo',
+                  cell: (o) => <span className="font-semibold text-slate-700">{o.moduleNumber}</span>,
+                },
                 {
                   header: 'Acción',
                   align: 'center',
@@ -601,7 +611,11 @@ export default function AdminCertificatesPage() {
                   cell: (o) => (
                     <span className="text-slate-600">
                       {o.createdByName} ·{' '}
-                      {new Date(o.createdAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      {new Date(o.createdAt).toLocaleDateString('es-CO', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                      })}
                     </span>
                   ),
                 },

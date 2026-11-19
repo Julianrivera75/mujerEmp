@@ -15,10 +15,8 @@ export async function issueCertificatePdf(
   moduleNumber: number,
   options: { notEligibleMessage?: string; bypassEligibility?: boolean } = {},
 ): Promise<Uint8Array> {
-  const {
-    notEligibleMessage = 'Esta estudiante todavía no es elegible para este módulo.',
-    bypassEligibility = false,
-  } = options;
+  const { notEligibleMessage = 'Esta estudiante todavía no es elegible para este módulo.', bypassEligibility = false } =
+    options;
 
   const module = CERTIFICATE_MODULES.find((m) => m.number === moduleNumber);
   if (!module) throw new HttpError(400, 'Módulo inválido.');

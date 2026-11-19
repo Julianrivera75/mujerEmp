@@ -109,7 +109,10 @@ async function main() {
         where: { studentId: markStudentId },
         include: { classSession: { select: { id: true, title: true, dateStart: true, status: true } } },
       });
-      const existing = await prisma.attendance.findMany({ where: { studentId: markStudentId }, select: { classId: true } });
+      const existing = await prisma.attendance.findMany({
+        where: { studentId: markStudentId },
+        select: { classId: true },
+      });
       const attendedIds = new Set(existing.map((a) => a.classId));
       const now = new Date();
       const toMark = enrollments
@@ -161,7 +164,9 @@ async function main() {
     if (sinCoincidencia.length > 0) {
       console.log('\n=== Búsqueda amplia para las que no tuvieron coincidencia (por nombre o apellido sueltos) ===\n');
       for (const row of sinCoincidencia) {
-        const parts = normalize(row.nombreLista).split(' ').filter((w) => w.length > 2);
+        const parts = normalize(row.nombreLista)
+          .split(' ')
+          .filter((w) => w.length > 2);
         const matches = students.filter((s) => {
           const n = normalize(s.name);
           return parts.some((p) => n.includes(p));
@@ -178,18 +183,24 @@ async function main() {
     const exactas = madrinaRows.filter((r) => r.tipo === 'EXACTA').length;
     const aRevisar = madrinaRows.filter((r) => r.tipo === 'A_REVISAR').length;
     const sinMatch = madrinaRows.filter((r) => r.tipo === 'SIN_COINCIDENCIA').length;
-    console.log(`\nExactas: ${exactas} / A revisar: ${aRevisar} / Sin coincidencia: ${sinMatch} / Total lista: ${MADRINAS.length}`);
+    console.log(
+      `\nExactas: ${exactas} / A revisar: ${aRevisar} / Sin coincidencia: ${sinMatch} / Total lista: ${MADRINAS.length}`,
+    );
 
     console.log('\n=== Candidatas para "Katia" ===\n');
     const katiaCandidates = students
       .filter((s) => normalize(s.name).includes('katia'))
       .map((s) => ({ nombre: s.name, correo: s.email, numero: s.memberNumber ?? '', id: s.id }));
     if (katiaCandidates.length === 0) {
-      console.log('Ninguna estudiante con "katia" en el nombre (revisar si el nombre real es distinto, p. ej. un apodo).');
+      console.log(
+        'Ninguna estudiante con "katia" en el nombre (revisar si el nombre real es distinto, p. ej. un apodo).',
+      );
     } else {
       console.table(katiaCandidates);
 
-      console.log('\n=== Clases inscritas de la candidata de Katia (para marcar presente en todas las que ya pasaron) ===\n');
+      console.log(
+        '\n=== Clases inscritas de la candidata de Katia (para marcar presente en todas las que ya pasaron) ===\n',
+      );
       const katia = katiaCandidates[0];
       const enrollments = await prisma.classEnrollment.findMany({
         where: { studentId: katia.id },
@@ -212,7 +223,8 @@ async function main() {
           fecha: c.dateStart.toISOString(),
           estado: c.status,
           yaMarcada: yaPresente ? 'sí' : 'no',
-          seMarcariaAhora: !yaPresente && past && c.status !== 'CANCELADA' ? 'SÍ' : 'no (ya marcada / cancelada / futura)',
+          seMarcariaAhora:
+            !yaPresente && past && c.status !== 'CANCELADA' ? 'SÍ' : 'no (ya marcada / cancelada / futura)',
         };
       });
       console.table(rows);
