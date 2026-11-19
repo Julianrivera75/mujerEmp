@@ -19,7 +19,7 @@ export async function getCertificateRules(): Promise<Map<number, CertificateRule
   return rules;
 }
 
-export interface CertificateOverrideInfo {
+interface CertificateOverrideInfo {
   id: string;
   action: CertificateOverrideAction;
   reason: string;
@@ -41,7 +41,7 @@ export interface ModuleEligibility {
 }
 
 /** Overrides activas (no revocadas) de las estudiantes pedidas, agrupadas por estudiante y por módulo. */
-export async function loadActiveOverrides(
+async function loadActiveOverrides(
   studentIds: readonly string[],
 ): Promise<Map<string, Map<number, CertificateOverrideInfo>>> {
   if (studentIds.length === 0) return new Map();
