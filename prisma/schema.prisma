@@ -128,6 +128,9 @@ model ClassSession {
   imageKeys      String[]    @default([])
   status         ClassStatus @default(PROGRAMADA)
   monthKey       String // Formato YYYY-MM para agrupamiento mensual
+  // Agrupa hasta 3 clases de un mismo día bajo un solo link ("programación"). Nulo en toda clase
+  // existente y en cualquier clase sola; solo se asigna cuando una programación tiene 2 o 3 clases.
+  groupId        String?
 
   mentorId String
   mentor   User   @relation("MentorClasses", fields: [mentorId], references: [id], onDelete: Restrict)
@@ -143,6 +146,7 @@ model ClassSession {
   @@index([mentorId])
   @@index([monthKey])
   @@index([dateStart])
+  @@index([groupId])
 }
 
 model ClassEnrollment {

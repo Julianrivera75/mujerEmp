@@ -61,6 +61,35 @@ describe('groupRooms', () => {
     expect(groups).toHaveLength(3);
     expect(groups).toEqual(expect.arrayContaining([['A'], ['O'], ['D']]));
   });
+
+  it('un mismo groupId encadena aunque el hueco sea mayor a 10 minutos', () => {
+    const first = make('G1', '09:00', '10:00', { groupId: 'g1' });
+    const second = make('G2', '10:15', '11:15', { groupId: 'g1' });
+    const third = make('G3', '11:45', '12:45', { groupId: 'g1' }); // 30 min de hueco antes de esta
+    expect(groupRooms([third, first, second]).map((chain) => chain.map((c) => c.id))).toEqual([['G1', 'G2', 'G3']]);
+  });
+
+  it('groupId distintos no se mezclan, y una clase sin groupId sigue la inferencia de siempre', () => {
+    const g1a = make('G1A', '09:00', '10:00', { groupId: 'g1' });
+    const g1b = make('G1B', '10:00', '11:00', { groupId: 'g1' });
+    const g2a = make('G2A', '09:00', '10:00', { groupId: 'g2', meetLink: 'https://meet.google.com/zzz-zzzz-zzz' });
+    const groups = groupRooms([g1a, g1b, g2a, A, B]).map((chain) => chain.map((c) => c.id));
+    expect(groups).toHaveLength(2);
+    expect(groups).toEqual(expect.arrayContaining([['G1A', 'G1B'], ['G2A']]));
+    // A y B (sin groupId) siguen su propia cadena por inferencia, no se cuelan en ningún grupo.
+    const inferredChain = groups.find((g) => g.includes('A'));
+    expect(inferredChain).toEqual(['A', 'B']);
+  });
+
+  it('sin groupId el comportamiento es exactamente el de antes (prueba de regresión)', () => {
+    expect(groupRooms([C, A, B]).map((chain) => chain.map((c) => c.id))).toEqual([['A', 'B', 'C']]);
+    const shortGap = make('S', '16:08', '17:00');
+    const longGap = make('L', '18:00', '19:00');
+    expect(groupRooms([A, B, shortGap, longGap]).map((chain) => chain.map((c) => c.id))).toEqual([
+      ['A', 'B', 'S'],
+      ['L'],
+    ]);
+  });
 });
 
 describe('currentClassOf', () => {

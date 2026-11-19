@@ -9,6 +9,7 @@ export interface ClassItem {
   recordingNotes: string | null;
   status: string;
   monthKey: string;
+  groupId?: string | null;
   imageKey?: string | null;
   /** URL firmada de lectura del afiche (vence en 1 hora). */
   imageUrl?: string | null;

@@ -13,6 +13,7 @@ export interface RoomClass {
   dateEnd: Date;
   meetLink: string | null;
   status?: string;
+  groupId?: string | null;
 }
 
 /** Clave de una sala: mismo enlace de Meet sin importar mayúsculas, parámetros o barra final. */
@@ -26,20 +27,37 @@ export function meetKey(link: string | null | undefined): string | null {
 }
 
 /**
- * Agrupa las clases en "cadenas": clases con el mismo enlace de Meet, el mismo día (zona horaria de la organización)
- * y sin un hueco mayor a `GAP_MAX_MS` entre una y la siguiente. Una clase sola forma su propia cadena.
+ * Agrupa las clases en "cadenas". Dos formas de quedar en la misma cadena:
+ * - Mismo `groupId` (programación de hasta 3 clases armada a propósito en el formulario de admin):
+ *   se encadenan siempre, sin mirar el enlace, el día ni el hueco entre ellas.
+ * - Sin `groupId` (toda clase existente y cualquier clase sola, el caso de siempre): mismo enlace de
+ *   Meet, mismo día (zona horaria de la organización) y sin un hueco mayor a `GAP_MAX_MS` entre una y
+ *   la siguiente, igual que antes de que existiera `groupId`.
+ * Una clase sola forma su propia cadena.
  */
 export function groupRooms<T extends RoomClass>(classes: readonly T[]): T[][] {
+  const active = classes.filter((c) => c.status !== 'CANCELADA');
+
+  const byGroupId = new Map<string, T[]>();
+  const ungrouped: T[] = [];
+  for (const c of active) {
+    if (c.groupId) byGroupId.set(c.groupId, [...(byGroupId.get(c.groupId) ?? []), c]);
+    else ungrouped.push(c);
+  }
+
+  const chains: T[][] = [];
+  for (const group of byGroupId.values()) {
+    chains.push([...group].sort((a, b) => a.dateStart.getTime() - b.dateStart.getTime()));
+  }
+
   const byRoom = new Map<string, T[]>();
-  for (const c of classes) {
-    if (c.status === 'CANCELADA') continue;
+  for (const c of ungrouped) {
     const key = meetKey(c.meetLink);
     if (!key) continue;
     const bucket = `${key}|${dayKeyOf(c.dateStart)}`;
     byRoom.set(bucket, [...(byRoom.get(bucket) ?? []), c]);
   }
 
-  const chains: T[][] = [];
   for (const group of byRoom.values()) {
     const sorted = [...group].sort((a, b) => a.dateStart.getTime() - b.dateStart.getTime());
     let chain: T[] = [];

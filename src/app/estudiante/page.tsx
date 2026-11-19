@@ -51,6 +51,7 @@ interface StudentClass {
   meetLink: string | null;
   youtubeUrl: string | null;
   status: string;
+  groupId?: string | null;
   mentor: { name: string; email: string };
   attendances: { studentId: string; joinedAt: string }[];
   resources: { id: string; title: string; type: string; url: string }[];
