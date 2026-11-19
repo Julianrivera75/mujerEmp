@@ -78,7 +78,12 @@ describe('POST /api/classes/group', () => {
     actAs(w.admin);
     const otherDay = new Date(2026, 11, 2, 9).toISOString();
     const res = await read(
-      await post({ slots: [slot({ dateStart: day(9), dateEnd: day(10) }), slot({ dateStart: otherDay, dateEnd: new Date(2026, 11, 2, 10).toISOString() })] }),
+      await post({
+        slots: [
+          slot({ dateStart: day(9), dateEnd: day(10) }),
+          slot({ dateStart: otherDay, dateEnd: new Date(2026, 11, 2, 10).toISOString() }),
+        ],
+      }),
     );
     expect(res.status).toBe(400);
   });
@@ -177,7 +182,9 @@ describe('PUT /api/classes/group', () => {
     );
     expect(res.status).toBe(200);
     expect(res.body.classSessions).toHaveLength(3);
-    expect(new Set(res.body.classSessions.map((c: { groupId: string }) => c.groupId))).toEqual(new Set([group.groupId]));
+    expect(new Set(res.body.classSessions.map((c: { groupId: string }) => c.groupId))).toEqual(
+      new Set([group.groupId]),
+    );
   });
 
   it('quita una clase de un grupo de 3 (pasa a 2, mismo groupId)', async () => {
@@ -233,7 +240,10 @@ describe('PUT /api/classes/group', () => {
       const res = await read(
         await put({
           groupId: group.groupId,
-          slots: group.classSessions.map((c, i) => ({ id: c.id, ...slot({ dateStart: day(9 + i), dateEnd: day(10 + i) }) })),
+          slots: group.classSessions.map((c, i) => ({
+            id: c.id,
+            ...slot({ dateStart: day(9 + i), dateEnd: day(10 + i) }),
+          })),
         }),
       );
       expect([401, 403]).toContain(res.status);

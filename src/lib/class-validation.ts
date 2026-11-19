@@ -10,14 +10,13 @@ import { keyBelongsTo, verifyUploadedObject } from './s3';
  */
 
 /** Valida una foto nueva: debe ser propia, existir en el almacenamiento y ser una imagen permitida (JPG, PNG o WebP). */
-export async function assertValidImage(imageKey: string, ownerId: string) {
+async function assertValidImage(imageKey: string, ownerId: string) {
   if (!keyBelongsTo(imageKey, 'classImage', ownerId) || !(await verifyUploadedObject(imageKey, 'classImage'))) {
     throw new HttpError(400, 'La imagen no es válida. Sube una foto JPG, PNG o WebP de hasta 5 MB.');
   }
 }
 
-export const cleanKeys = (keys: readonly string[]) =>
-  Array.from(new Set(keys.map((key) => key.trim()).filter(Boolean)));
+const cleanKeys = (keys: readonly string[]) => Array.from(new Set(keys.map((key) => key.trim()).filter(Boolean)));
 
 /** Fotos que dejará una edición: la lista nueva o, con el campo anterior de una sola foto, solo se cambia la primera. */
 export function resolveImageKeys(

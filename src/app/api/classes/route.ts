@@ -1,12 +1,7 @@
 import type { Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { HttpError, MAX_ROWS, parseBody, parseValue, withAuth } from '@/lib/api';
-import {
-  assertValidImages,
-  assertValidMentor,
-  resolveImageKeys,
-  resolveStudentIds,
-} from '@/lib/class-validation';
+import { assertValidImages, assertValidMentor, resolveImageKeys, resolveStudentIds } from '@/lib/class-validation';
 import { MAX_CLASS_IMAGES, classImageKeys } from '@/lib/class-images';
 import { monthKeyOf } from '@/lib/months';
 import { createPresignedDownloadUrl, deleteObject } from '@/lib/s3';

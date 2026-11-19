@@ -34,13 +34,13 @@ describe('bogotaDayRangeUtc', () => {
 });
 
 describe('findMentorOverlaps', () => {
-  const base = (
-    id: string,
-    mentorId: string,
-    mentorName: string,
-    start: string,
-    end: string,
-  ): OverlapCandidate => ({ mentorId, mentorName, title: `Clase ${id}`, dateStart: at(start), dateEnd: at(end) });
+  const base = (id: string, mentorId: string, mentorName: string, start: string, end: string): OverlapCandidate => ({
+    mentorId,
+    mentorName,
+    title: `Clase ${id}`,
+    dateStart: at(start),
+    dateEnd: at(end),
+  });
 
   it('la misma mentora en dos horarios sin cruce no genera aviso', () => {
     const classes = [base('A', 'm1', 'Carolina', '09:00', '10:00'), base('B', 'm1', 'Carolina', '10:00', '11:00')];

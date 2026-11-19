@@ -248,7 +248,7 @@ export function ClassFormModal({
           mode === 'edit' ? editingClasses.filter((c) => !slots.some((s) => s.id === c.id)).map((c) => c.id) : [];
         const body = {
           ...shared,
-          groupId: mode === 'edit' ? editingClasses[0]?.groupId ?? null : undefined,
+          groupId: mode === 'edit' ? (editingClasses[0]?.groupId ?? null) : undefined,
           slots: slotPayload,
           removedIds,
         };
@@ -265,7 +265,10 @@ export function ClassFormModal({
       setSubmitting(false);
       const saved = data.classSession ?? data.classSessions?.[0];
       for (const w of data.warnings ?? []) {
-        show('info', `Aviso: ${w.mentorName} queda con "${w.classATitle}" y "${w.classBTitle}" cruzadas en el horario.`);
+        show(
+          'info',
+          `Aviso: ${w.mentorName} queda con "${w.classATitle}" y "${w.classBTitle}" cruzadas en el horario.`,
+        );
       }
       onSaved(saved);
     } catch (err) {
@@ -306,8 +309,8 @@ export function ClassFormModal({
             onChange={(e) => setShared({ ...shared, meetLink: e.target.value })}
           />
           <Tip className="mt-2">
-            Al hacer clic en este enlace, el sistema registrará automáticamente la asistencia de la estudiante para
-            todo el día, sin importar a cuál de las clases entre.
+            Al hacer clic en este enlace, el sistema registrará automáticamente la asistencia de la estudiante para todo
+            el día, sin importar a cuál de las clases entre.
           </Tip>
         </div>
 
@@ -458,7 +461,9 @@ export function ClassFormModal({
       {submitting && (
         <div className="mt-4 space-y-1.5" role="status" aria-live="polite">
           <p className="text-xs font-semibold text-role-ink">
-            {mode === 'create' ? 'Creando la programación e inscribiendo a las estudiantes...' : 'Guardando los cambios...'}
+            {mode === 'create'
+              ? 'Creando la programación e inscribiendo a las estudiantes...'
+              : 'Guardando los cambios...'}
           </p>
           <ProgressBar indeterminate label="Guardando la programación" />
         </div>

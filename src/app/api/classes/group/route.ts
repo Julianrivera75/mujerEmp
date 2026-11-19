@@ -2,12 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { HttpError, parseBody, withAuth } from '@/lib/api';
 import { dayKeyOf } from '@/lib/attendance-days';
-import {
-  assertValidImages,
-  assertValidMentor,
-  resolveImageKeys,
-  resolveStudentIds,
-} from '@/lib/class-validation';
+import { assertValidImages, assertValidMentor, resolveImageKeys, resolveStudentIds } from '@/lib/class-validation';
 import { classImageKeys } from '@/lib/class-images';
 import { monthKeyOf } from '@/lib/months';
 import { deleteObject } from '@/lib/s3';
@@ -165,7 +160,10 @@ export const PUT = withAuth('classes/group PUT', ['ADMIN'], async (req, user) =>
     body.slots.map((slot, i) => {
       const existing = slot.id ? existingById.get(slot.id) : undefined;
       const existingKeys = existing ? classImageKeys(existing) : [];
-      return assertValidImages(slotImages[i].filter((key) => !existingKeys.includes(key)), user.id);
+      return assertValidImages(
+        slotImages[i].filter((key) => !existingKeys.includes(key)),
+        user.id,
+      );
     }),
   );
 
