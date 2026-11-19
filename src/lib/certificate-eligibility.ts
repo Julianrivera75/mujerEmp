@@ -23,11 +23,13 @@ export type CertificateOverrideAction = 'AUTHORIZED' | 'BLOCKED';
  * Estado del certificado de un módulo: se habilita al entrar en la ventana final del mes
  * y exige que la asistencia cumpla la regla configurada para ese módulo.
  *
- * `exempt` ("Madrina", ya pagó su cupo) salta la validación de asistencia y de "sin clases" — pero no la fecha: el
- * módulo sigue sin estar disponible antes de su ventana de certificación.
+ * `exempt` ("Madrina", ya pagó su cupo) tiene los 5 certificados disponibles desde el día uno,
+ * sin importar la fecha, el mes del módulo ni la asistencia — bypass total y permanente. La única
+ * excepción es un `override` `BLOCKED` puntual de admin, que bloquea igual a una estudiante exenta.
  *
- * `override`, si existe, manda sobre la regla y sobre `exempt` (una autorización o bloqueo puntual de admin para
- * ese módulo), pero tampoco adelanta la fecha: antes de la ventana de certificación el módulo sigue `locked`.
+ * Para una estudiante NO exenta, `override` manda sobre la regla de asistencia (`AUTHORIZED` la
+ * salta, `BLOCKED` bloquea aunque cumpla la regla) pero nunca adelanta la fecha: antes de la
+ * ventana de certificación el módulo sigue `locked` sin importar el override.
  */
 export function moduleStatus(
   monthKey: string,
@@ -38,10 +40,10 @@ export function moduleStatus(
   exempt = false,
   override?: CertificateOverrideAction,
 ): ModuleStatus {
+  if (exempt) return override === 'BLOCKED' ? 'blocked' : 'available';
   if (now < certificateOpensAt(monthKey)) return 'locked';
   if (override === 'BLOCKED') return 'blocked';
   if (override === 'AUTHORIZED') return 'available';
-  if (exempt) return 'available';
   if (total === 0) return 'no-classes';
   if (!meetsRule(rule, attended, total)) return 'low-attendance';
   return 'available';

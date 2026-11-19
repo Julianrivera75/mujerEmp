@@ -367,11 +367,11 @@ export default function AdminCertificatesPage() {
     }
   };
 
-  /** Genera, una por una, el certificado de cada fila marcada (solo las disponibles cuentan). */
+  /** Genera, una por una, el certificado de cada fila marcada. */
   const generateSelected = async () => {
-    const targets = filteredRows.filter((r) => selected.has(keyOf(r)) && r.status === 'available');
+    const targets = filteredRows.filter((r) => selected.has(keyOf(r)));
     if (targets.length === 0) {
-      show('info', 'No hay seleccionadas con el certificado disponible.');
+      show('info', 'No hay filas seleccionadas.');
       return;
     }
     setBulkRunning(true);
@@ -696,13 +696,9 @@ export default function AdminCertificatesPage() {
             <Button
               size="sm"
               variant="secondary"
-              onClick={() =>
-                setSelected(
-                  new Set(filteredRows.filter((r) => r.status === 'available').map((r) => keyOf(r))),
-                )
-              }
+              onClick={() => setSelected(new Set(filteredRows.map((r) => keyOf(r))))}
             >
-              Seleccionar todas las disponibles ({filteredRows.filter((r) => r.status === 'available').length})
+              Seleccionar todas ({filteredRows.length})
             </Button>
             <Button size="sm" variant="ghost" disabled={selected.size === 0} onClick={() => setSelected(new Set())}>
               Limpiar selección
@@ -741,7 +737,6 @@ export default function AdminCertificatesPage() {
                   <input
                     type="checkbox"
                     className="h-4 w-4 rounded border-slate-300"
-                    disabled={r.status !== 'available'}
                     checked={selected.has(keyOf(r))}
                     onChange={() => toggleSelected(keyOf(r))}
                     aria-label={`Seleccionar certificado del módulo ${r.moduleNumber} de ${r.name}`}
@@ -811,7 +806,6 @@ export default function AdminCertificatesPage() {
                   <Button
                     size="sm"
                     variant="secondary"
-                    disabled={r.status !== 'available'}
                     loading={generating === `${r.studentId}-${r.moduleNumber}`}
                     leftIcon={<FileDown className="h-4 w-4" />}
                     onClick={() => generateCertificate(r)}

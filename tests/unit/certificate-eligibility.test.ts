@@ -65,4 +65,16 @@ describe('moduleStatus', () => {
     expect(moduleStatus('2026-10', beforeWindow, 5, 5, percentRule, false, 'AUTHORIZED')).toBe('locked');
     expect(moduleStatus('2026-10', beforeWindow, 5, 5, percentRule, false, 'BLOCKED')).toBe('locked');
   });
+
+  it('una estudiante exenta (Madrina) tiene el certificado disponible desde el día uno, sin importar la fecha ni el mes del módulo', () => {
+    const farBeforeModule = new Date(2026, 0, 1);
+    expect(moduleStatus('2026-10', farBeforeModule, 0, 0, percentRule, true)).toBe('available');
+    const beforeWindow = new Date(2026, 9, 26, 23, 59);
+    expect(moduleStatus('2026-10', beforeWindow, 0, 0, percentRule, true)).toBe('available');
+  });
+
+  it('un bloqueo manual bloquea a una exenta aunque sea antes de la ventana o del mes', () => {
+    const beforeWindow = new Date(2026, 9, 26, 23, 59);
+    expect(moduleStatus('2026-10', beforeWindow, 0, 0, percentRule, true, 'BLOCKED')).toBe('blocked');
+  });
 });

@@ -147,11 +147,18 @@ describe('GET /api/admin/certificates/pdf', () => {
     expect((await getPdf(request('/api/admin/certificates/pdf?moduleNumber=1'))).status).toBe(400);
   });
 
-  it('no entrega el PDF si la estudiante no es elegible', async () => {
+  it('entrega el PDF aunque la estudiante no sea elegible (el admin descarga sin ninguna condición)', async () => {
     actAs(w.admin);
-    expect((await getPdf(request(`/api/admin/certificates/pdf?studentId=${w.sofia.id}&moduleNumber=1`))).status).toBe(
-      403,
-    );
+    const res = await getPdf(request(`/api/admin/certificates/pdf?studentId=${w.sofia.id}&moduleNumber=1`));
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Content-Type')).toBe('application/pdf');
+  });
+
+  it('entrega el PDF aunque el mes del módulo todavía no haya llegado', async () => {
+    actAs(w.admin);
+    const res = await getPdf(request(`/api/admin/certificates/pdf?studentId=${w.sofia.id}&moduleNumber=5`));
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Content-Type')).toBe('application/pdf');
   });
 
   it('entrega el PDF de cualquier estudiante elegible', async () => {

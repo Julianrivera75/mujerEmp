@@ -12,6 +12,11 @@
  * Excluye las cuentas con dominio @empoderas.org (las mismas que usa prisma/seed.js para las
  * cuentas de prueba) y las cuentas anonimizadas. Las estudiantes inactivas se incluyen pero se
  * marcan aparte, para que la coordinadora decida si les aplica certificado.
+ *
+ * Nota: esto es solo un reporte. El panel de admin ya no exige ninguna de estas condiciones para
+ * descargar un certificado (ver src/lib/certificate-issue.ts) y las exentas ("Madrina") tienen los
+ * 5 certificados disponibles desde el día uno sin importar la fecha (ver moduleStatus() en
+ * src/lib/certificate-eligibility.ts).
  */
 const { PrismaClient } = require('@prisma/client');
 
@@ -145,9 +150,9 @@ async function main() {
         );
         const override = overrideByStudentModule.get(`${s.id}:${mod.number}`) ?? null;
         let estado;
-        if (override === 'BLOCKED') estado = 'bloqueada (manual)';
+        if (s.certificateExempt) estado = override === 'BLOCKED' ? 'bloqueada (manual)' : 'exenta (Madrina)';
+        else if (override === 'BLOCKED') estado = 'bloqueada (manual)';
         else if (override === 'AUTHORIZED') estado = 'autorizada (manual)';
-        else if (s.certificateExempt) estado = 'exenta (Madrina)';
         else if (totalDays === 0) estado = 'sin clases';
         else if (meetsRule(rule, attendedDays, totalDays)) estado = 'elegible por regla';
         else estado = 'no elegible';
