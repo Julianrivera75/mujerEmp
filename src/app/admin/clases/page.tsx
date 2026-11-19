@@ -14,6 +14,7 @@ import { useToast } from '@/components/ui/Toast';
 import { formatDateLong, formatTimeRange, formatWeekdayDate } from '@/lib/format';
 import { dayKeyOf } from '@/lib/attendance-days';
 import { monthKeyOf, monthOptions } from '@/lib/months';
+import { groupRooms } from '@/lib/rooms';
 import { safeHref } from '@/lib/validators';
 import { ClassFormModal } from './_components/ClassFormModal';
 import { EnrollmentsModal } from './_components/EnrollmentsModal';
@@ -89,8 +90,19 @@ export default function AdminClassesPage() {
   const handleOpenEdit = (cls: ClassItem) => {
     setModalMode('edit');
     // Si la clase pertenece a una programación de varias, se edita junto con sus hermanas (ya están
-    // cargadas: comparten el mismo mes porque son del mismo día). Si no, se edita ella sola.
-    const siblings = cls.groupId ? classes.filter((c) => c.groupId === cls.groupId) : [cls];
+    // cargadas: comparten el mismo mes porque son del mismo día).
+    let siblings: ClassItem[];
+    if (cls.groupId) {
+      siblings = classes.filter((c) => c.groupId === cls.groupId);
+    } else {
+      // Clases programadas antes de esta función (mismo enlace de Meet, sin groupId todavía): se
+      // infieren por enlace + día + sin huecos grandes, igual que la "sala compartida" de la
+      // estudiante, para que se puedan seguir editando juntas aunque no tengan el dato nuevo.
+      const dated = classes.map((c) => ({ ...c, dateStart: new Date(c.dateStart), dateEnd: new Date(c.dateEnd) }));
+      const chain = groupRooms(dated).find((g) => g.some((c) => c.id === cls.id));
+      const chainIds = new Set((chain && chain.length > 1 ? chain : [{ id: cls.id }]).map((c) => c.id));
+      siblings = classes.filter((c) => chainIds.has(c.id));
+    }
     setEditingClasses(siblings);
     setIsModalOpen(true);
     loadUsers();

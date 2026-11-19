@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { AlertCircle, CheckCircle2, Upload, X } from 'lucide-react';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { logClientError } from '@/lib/client-log';
@@ -128,7 +128,11 @@ export default function FileUpload({
     if (file) void upload(file);
   };
 
-  const inputId = `file-upload-${category}`;
+  const uid = useId();
+  // Con varias instancias del mismo `category` en una sola página (hasta 3 clases, cada una con su
+  // propia foto), el id no puede depender solo de `category`: dos <input id> iguales hacen que el
+  // navegador asocie siempre el clic y el archivo con el primero, sin importar cuál se haya pulsado.
+  const inputId = `file-upload-${category}-${uid}`;
 
   return (
     <div>

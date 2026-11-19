@@ -133,7 +133,17 @@ export function ClassFormModal({
     () => buildInitialState(mode, editingClasses, mentors, students).slots,
   );
   const [submitting, setSubmitting] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  // Cada clase sube su propia foto por separado; un solo flag compartido entre las 3 hacía que la
+  // subida de una pisara el estado "ocupado" de las otras. Se guarda por índice de clase.
+  const [busySlots, setBusySlots] = useState<Set<number>>(new Set());
+  const uploading = busySlots.size > 0;
+  const setSlotBusy = (index: number, busy: boolean) =>
+    setBusySlots((prev) => {
+      const next = new Set(prev);
+      if (busy) next.add(index);
+      else next.delete(index);
+      return next;
+    });
   const [errorMsg, setErrorMsg] = useState('');
   const { show } = useToast();
 
@@ -144,6 +154,7 @@ export function ClassFormModal({
       setSlots(initial.slots);
       setErrorMsg('');
       setSubmitting(false);
+      setBusySlots(new Set());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, mode, editingClasses]);
@@ -399,7 +410,7 @@ export function ClassFormModal({
               <ClassImagesField
                 images={slot.images}
                 onChange={(images) => updateSlot(index, { images })}
-                onBusyChange={setUploading}
+                onBusyChange={(busy) => setSlotBusy(index, busy)}
               />
             </div>
           ))}
@@ -469,13 +480,20 @@ export function ClassFormModal({
         </div>
       )}
 
-      <div className="mt-5 flex items-center justify-end gap-3 border-t border-slate-100 pt-5">
-        <Button variant="ghost" onClick={onClose} disabled={submitting}>
-          Cancelar
-        </Button>
-        <Button type="submit" form="class-form" loading={submitting} disabled={uploading}>
-          {mode === 'create' ? 'Crear programación' : 'Guardar cambios'}
-        </Button>
+      <div className="mt-5 flex flex-col items-end gap-2 border-t border-slate-100 pt-5">
+        {uploading && (
+          <p className="text-xs font-semibold text-amber-700">
+            Espera a que terminen de subir las fotos para poder guardar.
+          </p>
+        )}
+        <div className="flex items-center justify-end gap-3">
+          <Button variant="ghost" onClick={onClose} disabled={submitting}>
+            Cancelar
+          </Button>
+          <Button type="submit" form="class-form" loading={submitting} disabled={uploading}>
+            {mode === 'create' ? 'Crear programación' : 'Guardar cambios'}
+          </Button>
+        </div>
       </div>
     </Modal>
   );
