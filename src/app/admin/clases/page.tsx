@@ -34,7 +34,7 @@ export default function AdminClassesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [enrollmentsOpen, setEnrollmentsOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
-  const [editingClass, setEditingClass] = useState<ClassItem | null>(null);
+  const [editingClasses, setEditingClasses] = useState<ClassItem[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<ClassItem | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -80,7 +80,7 @@ export default function AdminClassesPage() {
 
   const handleOpenCreate = () => {
     setModalMode('create');
-    setEditingClass(null);
+    setEditingClasses([]);
     setIsModalOpen(true);
     // Por si se creó una mentora o estudiante nueva después de cargar esta página.
     loadUsers();
@@ -88,7 +88,10 @@ export default function AdminClassesPage() {
 
   const handleOpenEdit = (cls: ClassItem) => {
     setModalMode('edit');
-    setEditingClass(cls);
+    // Si la clase pertenece a una programación de varias, se edita junto con sus hermanas (ya están
+    // cargadas: comparten el mismo mes porque son del mismo día). Si no, se edita ella sola.
+    const siblings = cls.groupId ? classes.filter((c) => c.groupId === cls.groupId) : [cls];
+    setEditingClasses(siblings);
     setIsModalOpen(true);
     loadUsers();
   };
@@ -309,7 +312,7 @@ export default function AdminClassesPage() {
       <ClassFormModal
         open={isModalOpen}
         mode={modalMode}
-        editingClass={editingClass}
+        editingClasses={editingClasses}
         mentors={mentors}
         students={students}
         onClose={() => setIsModalOpen(false)}
