@@ -53,7 +53,19 @@ describe('GET /api/certificates', () => {
     expect(res.body.modules.map((m: { number: number }) => m.number)).toEqual([1, 2, 3, 4, 5]);
   });
 
-  it('cuenta solo los días con charlas del módulo en los que la estudiante está inscrita', async () => {
+  it('no incluye porcentaje, días ni la regla: la estudiante no ve su propia asistencia', async () => {
+    await octoberClass('Clase 1', true);
+    actAs(w.sofia);
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date(2026, 9, 29) });
+    const first = (await read(await list())).body.modules[0];
+    expect(Object.keys(first).sort()).toEqual(['art', 'issuedOn', 'monthKey', 'number', 'opensAt', 'status', 'title']);
+    expect(first.percentage).toBeUndefined();
+    expect(first.attended).toBeUndefined();
+    expect(first.total).toBeUndefined();
+    expect(first.rule).toBeUndefined();
+  });
+
+  it('cuenta solo los días con charlas del módulo en los que la estudiante está inscrita (vía el estado resultante)', async () => {
     await octoberClass('Clase 1', true);
     await octoberClass('Clase 2', false, 7);
     await prisma.classSession.create({
@@ -69,9 +81,10 @@ describe('GET /api/certificates', () => {
     actAs(w.sofia);
     vi.useFakeTimers({ toFake: ['Date'], now: new Date(2026, 9, 29) });
     const res = await read(await list());
-    const first = res.body.modules[0];
-    expect(first).toMatchObject({ number: 1, total: 2, attended: 1, percentage: 50 });
-    expect(res.body.modules[1]).toMatchObject({ number: 2, total: 0, attended: 0 });
+    // Módulo 1 tiene la excepción de "al menos un día": con 1 de 2 asistida, ya está disponible.
+    expect(res.body.modules[0]).toMatchObject({ number: 1, status: 'available' });
+    // Módulo 2 no tiene clases propias de la estudiante (la "Ajena" no cuenta: no está inscrita).
+    expect(res.body.modules[1]).toMatchObject({ number: 2, status: 'no-classes' });
   });
 
   it('entrar a una sola charla del día basta: varias charlas el mismo día cuentan un solo día', async () => {
@@ -82,7 +95,7 @@ describe('GET /api/certificates', () => {
     actAs(w.sofia);
     vi.useFakeTimers({ toFake: ['Date'], now: new Date(2026, 9, 29) });
     const first = (await read(await list())).body.modules[0];
-    expect(first).toMatchObject({ number: 1, total: 1, attended: 1, percentage: 100, status: 'available' });
+    expect(first).toMatchObject({ number: 1, status: 'available' });
   });
 
   it('el estado depende de la fecha: bloqueado antes de la ventana y disponible después con 80 %', async () => {
@@ -112,13 +125,6 @@ describe('GET /api/certificates', () => {
     actAs(w.sofia);
     vi.useFakeTimers({ toFake: ['Date'], now: new Date(2026, 9, 29) });
     const first = (await read(await list())).body.modules[0];
-    expect(first).toMatchObject({
-      number: 1,
-      attended: 1,
-      total: 4,
-      percentage: 25,
-      status: 'available',
-      rule: { ruleType: 'MIN_ATTENDED_DAYS', threshold: 1 },
-    });
+    expect(first).toMatchObject({ number: 1, status: 'available' });
   });
 });

@@ -6,35 +6,16 @@ import { ArrowLeft, Award, Download, ExternalLink, Eye, Lock } from 'lucide-reac
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { ProgressBar } from '@/components/ui/ProgressBar';
 import { logClientError } from '@/lib/client-log';
 import { formatDateLong } from '@/lib/format';
 import { type ModuleStatus } from '@/lib/modules';
-
-interface CertificateRule {
-  ruleType: 'MIN_ATTENDANCE_PERCENT' | 'MIN_ATTENDED_DAYS';
-  threshold: number;
-}
 
 interface ModuleState {
   number: number;
   title: string;
   issuedOn: string;
   status: ModuleStatus;
-  percentage: number;
-  attended: number;
-  total: number;
   opensAt: string;
-  rule: CertificateRule;
-}
-
-/** Cuánto le falta a la estudiante para cumplir la regla del módulo, en su propia forma (porcentaje o días). */
-function missingAttendanceText(module: ModuleState): string {
-  if (module.rule.ruleType === 'MIN_ATTENDED_DAYS') {
-    const plural = module.rule.threshold === 1 ? 'día' : 'días';
-    return `Necesitas asistir al menos a ${module.rule.threshold} ${plural} con charla (tienes ${module.attended}).`;
-  }
-  return `Necesitas al menos ${module.rule.threshold}% de asistencia para descargarlo (tienes ${module.percentage}%).`;
 }
 
 interface CertificatesResponse {
@@ -225,23 +206,13 @@ function ModuleCard({
         <StatusBadge status={module.status} />
       </div>
 
-      <div className="text-xs text-slate-600">
-        <div className="mb-1.5 flex justify-between font-semibold">
-          <span>Asistencia</span>
-          <span className="text-role-ink">
-            {module.percentage}% ({module.attended} de {module.total} días)
-          </span>
-        </div>
-        <ProgressBar value={module.percentage} label={`Asistencia del módulo ${module.number}`} />
-      </div>
-
       <p className="text-xs text-slate-500">
         {module.status === 'locked'
           ? `Disponible desde el ${formatDateLong(module.opensAt)}.`
           : module.status === 'no-classes'
             ? 'Este módulo aún no tiene clases registradas para ti.'
             : module.status === 'low-attendance'
-              ? missingAttendanceText(module)
+              ? 'Tu certificado aún no está disponible. Si tienes dudas, escríbele a la coordinación.'
               : module.status === 'blocked'
                 ? 'Tu certificado de este módulo fue bloqueado por la administración. Escríbele a la coordinación si tienes dudas.'
                 : `Fecha de emisión del certificado: ${module.issuedOn}.`}

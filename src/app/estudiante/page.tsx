@@ -2,21 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import {
-  Video,
-  Calendar,
-  Clock,
-  CheckCircle2,
-  BookOpen,
-  ClipboardList,
-  ChevronRight,
-  Youtube,
-  Award,
-} from 'lucide-react';
+import { Video, Calendar, Clock, BookOpen, ClipboardList, ChevronRight, Youtube } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { StatusPill } from '@/components/ui/Badge';
-import { ProgressBar } from '@/components/ui/ProgressBar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { useSessionUser } from '@/lib/user-context';
@@ -26,19 +15,9 @@ import { formatDateLong, formatTimeRange, formatWeekdayDate } from '@/lib/format
 import { logClientError } from '@/lib/client-log';
 import { ClassGallery } from '@/components/ClassGallery';
 import { RoomCard } from '@/components/RoomCard';
-import { isPastClass, summarizeDays } from '@/lib/attendance-days';
-import { monthKeyOf } from '@/lib/months';
+import { isPastClass } from '@/lib/attendance-days';
 import { groupRooms } from '@/lib/rooms';
 import { RoleSwitchBanner } from '@/components/RoleSwitchBanner';
-
-interface CertificateModuleProgress {
-  number: number;
-  monthKey: string;
-  title: string;
-  percentage: number;
-  attended: number;
-  total: number;
-}
 
 interface StudentClass {
   id: string;
@@ -60,10 +39,7 @@ interface StudentClass {
 export default function StudentDashboardPage() {
   const user = useSessionUser();
   const [classes, setClasses] = useState<StudentClass[]>([]);
-  const [certModules, setCertModules] = useState<CertificateModuleProgress[]>([]);
   const [loading, setLoading] = useState(true);
-  // Por defecto se muestra el avance del módulo en curso; con el clic se ve el acumulado de todo el programa.
-  const [showAllTime, setShowAllTime] = useState(false);
   // Instante de la última carga de datos: se usa como "ahora" para toda la vista, en vez de recalcularlo en cada
   // render, para que la asistencia mostrada no cambie sola por volver a renderizar sin datos nuevos.
   const [asOf, setAsOf] = useState<Date>(() => new Date());
@@ -71,13 +47,9 @@ export default function StudentDashboardPage() {
   const loadData = async ({ silent = false } = {}) => {
     try {
       if (!silent) setLoading(true);
-      const [classesRes, certsRes] = await Promise.all([fetch('/api/classes'), fetch('/api/certificates')]);
+      const classesRes = await fetch('/api/classes');
       const data = await classesRes.json();
       setClasses(data.classes || []);
-      if (certsRes.ok) {
-        const certsData = await certsRes.json();
-        setCertModules(certsData.modules || []);
-      }
       setAsOf(new Date());
     } catch (err) {
       logClientError('Error cargando datos del estudiante:', err);
@@ -100,18 +72,6 @@ export default function StudentDashboardPage() {
     upcomingClasses.map((c) => ({ ...c, dateStart: new Date(c.dateStart), dateEnd: new Date(c.dateEnd) })),
   ).filter((chain) => chain.length > 1);
   const roomOf = new Map(roomChains.flatMap((chain) => chain.map((c) => [c.id, chain] as const)));
-  // La asistencia se mide por día: con entrar a una sola charla del día ya cuenta ese día.
-  const daySummary = summarizeDays(
-    classes,
-    classes.flatMap((c) =>
-      c.attendances.filter((a) => a.studentId === user.id).map((a) => ({ classId: c.id, joinedAt: a.joinedAt })),
-    ),
-    now,
-  );
-  const totalAttended = daySummary.attendedDays;
-  const allTimePct = daySummary.percentage;
-  const currentModule = certModules.find((m) => m.monthKey === monthKeyOf(now));
-  const progressPct = !showAllTime && currentModule ? currentModule.percentage : allTimePct;
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
@@ -150,7 +110,7 @@ export default function StudentDashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Card variant="glass" className="flex items-center gap-4 p-5">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-fuchsia-100 text-fuchsia-600">
             <Calendar className="h-6 w-6" strokeWidth={1.75} />
@@ -158,15 +118,6 @@ export default function StudentDashboardPage() {
           <div>
             <p className="text-xs font-bold uppercase text-slate-500">Clases del programa</p>
             <p className="font-display text-2xl font-bold tabular-nums text-slate-800">{classes.length}</p>
-          </div>
-        </Card>
-        <Card variant="glass" className="flex items-center gap-4 p-5">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600">
-            <CheckCircle2 className="h-6 w-6" strokeWidth={1.75} />
-          </div>
-          <div>
-            <p className="text-xs font-bold uppercase text-slate-500">Días asistidos</p>
-            <p className="font-display text-2xl font-bold tabular-nums text-slate-800">{totalAttended}</p>
           </div>
         </Card>
         <Card variant="glass" className="flex items-center gap-4 p-5">
@@ -181,54 +132,6 @@ export default function StudentDashboardPage() {
           </div>
         </Card>
       </div>
-
-      {classes.length > 0 && (
-        <Card variant="tinted" className="p-6 sm:p-7">
-          <div className="mb-3 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-role-from text-white shadow-soft">
-                <Award className="h-5 w-5" />
-              </div>
-              <div>
-                <h2 className="text-base font-bold text-slate-800">
-                  {!showAllTime && currentModule
-                    ? `Tu avance en el módulo actual (${currentModule.title})`
-                    : 'Tu avance acumulado de todo el programa'}
-                </h2>
-                <p className="text-xs text-slate-600">
-                  Cada módulo tiene su propia regla de asistencia; consulta el detalle en Certificados. Cuenta cada día
-                  en que entras al menos a una charla por Google Meet.
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col items-start gap-1 sm:items-end">
-              <span className="text-lg font-black text-role-ink">{progressPct}% cumplido</span>
-              {currentModule && (
-                <button
-                  type="button"
-                  onClick={() => setShowAllTime((v) => !v)}
-                  className="text-[11px] font-bold text-role-ink underline underline-offset-2 hover:brightness-90"
-                >
-                  {showAllTime ? 'Ver módulo actual' : 'Ver acumulado de todos los módulos'}
-                </button>
-              )}
-            </div>
-          </div>
-
-          <ProgressBar value={progressPct} label="Avance de asistencia" className="mb-3 h-3" />
-
-          <div className="flex justify-end">
-            <Button
-              href="/estudiante/certificado"
-              variant="secondary"
-              size="sm"
-              leftIcon={<Award className="h-4 w-4" />}
-            >
-              Ver mis certificados
-            </Button>
-          </div>
-        </Card>
-      )}
 
       <div>
         <h2 className="mb-1 flex items-center gap-2.5 font-display text-xl font-bold text-slate-800">
