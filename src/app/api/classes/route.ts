@@ -1,10 +1,10 @@
 import type { Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { HttpError, MAX_ROWS, parseBody, parseValue, withAuth } from '@/lib/api';
+import { assertValidImages, assertValidMentor, resolveImageKeys, resolveStudentIds } from '@/lib/class-validation';
 import { MAX_CLASS_IMAGES, classImageKeys } from '@/lib/class-images';
 import { monthKeyOf } from '@/lib/months';
-import { rolesOf } from '@/lib/roles';
-import { createPresignedDownloadUrl, deleteObject, keyBelongsTo, verifyUploadedObject } from '@/lib/s3';
+import { createPresignedDownloadUrl, deleteObject } from '@/lib/s3';
 import prisma from '@/lib/prisma';
 import { createClassSchema, meetLink, updateClassSchema, youtubeLink } from '@/lib/schemas';
 import { CLASS_STATUSES, cleanText, isOneOf, parseDate } from '@/lib/validators';
@@ -60,45 +60,6 @@ export const GET = withAuth('classes GET', 'any', async (req, user) => {
 
   return NextResponse.json({ classes: withImages });
 });
-
-/** Valida una foto nueva: debe ser propia, existir en el almacenamiento y ser una imagen permitida (JPG, PNG o WebP). */
-async function assertValidImage(imageKey: string, ownerId: string) {
-  if (!keyBelongsTo(imageKey, 'classImage', ownerId) || !(await verifyUploadedObject(imageKey, 'classImage'))) {
-    throw new HttpError(400, 'La imagen no es válida. Sube una foto JPG, PNG o WebP de hasta 5 MB.');
-  }
-}
-
-const cleanKeys = (keys: readonly string[]) => Array.from(new Set(keys.map((key) => key.trim()).filter(Boolean)));
-
-/** Fotos que dejará una edición: la lista nueva o, con el campo anterior de una sola foto, solo se cambia la primera. */
-function resolveImageKeys(existing: string[], requested: { imageKeys?: string[]; imageKey?: string | null }): string[] {
-  if (requested.imageKeys !== undefined) return cleanKeys(requested.imageKeys);
-  if (requested.imageKey === undefined) return existing;
-  const legacy = requested.imageKey?.trim() || null;
-  return legacy ? cleanKeys([legacy, ...existing.slice(1)]) : existing.slice(1);
-}
-
-async function assertValidImages(keys: readonly string[], ownerId: string) {
-  if (keys.length > MAX_CLASS_IMAGES) throw new HttpError(400, `Puedes subir hasta ${MAX_CLASS_IMAGES} fotos.`);
-  for (const key of keys) await assertValidImage(key, ownerId);
-}
-
-async function resolveStudentIds(ids: readonly string[] | null | undefined): Promise<string[]> {
-  const unique = Array.from(new Set(ids ?? []));
-  if (unique.length === 0) return [];
-  const found = await prisma.user.findMany({
-    where: { id: { in: unique }, OR: [{ role: 'STUDENT' }, { extraRoles: { has: 'STUDENT' } }] },
-    select: { id: true },
-  });
-  return found.map((u) => u.id);
-}
-
-async function assertValidMentor(mentorId: string) {
-  const mentor = await prisma.user.findUnique({ where: { id: mentorId }, select: { role: true, extraRoles: true } });
-  if (!mentor || !(rolesOf(mentor).includes('MENTOR') || mentor.role === 'ADMIN')) {
-    throw new HttpError(400, 'La mentora seleccionada no es válida.');
-  }
-}
 
 export const POST = withAuth('classes POST', ['ADMIN'], async (req, user) => {
   const body = await parseBody(req, createClassSchema);

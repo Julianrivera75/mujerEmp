@@ -2,7 +2,17 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Award, Bell, CheckCheck, ClipboardCheck, ClipboardList, Clock, Flag, Inbox, MessageCircle } from 'lucide-react';
+import {
+  Award,
+  Bell,
+  CheckCheck,
+  ClipboardCheck,
+  ClipboardList,
+  Clock,
+  Flag,
+  Inbox,
+  MessageCircle,
+} from 'lucide-react';
 import { useActivity } from '@/components/ActivityProvider';
 import { useNotificationOpener } from '@/components/useNotificationOpener';
 import { formatDayMonthTime } from '@/lib/format';

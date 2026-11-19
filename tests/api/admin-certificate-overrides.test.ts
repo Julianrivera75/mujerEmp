@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GET as getCertificates } from '@/app/api/admin/certificates/route';
-import { DELETE as deleteOverride, GET as getOverrides, POST as postOverride } from '@/app/api/admin/certificates/overrides/route';
+import {
+  DELETE as deleteOverride,
+  GET as getOverrides,
+  POST as postOverride,
+} from '@/app/api/admin/certificates/overrides/route';
 import prisma from '@/lib/prisma';
 import { read, request } from '../helpers/http';
 import { actAs } from '../helpers/state';

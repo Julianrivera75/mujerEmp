@@ -194,6 +194,42 @@ describe('PUT /api/classes', () => {
   });
 });
 
+describe('groupId (regresión)', () => {
+  it('crear o editar una sola clase por el endpoint de siempre nunca toca groupId', async () => {
+    actAs(w.admin);
+    const created = await read(
+      await POST(
+        request('/api/classes', {
+          method: 'POST',
+          body: {
+            title: 'Clase sola',
+            dateStart: '2026-12-01T15:00',
+            dateEnd: '2026-12-01T17:00',
+            mentorId: w.carolina.id,
+          },
+        }),
+      ),
+    );
+    expect(created.status).toBe(200);
+    expect(
+      (await prisma.classSession.findUniqueOrThrow({ where: { id: created.body.classSession.id } })).groupId,
+    ).toBeNull();
+
+    const edited = await read(
+      await PUT(
+        request('/api/classes', {
+          method: 'PUT',
+          body: { id: created.body.classSession.id, title: 'Clase sola editada' },
+        }),
+      ),
+    );
+    expect(edited.status).toBe(200);
+    expect(
+      (await prisma.classSession.findUniqueOrThrow({ where: { id: created.body.classSession.id } })).groupId,
+    ).toBeNull();
+  });
+});
+
 describe('DELETE /api/classes', () => {
   it('solo la administradora elimina clases', async () => {
     actAs(w.carolina);

@@ -231,11 +231,7 @@ export default function AdminAttendancePage() {
         </p>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <div className="flex-1">
-            <Select
-              label="Estudiante"
-              value={manualStudentId}
-              onChange={(e) => setManualStudentId(e.target.value)}
-            >
+            <Select label="Estudiante" value={manualStudentId} onChange={(e) => setManualStudentId(e.target.value)}>
               <option value="">Selecciona una estudiante...</option>
               {studentSummary.map((s) => (
                 <option key={s.id} value={s.id}>

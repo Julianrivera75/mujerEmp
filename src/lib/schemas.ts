@@ -198,6 +198,47 @@ export const createClassSchema = z.object({
   ...classBase,
 });
 
+/** Una clase dentro de una programación de 1 a 3 (hasta 3 clases bajo un mismo link de día). */
+const classSlotSchema = z.object({
+  id: z.string().optional(), // presente solo al editar una clase que ya existía en el grupo
+  title: requiredText('Título, fecha inicio, fecha fin y mentora son obligatorios en cada clase.', 200),
+  dateStart: dateField('Título, fecha inicio, fecha fin y mentora son obligatorios en cada clase.'),
+  dateEnd: dateField('Título, fecha inicio, fecha fin y mentora son obligatorios en cada clase.'),
+  mentorId: requiredId('Título, fecha inicio, fecha fin y mentora son obligatorios en cada clase.'),
+  description: z.string().nullish(),
+  imageKey: z.string().max(300).nullish(),
+  imageKeys: z
+    .array(z.string().min(1).max(300))
+    .max(MAX_CLASS_IMAGES, `Puedes subir hasta ${MAX_CLASS_IMAGES} fotos.`)
+    .optional(),
+});
+
+export const createClassGroupSchema = z.object({
+  meetLink: meetLink,
+  youtubeUrl: youtubeLink,
+  recordingNotes: z.string().nullish(),
+  status: z.enum(CLASS_STATUSES, { error: 'Estado de clase inválido.' }).optional(),
+  studentIds: z.array(z.string()).optional(),
+  slots: z
+    .array(classSlotSchema)
+    .min(1, 'Agrega al menos una clase.')
+    .max(3, 'Puedes programar hasta 3 clases por día.'),
+});
+
+export const updateClassGroupSchema = z.object({
+  groupId: z.string().nullish(),
+  meetLink: z.string().nullish(),
+  youtubeUrl: z.string().nullish(),
+  recordingNotes: z.string().nullish(),
+  status: z.enum(CLASS_STATUSES, { error: 'Estado de clase inválido.' }).optional(),
+  studentIds: z.array(z.string()).nullish(),
+  slots: z
+    .array(classSlotSchema)
+    .min(1, 'Agrega al menos una clase.')
+    .max(3, 'Puedes programar hasta 3 clases por día.'),
+  removedIds: z.array(z.string()).optional(),
+});
+
 /** En la edición los enlaces son opcionales: si no vienen, se conservan los actuales. */
 export const updateClassSchema = z.object({
   id: requiredId('ID de clase requerido.'),

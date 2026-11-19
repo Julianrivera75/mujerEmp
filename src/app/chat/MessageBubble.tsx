@@ -6,7 +6,7 @@ import { cn } from '@/lib/cn';
 import { formatTime } from '@/lib/format';
 import { formatFileSize } from '@/lib/upload';
 
-export interface MessageAttachment {
+interface MessageAttachment {
   name: string | null;
   type: string | null;
   size: number | null;

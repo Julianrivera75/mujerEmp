@@ -6,7 +6,11 @@ import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
-/** Estado de los certificados por módulo de la estudiante con sesión. */
+/**
+ * Estado de los certificados por módulo de la estudiante con sesión. No incluye porcentaje, días
+ * asistidos/totales ni el umbral de la regla: la estudiante no debe ver su propia asistencia, solo si
+ * el certificado está disponible y, si no, un mensaje neutro (ver estudiante/certificado/page.tsx).
+ */
 export const GET = withAuth('certificates GET', ['STUDENT'], async (_req, user) => {
   const student = await prisma.user.findUnique({
     where: { id: user.id },
@@ -26,12 +30,7 @@ export const GET = withAuth('certificates GET', ['STUDENT'], async (_req, user) 
       issuedOn: module.issuedOn,
       art: module.art,
       status: m?.status ?? 'no-classes',
-      percentage: m?.percentage ?? 0,
-      /** Días presentes y días con charlas del módulo. */
-      attended: m?.attended ?? 0,
-      total: m?.total ?? 0,
       opensAt: m?.opensAt ?? null,
-      rule: m?.rule ?? { ruleType: 'MIN_ATTENDANCE_PERCENT', threshold: 80 },
     };
   });
 

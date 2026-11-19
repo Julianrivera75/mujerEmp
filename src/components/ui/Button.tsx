@@ -59,7 +59,11 @@ export function Button(props: ButtonProps) {
   );
 
   if ('href' in props && props.href) {
-    const { href: _href, external, ...anchorRest } = rest as React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+    const {
+      href: _href,
+      external,
+      ...anchorRest
+    } = rest as React.AnchorHTMLAttributes<HTMLAnchorElement> & {
       external?: boolean;
     };
     if (external) {

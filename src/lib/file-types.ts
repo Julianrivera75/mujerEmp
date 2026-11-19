@@ -32,7 +32,7 @@ export const ATTACHMENT_TYPES_LABEL = 'PDF, imagen (JPG, PNG, WebP), Word, Power
 const extensionOf = (name: string) => name.split('.').pop()?.toLowerCase() ?? '';
 
 /** Tipo de contenido según la extensión (los navegadores a veces no lo informan para Word o Excel). */
-export function mimeFromName(name: string): string | null {
+function mimeFromName(name: string): string | null {
   return MIME_BY_EXTENSION[extensionOf(name)] ?? null;
 }
 

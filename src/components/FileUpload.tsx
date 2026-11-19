@@ -41,6 +41,7 @@ export default function FileUpload({
   const [fileInfo, setFileInfo] = useState<{ name: string; size: number } | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [lastFile, setLastFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const busy = phase === 'preparing' || phase === 'uploading';
 
@@ -110,6 +111,23 @@ export default function FileUpload({
     if (file) void upload(file);
   };
 
+  // Arrastrar y soltar: pasa por la misma función de subida que el clic, un solo camino para "archivo elegido".
+  const handleDragOver = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    if (!busy) setIsDragging(true);
+  };
+  const handleDragLeave = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+  const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (busy) return;
+    const file = e.dataTransfer.files?.[0];
+    if (file) void upload(file);
+  };
+
   const inputId = `file-upload-${category}`;
 
   return (
@@ -157,7 +175,14 @@ export default function FileUpload({
       ) : (
         <label
           htmlFor={inputId}
-          className="flex cursor-pointer items-center justify-center space-x-2 rounded-xl border-2 border-dashed border-slate-300 px-3.5 py-2.5 text-xs font-semibold text-slate-600 transition-colors hover:border-fuchsia-400 hover:text-role-ink"
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`flex cursor-pointer items-center justify-center space-x-2 rounded-xl border-2 border-dashed px-3.5 py-2.5 text-xs font-semibold transition-colors ${
+            isDragging
+              ? 'border-fuchsia-500 bg-fuchsia-50 text-role-ink'
+              : 'border-slate-300 text-slate-600 hover:border-fuchsia-400 hover:text-role-ink'
+          }`}
         >
           {phase === 'done' && fileInfo ? (
             <>
@@ -167,7 +192,7 @@ export default function FileUpload({
           ) : (
             <>
               <Upload className="h-4 w-4" />
-              <span>{label || 'Subir archivo'}</span>
+              <span>{isDragging ? 'Suelta la imagen aquí...' : label || 'Subir archivo, o arrástrala aquí'}</span>
             </>
           )}
         </label>
