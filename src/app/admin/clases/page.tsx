@@ -17,10 +17,38 @@ import { monthKeyOf, monthOptions } from '@/lib/months';
 import { groupRooms } from '@/lib/rooms';
 import { safeHref } from '@/lib/validators';
 import { ClassFormModal } from './_components/ClassFormModal';
+import { ClassGroupCard } from './_components/ClassGroupCard';
 import { EnrollmentsModal } from './_components/EnrollmentsModal';
 import type { ClassItem, ManagedUser, SimpleUser } from './types';
 import { logClientError } from '@/lib/client-log';
 import { ClassGallery } from '@/components/ClassGallery';
+
+/**
+ * Agrupa las clases en "programaciones" de un día: primero por `groupId` cuando existe; las que no
+ * lo tienen (programaciones de antes de esta función) se infieren por enlace + día + sin huecos
+ * grandes, igual que la sala compartida de la estudiante. Cada grupo queda ordenado por horario, y
+ * los grupos entre sí también, para no alterar el orden cronológico de la lista.
+ */
+function groupClassItems(classes: ClassItem[]): ClassItem[][] {
+  const byGroupId = new Map<string, ClassItem[]>();
+  const ungrouped: ClassItem[] = [];
+  for (const c of classes) {
+    if (c.groupId) byGroupId.set(c.groupId, [...(byGroupId.get(c.groupId) ?? []), c]);
+    else ungrouped.push(c);
+  }
+
+  const groups = [...byGroupId.values()];
+  if (ungrouped.length > 0) {
+    const dated = ungrouped.map((c) => ({ ...c, dateStart: new Date(c.dateStart), dateEnd: new Date(c.dateEnd) }));
+    for (const chain of groupRooms(dated)) {
+      groups.push(chain.map((c) => ungrouped.find((o) => o.id === c.id)!));
+    }
+  }
+
+  for (const g of groups) g.sort((a, b) => new Date(a.dateStart).getTime() - new Date(b.dateStart).getTime());
+  groups.sort((a, b) => new Date(a[0].dateStart).getTime() - new Date(b[0].dateStart).getTime());
+  return groups;
+}
 
 export default function AdminClassesPage() {
   const [classes, setClasses] = useState<ClassItem[]>([]);
@@ -30,6 +58,7 @@ export default function AdminClassesPage() {
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(() => monthKeyOf(new Date()));
   const months = useMemo(() => monthOptions(), []);
+  const classGroups = useMemo(() => groupClassItems(classes), [classes]);
   const { show } = useToast();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -89,21 +118,10 @@ export default function AdminClassesPage() {
 
   const handleOpenEdit = (cls: ClassItem) => {
     setModalMode('edit');
-    // Si la clase pertenece a una programación de varias, se edita junto con sus hermanas (ya están
-    // cargadas: comparten el mismo mes porque son del mismo día).
-    let siblings: ClassItem[];
-    if (cls.groupId) {
-      siblings = classes.filter((c) => c.groupId === cls.groupId);
-    } else {
-      // Clases programadas antes de esta función (mismo enlace de Meet, sin groupId todavía): se
-      // infieren por enlace + día + sin huecos grandes, igual que la "sala compartida" de la
-      // estudiante, para que se puedan seguir editando juntas aunque no tengan el dato nuevo.
-      const dated = classes.map((c) => ({ ...c, dateStart: new Date(c.dateStart), dateEnd: new Date(c.dateEnd) }));
-      const chain = groupRooms(dated).find((g) => g.some((c) => c.id === cls.id));
-      const chainIds = new Set((chain && chain.length > 1 ? chain : [{ id: cls.id }]).map((c) => c.id));
-      siblings = classes.filter((c) => chainIds.has(c.id));
-    }
-    setEditingClasses(siblings);
+    // Se edita junto con sus hermanas de la misma programación (ya están cargadas: comparten el
+    // mismo mes porque son del mismo día) — mismo agrupamiento que pinta la lista.
+    const group = groupClassItems(classes).find((g) => g.some((c) => c.id === cls.id));
+    setEditingClasses(group ?? [cls]);
     setIsModalOpen(true);
     loadUsers();
   };
@@ -191,7 +209,18 @@ export default function AdminClassesPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {classes.map((cls) => {
+          {classGroups.map((group) => {
+            if (group.length > 1) {
+              return (
+                <ClassGroupCard
+                  key={group.map((c) => c.id).join('-')}
+                  classes={group}
+                  onEdit={handleOpenEdit}
+                  onDelete={setDeleteTarget}
+                />
+              );
+            }
+            const cls = group[0];
             const start = new Date(cls.dateStart);
             const end = new Date(cls.dateEnd);
             const formattedDate = formatWeekdayDate(start);
