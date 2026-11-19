@@ -3,6 +3,7 @@
 import React from 'react';
 import { CheckCircle2, Clock, Radio } from 'lucide-react';
 import JoinMeetButton from '@/components/JoinMeetButton';
+import { ClassGallery } from '@/components/ClassGallery';
 import { ClassResourceList, type ClassResourceItem } from '@/components/ClassResourceList';
 import { Card } from '@/components/ui/Card';
 import { StatusPill } from '@/components/ui/Badge';
@@ -20,6 +21,8 @@ export interface RoomClassItem {
   mentor: { name: string };
   attendances: { studentId: string; joinedAt: string }[];
   resources: ClassResourceItem[];
+  imageUrl?: string | null;
+  imageUrls?: string[];
 }
 
 interface RoomCardProps {
@@ -77,12 +80,19 @@ export function RoomCard({ classes, userId, onChanged }: RoomCardProps) {
               key={c.id}
               className="flex flex-col gap-2 rounded-2xl border border-slate-100 bg-white/70 p-3.5 sm:flex-row sm:items-center sm:justify-between"
             >
-              <div className="min-w-0 space-y-1.5">
-                <p className="break-words text-sm font-bold text-slate-800">{c.title}</p>
-                <p className="text-xs text-slate-500">
-                  {formatTimeRange(c.dateStart, c.dateEnd)} · Mentora: <strong>{c.mentor.name}</strong>
-                </p>
-                <ClassResourceList resources={c.resources} />
+              <div className="flex min-w-0 items-start gap-3">
+                <ClassGallery
+                  urls={c.imageUrls ?? (c.imageUrl ? [c.imageUrl] : [])}
+                  title={c.title}
+                  className="w-20 flex-shrink-0 sm:w-24"
+                />
+                <div className="min-w-0 space-y-1.5">
+                  <p className="break-words text-sm font-bold text-slate-800">{c.title}</p>
+                  <p className="text-xs text-slate-500">
+                    {formatTimeRange(c.dateStart, c.dateEnd)} · Mentora: <strong>{c.mentor.name}</strong>
+                  </p>
+                  <ClassResourceList resources={c.resources} />
+                </div>
               </div>
               <div className="flex flex-shrink-0 flex-wrap items-center gap-2">
                 {live && <StatusPill label="En vivo" tone="success" pulse />}
